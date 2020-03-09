@@ -35,7 +35,7 @@
     "test": "react-app-rewired test",
     "format": "prettier --write '**/*.{js,ts,css,scss,html}'",
     "lint": "eslint '**/*.{js,ts}'",
-    "firebase": "firebase deploy"
+    "firebase": "cd functions && npm i && cd .. && firebase deploy --token \"$FIREBASE_TOKEN\""
   },
   "browserslist": {
     "production": [

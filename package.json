@@ -9,20 +9,33 @@
     "antd": "^4.0.2",
     "babel-plugin-import": "^1.13.0",
     "customize-cra": "^0.9.1",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "firebase": "^7.10.0",
+    "firebase-tools": "^7.14.0",
     "less": "^3.11.1",
     "less-loader": "^5.0.0",
+    "mobx": "^5.15.4",
+    "mobx-react": "^6.1.8",
+    "prettier": "^1.19.1",
     "react": "^16.13.0",
     "react-app-rewired": "^2.1.5",
     "react-dom": "^16.13.0",
-    "react-scripts": "3.4.0"
+    "react-router-dom": "^5.1.2",
+    "react-scripts": "3.4.0",
+    "styled-components": "^5.0.1",
+    "stylelint": "^13.2.0",
+    "stylelint-config-prettier": "^8.0.1",
+    "stylelint-prettier": "^1.1.2"
   },
   "scripts": {
     "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
-    "test": "react-app-rewired test"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
+    "build": "npm run firebase && react-app-rewired build",
+    "test": "react-app-rewired test",
+    "format": "prettier --write '**/*.{js,ts,css,scss,html}'",
+    "lint": "eslint '**/*.{js,ts}'",
+    "firebase": "firebase deploy"
   },
   "browserslist": {
     "production": [

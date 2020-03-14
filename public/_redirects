@@ -5,3 +5,4 @@
 
 # Redirect default Netlify subdomain to primary domain
 http://mywardrobe.netlify.com/* http://wardrobe.rocks/:splat 301!
+https://mywardrobe.netlify.com/* https://wardrobe.rocks/:splat 301!

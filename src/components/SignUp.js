@@ -1,7 +1,35 @@
 import React from 'react';
+import { Button } from 'antd';
+import { observer } from 'mobx-react';
+import { StoreContext } from '../stores';
+import { withRouter } from 'react-router-dom';
 
+@withRouter
+@observer
 export default class SignUp extends React.Component {
+  static contextType = StoreContext;
+
+  onSignup = () => {
+    const { userStore } = this.context;
+    const { history } = this.props;
+
+    // this is fake signup, should replace with firebase.auth
+    userStore.currentUser = {
+      displayName: 'Bucky Badger',
+      email: 'bucky.badger@wisc.edu',
+    };
+
+    history.replace('/');
+  };
+
   render() {
-    return <div>hi I'm signup</div>;
+    return (
+      <div>
+        <h2>hi I'm Signup</h2>
+        <Button onClick={this.onSignup} type="primary">
+          SIGN UP
+        </Button>
+      </div>
+    );
   }
 }

@@ -1,6 +1,24 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Wardrobe
+
+> This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+
+## Getting Started
+
+#### node.js and npm
+
+First you need `node.js` installed, which will also come with `npm` (node package manager). Run `node -v` and `npm -v` to and make sure you have both of them.
+
+After cloning this repo, run `npm install` in the root directory in this project. This will install all the required dependencies. Dependencies are managed by [NPM](https://www.npmjs.com/), it works by tracking all the dependencies and their versions in `package.json`, and will download them in the `node_modules` folder. The first time you run `npm install` may take forever, but the results are cached and should be fast when you only need to update some packages.
+
+#### IDE
+
+I recommend using [VSCode](https://code.visualstudio.com/) when developing, as we can share common settings like code-formatting options. These settings are stored in `.vscode/settings.json`.
+
+When you open this repo with VSCode, it will prompt you to install recommended extensions (listed in `.vscode/extensions.json`).
 
 ## Available Scripts
+
+To start the server for development:
 
 In the project directory, you can run:
 
@@ -27,17 +45,43 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
+## UI Framework & Libraries
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+I installed 2 UI Frameworks, because both are popular and contains a lot of ready-to-use components, so we don't need to re-invent the wheel!
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- [Material-UI](https://material-ui.com/)
+- [Ant Design](https://ant.design/)
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+#### styles
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+To avoid CSS leaking to all pages, only add global styles in `index.css` if you want the style to be applied to all pages.
 
-## Learn More
+To add "scoped" style to a component or a page, please use [Styled-Components](https://styled-components.com/). Check out `Header.js` for example usage.
+
+## Directory Structure
+
+```sh
+├── build # output of compiled result, ignored by git
+├── config-overrides.js # override create-react-app settings
+├── firebase # firebase database/storage settings
+├── functions # firebase cloud functions source code
+├── package-lock.json # auto-generated, do not edit
+├── package.json # tracks npm package dependencies
+├── public # only put files that don't need bundle
+└── src # all source code lives in here
+    ├── App.js # all the routes are defined here!
+    ├── components # put all components in this folder
+    │   ├── Header.js
+    |   ├── ...
+    │   └── SignUp.js
+    ├── images # put images here
+    ├── index.css # global css, only add styles if want to apply to every page
+    ├── index.js # entry point for front-end
+    └── stores # global stores shared across components
+        └── UserStore.js # store about current loggedin user
+```
+
+## Learn More about advanced create-react-app settings
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 

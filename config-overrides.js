@@ -5,6 +5,7 @@ const {
   addDecoratorsLegacy,
   useEslintRc,
 } = require('customize-cra');
+const theme = require('./src/theme');
 
 module.exports = override(
   fixBabelImports('import', {
@@ -14,7 +15,7 @@ module.exports = override(
   }),
   addLessLoader({
     javascriptEnabled: true,
-    modifyVars: { '@primary-color': '#7D64E1' },
+    modifyVars: { '@primary-color': theme.primary },
   }),
   addDecoratorsLegacy(),
   useEslintRc('./.eslintrc')

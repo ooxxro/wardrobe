@@ -1,12 +1,7 @@
-import { observable, computed } from 'mobx';
+export default class UserStore {
+  currentUser = null;
 
-class UserStore {
-  @observable currentUser = null;
-
-  @computed get isLoggedIn() {
+  get isLoggedIn() {
     return this.currentUser != null;
   }
 }
-
-const userStore = new UserStore();
-export default userStore;

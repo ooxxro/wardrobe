@@ -20,15 +20,27 @@ export default class Login extends React.Component {
     const { userStore } = this.context;
     const { history } = this.props;
 
-    //alert('Email: ' + this.state.email + '\n' + 'Password: ' + this.state.password);
+    if (this.state.email === '' || this.state.password === '') {
+      let errorString = 'Please enter the following fields:\n';
 
-    // this is fake login, should replace with firebase.auth
-    userStore.currentUser = {
-      displayName: 'Bucky Badger',
-      email: 'bucky.badger@wisc.edu',
-    };
+      if (this.state.email === '') {
+        errorString += 'Email\n';
+      }
 
-    history.replace('/');
+      if (this.state.password === '') {
+        errorString += 'Password\n';
+      }
+
+      alert(errorString);
+    } else {
+      // this is fake signup, should replace with firebase.auth
+      userStore.currentUser = {
+        displayName: 'Bucky Badger',
+        email: 'bucky.badger@wisc.edu',
+      };
+
+      history.replace('/');
+    }
   };
 
   handleEmailChange(event) {

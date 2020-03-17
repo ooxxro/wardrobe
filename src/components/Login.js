@@ -26,9 +26,17 @@ export default class Login extends React.Component {
     return (
       <div>
         <h2>hi I'm login</h2>
-        <Button onClick={this.onLogin} type="primary">
-          LOGIN
-        </Button>
+        <form id="loginForm">
+          <label for="email">Email: </label>
+          <input type="text" id="email" name="email" placeholder="Email" />
+          <br />
+          <label for="password">Password: </label>
+          <input type="password" id="password" name="password" placeholder="Password" />
+          <br />
+          <Button onClick={this.onLogin} type="primary">
+            LOGIN
+          </Button>
+        </form>
       </div>
     );
   }

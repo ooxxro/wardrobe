@@ -55,17 +55,16 @@ export default class SignUp extends React.Component {
       firebase
         .auth()
         .createUserWithEmailAndPassword(this.state.email, this.state.password)
-        .then(function(result) {
-          userStore.currentUser = {
-            displayName: this.state.displayname, //Should come from firestore document for this user
-            email: result.user.email,
-          };
-        })
         .catch(function(error) {
           // Handle Errors here.
           let errorCode = error.code;
           let errorMessage = error.message;
         });
+
+      /*userStore.currentUser = {
+        displayName: 'Bucky Badger', //Should come from firestore doc for this user
+        email: firebase.auth().currentUser.email,
+      };*/
 
       history.replace('/');
     }

@@ -33,10 +33,19 @@ export default class Login extends React.Component {
 
       alert(errorString);
     } else {
-      // this is fake signup, should replace with firebase.auth
+      firebase
+        .auth()
+        .signInWithEmailAndPassword(this.state.email, this.state.password)
+        .catch(function(error) {
+          // Handle Errors here.
+          let errorCode = error.code;
+          let errorMessage = error.message;
+          // ...
+        });
+
       userStore.currentUser = {
-        displayName: 'Bucky Badger',
-        email: 'bucky.badger@wisc.edu',
+        displayName: 'Bucky Badger', //Should come from firestore doc for this user
+        email: firebase.auth().currentUser.email,
       };
 
       history.replace('/');

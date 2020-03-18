@@ -50,10 +50,18 @@ export default class SignUp extends React.Component {
     } else if (this.state.password !== this.state.verifypassword) {
       alert('Your password and verification password do not match.');
     } else {
-      // this is fake signup, should replace with firebase.auth
+      firebase
+        .auth()
+        .createUserWithEmailAndPassword(this.state.email, this.state.password)
+        .catch(function(error) {
+          // Handle Errors here.
+          let errorCode = error.code;
+          let errorMessage = error.message;
+        });
+
       userStore.currentUser = {
-        displayName: 'Bucky Badger',
-        email: 'bucky.badger@wisc.edu',
+        displayName: this.state.displayname, //Should come from firestore document for this user
+        email: firebase.auth().currentUser.email,
       };
 
       history.replace('/');

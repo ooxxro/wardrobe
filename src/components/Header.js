@@ -62,7 +62,16 @@ export default class Header extends React.Component {
     const { userStore } = this.context;
     const { history } = this.props;
 
-    // fack logout here, should be replaced with firebase.auth
+    firebase
+      .auth()
+      .signOut()
+      .then(function() {
+        // Sign-out successful.
+      })
+      .catch(function(error) {
+        // An error happened.
+      });
+
     userStore.currentUser = null;
     history.push('/');
   };

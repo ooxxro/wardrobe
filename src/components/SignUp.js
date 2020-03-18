@@ -3,6 +3,8 @@ import { Button } from 'antd';
 import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
+import * as firebase from 'firebase/app';
+import 'firebase/auth';
 
 @withRouter
 @observer

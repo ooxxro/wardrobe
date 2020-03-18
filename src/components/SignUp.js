@@ -61,6 +61,16 @@ export default class SignUp extends React.Component {
           let errorMessage = error.message;
         });
 
+      firebase
+        .auth()
+        .signInWithEmailAndPassword(this.state.email, this.state.password)
+        .catch(function(error) {
+          // Handle Errors here.
+          let errorCode = error.code;
+          let errorMessage = error.message;
+          // ...
+        });
+
       userStore.currentUser = {
         displayName: this.state.displayname, //Should come from firestore document for this user
         email: firebase.auth().currentUser.email,

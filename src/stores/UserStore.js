@@ -7,16 +7,12 @@ class UserStore {
 
   @computed
   get isLoggedIn() {
-    firebase.auth().onAuthStateChanged(function(user) {
-      if (user) {
-        //User is Signed in
-        return true;
-      } else {
-        //User is signed out
-        return false;
-      }
-    });
-
+    let user = firebase.auth().currentUser;
+    if (user) {
+      return true;
+    } else {
+      return false;
+    }
     //return this.currentUser != null;
   }
 }

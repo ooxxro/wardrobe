@@ -3,7 +3,8 @@ import styled from 'styled-components';
 import Header from './Header';
 
 const Wrapper = styled.div`
-  background: linear-gradient(90deg, #6b8ade 0%, #7d64e1 100%);
+  background: linear-gradient(90deg, #6e8fe7 0%, #8261e6 100%);
+  /* background: linear-gradient(90deg, #6b8ade 0%, #8e2dd7 100%); */
   min-height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;

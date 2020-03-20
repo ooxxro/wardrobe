@@ -74,7 +74,7 @@ export default class Header extends React.Component {
         // An error happened.
       });
 
-    //userStore.currentUser = null;
+    userStore.currentUser = null;
     history.push('/');
   };
 

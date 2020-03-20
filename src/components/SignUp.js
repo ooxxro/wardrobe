@@ -61,10 +61,10 @@ export default class SignUp extends React.Component {
           let errorMessage = error.message;
         });
 
-      /*userStore.currentUser = {
-        displayName: 'Bucky Badger', //Should come from firestore doc for this user
-        email: firebase.auth().currentUser.email,
-      };*/
+      userStore.currentUser = {
+        displayName: this.state.displayname, //Should come from firestore doc for this user
+        email: this.state.email,
+      };
 
       history.replace('/');
     }

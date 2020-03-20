@@ -7,13 +7,7 @@ class UserStore {
 
   @computed
   get isLoggedIn() {
-    let user = firebase.auth().currentUser;
-    if (user) {
-      return true;
-    } else {
-      return false;
-    }
-    //return this.currentUser != null;
+    return this.currentUser != null;
   }
 }
 

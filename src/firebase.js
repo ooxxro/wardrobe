@@ -3,7 +3,6 @@ import 'firebase/analytics';
 import 'firebase/auth';
 import 'firebase/firestore';
 import 'firebase/storage';
-import userStore from './stores/UserStore';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -19,15 +18,5 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
-
-// sync auth state with userStore
-firebase.auth().onAuthStateChanged(user => {
-  if (user) {
-    // User is signed in.
-    userStore.setUser(user);
-  } else {
-    userStore.setUser(null);
-  }
-});
 
 export default firebase;

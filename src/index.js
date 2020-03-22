@@ -4,26 +4,10 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { BrowserRouter } from 'react-router-dom';
-import * as firebase from 'firebase/app';
-import 'firebase/analytics';
-import 'firebase/auth';
-import 'firebase/firestore';
-import 'firebase/storage';
+import firebase from './firebase';
+import userStore from './stores/UserStore';
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: 'AIzaSyAxa02LRNqxRPpCJlh1u7A3isRsZFJI9hY',
-  authDomain: 'wardrobe-rocks.firebaseapp.com',
-  databaseURL: 'https://wardrobe-rocks.firebaseio.com',
-  projectId: 'wardrobe-rocks',
-  storageBucket: 'wardrobe-rocks.appspot.com',
-  messagingSenderId: '1049503584150',
-  appId: '1:1049503584150:web:edffde560062853bbf17b7',
-  measurementId: 'G-KWLEGFFQL0',
-};
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-firebase.analytics();
+let rendered = false;
 
 const Root = () => (
   <BrowserRouter>
@@ -31,7 +15,21 @@ const Root = () => (
   </BrowserRouter>
 );
 
-ReactDOM.render(<Root />, document.getElementById('root'));
+// sync auth state with userStore
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    // User is signed in.
+    userStore.setUser(user);
+  } else {
+    userStore.setUser(null);
+  }
+
+  if (!rendered) {
+    rendered = true;
+    // render for the first time when auth state is known
+    ReactDOM.render(<Root />, document.getElementById('root'));
+  }
+});
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

@@ -2,12 +2,12 @@ import React from 'react';
 import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
-import * as firebase from 'firebase/app';
-import 'firebase/auth';
+import firebase from '../firebase';
 import styled from 'styled-components';
 import signupImg from '../images/signup.png';
 import { Button } from '@material-ui/core';
 import { Link } from 'react-router-dom';
+import { message } from 'antd';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -84,14 +84,9 @@ export default class SignUp extends React.Component {
   constructor(props) {
     super(props);
     this.state = { email: '', password: '', verifypassword: '', displayname: '' };
-    this.handleEmailChange = this.handleEmailChange.bind(this);
-    this.handlePasswordChange = this.handlePasswordChange.bind(this);
-    this.handleVerifyPasswordChange = this.handleVerifyPasswordChange.bind(this);
-    this.handleDisplayNameChange = this.handleDisplayNameChange.bind(this);
   }
 
   onSignup = () => {
-    const { userStore } = this.context;
     const { history } = this.props;
 
     if (
@@ -125,36 +120,31 @@ export default class SignUp extends React.Component {
       firebase
         .auth()
         .createUserWithEmailAndPassword(this.state.email, this.state.password)
-        .catch(function(error) {
+        .then(() => {
+          history.replace('/');
+        })
+        .catch(error => {
           // Handle Errors here.
-          let errorCode = error.code;
-          let errorMessage = error.message;
+          message.error(error.message);
         });
-
-      userStore.currentUser = {
-        displayName: this.state.displayname, //Should come from firestore doc for this user
-        email: this.state.email,
-      };
-
-      history.replace('/');
     }
   };
 
-  handleEmailChange(event) {
+  handleEmailChange = event => {
     this.setState({ email: event.target.value });
-  }
+  };
 
-  handlePasswordChange(event) {
+  handlePasswordChange = event => {
     this.setState({ password: event.target.value });
-  }
+  };
 
-  handleVerifyPasswordChange(event) {
+  handleVerifyPasswordChange = event => {
     this.setState({ verifypassword: event.target.value });
-  }
+  };
 
-  handleDisplayNameChange(event) {
+  handleDisplayNameChange = event => {
     this.setState({ displayname: event.target.value });
-  }
+  };
 
   render() {
     return (
@@ -212,9 +202,7 @@ export default class SignUp extends React.Component {
               <br />
               <Button
                 className="signupbutton"
-                component={Link}
                 onClick={this.onSignup}
-                type="primary"
                 variant="contained"
                 color="primary"
               >
@@ -222,7 +210,7 @@ export default class SignUp extends React.Component {
               </Button>
 
               <p>
-                Or go back to <a href="/login">login</a>
+                Or go back to <Link to="/login">login</Link>
               </p>
             </RightContent>
           </Right>

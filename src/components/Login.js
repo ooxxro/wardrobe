@@ -44,7 +44,6 @@ const RightContent = styled.div`
   font-size: 15px;
 
   margin: 0px auto;
-  padding-top: 20%;
   form {
     text-align: left;
   }

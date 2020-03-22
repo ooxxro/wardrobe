@@ -6,7 +6,9 @@ import { UserOutlined } from '@ant-design/icons'; //Should be User's current ava
 import { Avatar } from 'antd';
 
 const Wrapper = styled.div`
-  width: 100%;
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
 `;
 
 const Card1 = styled.div`

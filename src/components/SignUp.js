@@ -216,7 +216,7 @@ export default class SignUp extends React.Component {
               </Button>
 
               <p>
-                Or go back to <a href="/login">login</a>
+                Or go back to <Link to="/login">login</Link>
               </p>
             </RightContent>
           </Right>

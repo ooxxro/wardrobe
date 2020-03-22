@@ -168,7 +168,7 @@ export default class MyWardrobe extends React.Component {
         <Line />
         <Down>
           <CardWrapper className="all">
-            <LinkCard className="all">
+            <LinkCard to="/my-wardrobe/all" className="all">
               <ImgWrapper>
                 <img src={clothesImg} />
               </ImgWrapper>
@@ -176,7 +176,7 @@ export default class MyWardrobe extends React.Component {
             </LinkCard>
           </CardWrapper>
           <CardWrapper className="hat">
-            <LinkCard className="hat">
+            <LinkCard to="/my-wardrobe/hats" className="hat">
               <ImgWrapper>
                 <img src={hatImg} />
               </ImgWrapper>
@@ -184,7 +184,7 @@ export default class MyWardrobe extends React.Component {
             </LinkCard>
           </CardWrapper>
           <CardWrapper className="shirt">
-            <LinkCard className="shirt">
+            <LinkCard to="/my-wardrobe/shirts" className="shirt">
               <ImgWrapper>
                 <img src={tshirtImg} />
               </ImgWrapper>
@@ -192,7 +192,7 @@ export default class MyWardrobe extends React.Component {
             </LinkCard>
           </CardWrapper>
           <CardWrapper className="pant">
-            <LinkCard className="pant">
+            <LinkCard to="/my-wardrobe/pants" className="pant">
               <ImgWrapper>
                 <img src={pantsImg} />
               </ImgWrapper>
@@ -200,7 +200,7 @@ export default class MyWardrobe extends React.Component {
             </LinkCard>
           </CardWrapper>
           <CardWrapper className="shoe">
-            <LinkCard className="shoe">
+            <LinkCard to="/my-wardrobe/shoes" className="shoe">
               <ImgWrapper>
                 <img src={shoesImg} />
               </ImgWrapper>

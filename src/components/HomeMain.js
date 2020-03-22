@@ -85,7 +85,6 @@ export default class HomeMain extends React.Component {
   static contextType = StoreContext;
 
   render() {
-    const { userStore } = this.context;
     return (
       <Wrapper>
         <Left>

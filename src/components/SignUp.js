@@ -2,8 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
-import * as firebase from 'firebase/app';
-import 'firebase/auth';
+import firebase from '../firebase';
 import styled from 'styled-components';
 import signupImg from '../images/signup.png';
 import { Button } from '@material-ui/core';
@@ -125,18 +124,14 @@ export default class SignUp extends React.Component {
       firebase
         .auth()
         .createUserWithEmailAndPassword(this.state.email, this.state.password)
+        .then(() => {
+          history.replace('/');
+        })
         .catch(function(error) {
           // Handle Errors here.
           let errorCode = error.code;
           let errorMessage = error.message;
         });
-
-      userStore.currentUser = {
-        displayName: this.state.displayname, //Should come from firestore doc for this user
-        email: this.state.email,
-      };
-
-      history.replace('/');
     }
   };
 

@@ -6,8 +6,7 @@ import { observer } from 'mobx-react';
 import { UserOutlined } from '@ant-design/icons';
 import { Avatar, Menu, Dropdown } from 'antd';
 import { StoreContext } from '../stores';
-import * as firebase from 'firebase/app';
-import 'firebase/auth';
+import firebase from '../firebase';
 
 const Wrapper = styled.header`
   height: 64px;
@@ -67,15 +66,13 @@ export default class Header extends React.Component {
     firebase
       .auth()
       .signOut()
-      .then(function() {
+      .then(() => {
         // Sign-out successful.
+        history.push('/');
       })
-      .catch(function(error) {
+      .catch(error => {
         // An error happened.
       });
-
-    userStore.currentUser = null;
-    history.push('/');
   };
 
   render() {

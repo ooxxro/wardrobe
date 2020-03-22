@@ -2,8 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
-import * as firebase from 'firebase/app';
-import 'firebase/auth';
+import firebase from '../firebase';
 import styled from 'styled-components';
 import loginImg from '../images/login.png';
 import { Button } from '@material-ui/core';
@@ -113,19 +112,15 @@ export default class Login extends React.Component {
       firebase
         .auth()
         .signInWithEmailAndPassword(this.state.email, this.state.password)
+        .then(() => {
+          history.replace('/');
+        })
         .catch(function(error) {
           // Handle Errors here.
           let errorCode = error.code;
           let errorMessage = error.message;
           // ...
         });
-
-      userStore.currentUser = {
-        displayName: 'Bucky Badger', //Should come from firestore doc for this user
-        email: firebase.auth().currentUser.email,
-      };
-
-      history.replace('/');
     }
   };
 

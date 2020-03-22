@@ -1,6 +1,4 @@
-import { observable, computed } from 'mobx';
-import * as firebase from 'firebase/app';
-import 'firebase/auth';
+import { observable, computed, action } from 'mobx';
 
 class UserStore {
   @observable currentUser = null;
@@ -8,6 +6,11 @@ class UserStore {
   @computed
   get isLoggedIn() {
     return this.currentUser != null;
+  }
+
+  @action
+  setUser(user) {
+    this.currentUser = user;
   }
 }
 

@@ -89,8 +89,6 @@ export default class Login extends React.Component {
   constructor(props) {
     super(props);
     this.state = { email: '', password: '' };
-    this.handleEmailChange = this.handleEmailChange.bind(this);
-    this.handlePasswordChange = this.handlePasswordChange.bind(this);
   }
 
   onLogin = () => {
@@ -122,13 +120,13 @@ export default class Login extends React.Component {
     }
   };
 
-  handleEmailChange(event) {
+  handleEmailChange = event => {
     this.setState({ email: event.target.value });
-  }
+  };
 
-  handlePasswordChange(event) {
+  handlePasswordChange = event => {
     this.setState({ password: event.target.value });
-  }
+  };
 
   render() {
     return (
@@ -171,9 +169,7 @@ export default class Login extends React.Component {
 
               <Button
                 className="loginbutton"
-                component={Link}
                 onClick={this.onLogin}
-                type="primary"
                 variant="contained"
                 color="primary"
               >

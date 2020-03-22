@@ -84,10 +84,6 @@ export default class SignUp extends React.Component {
   constructor(props) {
     super(props);
     this.state = { email: '', password: '', verifypassword: '', displayname: '' };
-    this.handleEmailChange = this.handleEmailChange.bind(this);
-    this.handlePasswordChange = this.handlePasswordChange.bind(this);
-    this.handleVerifyPasswordChange = this.handleVerifyPasswordChange.bind(this);
-    this.handleDisplayNameChange = this.handleDisplayNameChange.bind(this);
   }
 
   onSignup = () => {
@@ -134,21 +130,21 @@ export default class SignUp extends React.Component {
     }
   };
 
-  handleEmailChange(event) {
+  handleEmailChange = event => {
     this.setState({ email: event.target.value });
-  }
+  };
 
-  handlePasswordChange(event) {
+  handlePasswordChange = event => {
     this.setState({ password: event.target.value });
-  }
+  };
 
-  handleVerifyPasswordChange(event) {
+  handleVerifyPasswordChange = event => {
     this.setState({ verifypassword: event.target.value });
-  }
+  };
 
-  handleDisplayNameChange(event) {
+  handleDisplayNameChange = event => {
     this.setState({ displayname: event.target.value });
-  }
+  };
 
   render() {
     return (
@@ -206,9 +202,7 @@ export default class SignUp extends React.Component {
               <br />
               <Button
                 className="signupbutton"
-                component={Link}
                 onClick={this.onSignup}
-                type="primary"
                 variant="contained"
                 color="primary"
               >

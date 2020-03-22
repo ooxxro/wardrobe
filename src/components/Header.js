@@ -4,7 +4,7 @@ import { Link, withRouter } from 'react-router-dom';
 import Button from '@material-ui/core/Button';
 import { observer } from 'mobx-react';
 import { UserOutlined } from '@ant-design/icons';
-import { Avatar, Menu, Dropdown } from 'antd';
+import { Avatar, Menu, Dropdown, message } from 'antd';
 import { StoreContext } from '../stores';
 import firebase from '../firebase';
 
@@ -60,7 +60,6 @@ export default class Header extends React.Component {
   static contextType = StoreContext;
 
   onLogout = () => {
-    const { userStore } = this.context;
     const { history } = this.props;
 
     firebase
@@ -72,6 +71,9 @@ export default class Header extends React.Component {
       })
       .catch(error => {
         // An error happened.
+        message.error(
+          'Oops, something went wrong. Please try again later. Error: ' + error.message
+        );
       });
   };
 

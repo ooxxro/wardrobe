@@ -7,6 +7,7 @@ import styled from 'styled-components';
 import signupImg from '../images/signup.png';
 import { Button } from '@material-ui/core';
 import { Link } from 'react-router-dom';
+import { message } from 'antd';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -90,7 +91,6 @@ export default class SignUp extends React.Component {
   }
 
   onSignup = () => {
-    const { userStore } = this.context;
     const { history } = this.props;
 
     if (
@@ -127,10 +127,9 @@ export default class SignUp extends React.Component {
         .then(() => {
           history.replace('/');
         })
-        .catch(function(error) {
+        .catch(error => {
           // Handle Errors here.
-          let errorCode = error.code;
-          let errorMessage = error.message;
+          message.error(error.message);
         });
     }
   };

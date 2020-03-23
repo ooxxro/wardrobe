@@ -51,10 +51,20 @@ const Card1Content = styled.div`
 
   .saveEmailButton {
     width: 10%;
+    background: #6247ce;
+    &:hover {
+      color: #fff;
+      background-color: #6247ce;
+    }
   }
 
   .savePasswordButton {
     width: 10%;
+    background: #6247ce;
+    &:hover {
+      color: #fff;
+      background-color: #6247ce;
+    }
   }
 `;
 
@@ -77,6 +87,14 @@ const Card2 = styled.div`
     margin-right: auto;
     padding-bottom: 2rem;
     width: 90%;
+
+    .deleteAccountButton {
+      background: #6247ce;
+      &:hover {
+        color: #fff;
+        background-color: #6247ce;
+      }
+    }
   }
 `;
 
@@ -160,7 +178,13 @@ export default class Setting extends React.Component {
           <div className="card2Content">
             <p>Once you delete, it will clear all of your data.</p>
             <p>Are you sure you want to delete your account?</p>
-            <Button component={Link} type="primary" variant="contained" color="primary">
+            <Button
+              className="deleteAccountButton"
+              component={Link}
+              type="primary"
+              variant="contained"
+              color="primary"
+            >
               DELETE MY ACCOUNT
             </Button>
           </div>

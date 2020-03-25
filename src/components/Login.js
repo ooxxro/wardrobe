@@ -105,7 +105,7 @@ export default class Login extends React.Component {
         errorString += 'Password\n';
       }
 
-      alert(errorString);
+      message.error(errorString);
     } else {
       firebase
         .auth()

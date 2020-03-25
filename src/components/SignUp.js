@@ -113,9 +113,9 @@ export default class SignUp extends React.Component {
         errorString += 'Verification Password\n';
       }
 
-      alert(errorString);
+      message.error(errorString);
     } else if (this.state.password !== this.state.verifypassword) {
-      alert('Your password and verification password do not match.');
+      message.error('Your password and verification password do not match.');
     } else {
       firebase
         .auth()

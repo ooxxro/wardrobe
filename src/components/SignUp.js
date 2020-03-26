@@ -122,8 +122,6 @@ export default class SignUp extends React.Component {
         .auth()
         .createUserWithEmailAndPassword(this.state.email, this.state.password)
         .then(cred => {
-          history.replace('/');
-
           //Create user in firestore - auth uid matches db id
           db.collection('users')
             .doc(cred.user.uid)
@@ -138,26 +136,31 @@ export default class SignUp extends React.Component {
             .doc('all')
             .set({
               name: 'All',
+              clothes: ['dummyID'],
             });
           db.collection('users/' + cred.user.uid + '/categories')
             .doc('hats')
             .set({
               name: 'Hats',
+              clothes: ['dummyID'],
             });
           db.collection('users/' + cred.user.uid + '/categories')
             .doc('shirts')
             .set({
               name: 'Shirts',
+              clothes: ['dummyID'],
             });
           db.collection('users/' + cred.user.uid + '/categories')
             .doc('pants')
             .set({
               name: 'Pants',
+              clothes: ['dummyID'],
             });
           db.collection('users/' + cred.user.uid + '/categories')
             .doc('shoes')
             .set({
               name: 'Shoes',
+              clothes: ['dummyID'],
             });
 
           //Initialize empty backgrounds collection for this user, should contain default image
@@ -172,38 +175,24 @@ export default class SignUp extends React.Component {
             .doc('DummyOutfit')
             .set({
               /*Note, outfits the user creates will have name,
-               *clothes collection, and image url initialized.
+               *clothes ID array, and image url initialized.
                *Also maybe a "favorite" boolean field?
                *This is just here to make the collection.*/
               exists: true,
             });
 
-          //Iniitialize clothes collections for each category with dummy clothing item that should be hidden
-          db.collection('users/' + cred.user.uid + '/categories/all/clothes')
+          //Initialize empty clothes collection for this user, contains one dummy clothing item
+          db.collection('users/' + cred.user.uid + '/clothes')
             .doc('DummyClothingItem')
             .set({
+              /*Note, clothes the user creates will have name,
+               *category ID array, image url, created timestamp,
+               *and last updated timestamp initialized.
+               *This is just here to make the collection.*/
               exists: true,
             });
-          db.collection('users/' + cred.user.uid + '/categories/hats/clothes')
-            .doc('DummyClothingItem')
-            .set({
-              exists: true,
-            });
-          db.collection('users/' + cred.user.uid + '/categories/shirts/clothes')
-            .doc('DummyClothingItem')
-            .set({
-              exists: true,
-            });
-          db.collection('users/' + cred.user.uid + '/categories/pants/clothes')
-            .doc('DummyClothingItem')
-            .set({
-              exists: true,
-            });
-          db.collection('users/' + cred.user.uid + '/categories/shoes/clothes')
-            .doc('DummyClothingItem')
-            .set({
-              exists: true,
-            });
+
+          history.replace('/');
         })
         .catch(error => {
           // Handle Errors here.

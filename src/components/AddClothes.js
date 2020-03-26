@@ -121,57 +121,23 @@ export default class AddClothes extends React.Component {
   render() {
     const menu = <Hover>Make sure your clothes fit the background for background removal!</Hover>;
     const { userStore } = this.context;
-    // const [image, setImage] = useState(null);
-    // const [url, setUrl] = useState('');
-    // const [progress, setProgress] = useState(0);
-    // const [error, setError] = useState('');
-    let errorMsg = '';
-    let image = null;
-    let progressBar = 0;
-    let urlMsg = '';
-    console.log(errorMsg, progressBar, urlMsg);
+
     const handChange = e => {
       const file = e.target.files[0];
+      const uploadPath = userStore.currentUser.email + '/' + file['name'];
+      let storageRef = firebase.storage().ref(uploadPath);
+      // let imageRef = storageRef.child('../images/arrow.png');
+
       if (file) {
         const fileType = file['type'];
+        // const uploadPath = userStore.currentUser.email + '/' + file[""];
         const validImageTypes = ['image/gif', 'image/jpeg', 'image/png'];
         if (validImageTypes.includes(fileType)) {
-          errorMsg = '';
-          image = file;
-        } else {
-          errorMsg = 'Please select an image to upload';
+          let task = storageRef.put(file);
+          task.on('state_changed', () => {
+            console.log('complete!');
+          });
         }
-      }
-    };
-
-    const handleUpdate = () => {
-      if (image) {
-        const uploadPath = userStore.userID;
-        console.log(uploadPath);
-        const uploadTask = firebase.storage.ref(`images/${image.name}`).put(image);
-
-        uploadTask.on(
-          'state_changed',
-          snapshot => {
-            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-            progressBar = progress;
-          },
-          error => {
-            errorMsg = error;
-          },
-          () => {
-            firebase.storage
-              .ref('images')
-              .child(image.name)
-              .getDownloadURL()
-              .then(url => {
-                urlMsg = url;
-                progressBar = 0;
-              });
-          }
-        );
-      } else {
-        errorMsg = 'Error please choose an image to upload';
       }
     };
     return (
@@ -199,11 +165,11 @@ export default class AddClothes extends React.Component {
           </Row>
           <Row className="cardBody">
             <Col sm={5}>
-              <Upload onClick={handleUpdate}>
+              <Upload>
                 <input
                   type="file"
-                  onChange={handChange}
                   name="file"
+                  onChange={handChange}
                   id="file"
                   className="inputfile"
                 />
@@ -230,8 +196,6 @@ export default class AddClothes extends React.Component {
             </Col>
           </Row>
         </Container>
-        <p style={{ color: 'red' }}>{errorMsg}</p>
-        {urlMsg ? <img src={urlMsg} alt="logo" /> : <span>No Img</span>}
       </Card>
     );
   }

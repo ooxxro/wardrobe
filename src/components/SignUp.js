@@ -117,11 +117,93 @@ export default class SignUp extends React.Component {
     } else if (this.state.password !== this.state.verifypassword) {
       message.error('Your password and verification password do not match.');
     } else {
+      let db = firebase.firestore();
       firebase
         .auth()
         .createUserWithEmailAndPassword(this.state.email, this.state.password)
-        .then(() => {
+        .then(cred => {
           history.replace('/');
+
+          //Create user in firestore - auth uid matches db id
+          db.collection('users')
+            .doc(cred.user.uid)
+            .set({
+              //Set display name, note that we already have user email and id by this point
+              displayName: this.state.displayname,
+            });
+
+          //Iniitialize categories collection for this user
+          //Note: ID of the category is also the name of the category in lowercase
+          db.collection('users/' + cred.user.uid + '/categories')
+            .doc('all')
+            .set({
+              name: 'All',
+            });
+          db.collection('users/' + cred.user.uid + '/categories')
+            .doc('hats')
+            .set({
+              name: 'Hats',
+            });
+          db.collection('users/' + cred.user.uid + '/categories')
+            .doc('shirts')
+            .set({
+              name: 'Shirts',
+            });
+          db.collection('users/' + cred.user.uid + '/categories')
+            .doc('pants')
+            .set({
+              name: 'Pants',
+            });
+          db.collection('users/' + cred.user.uid + '/categories')
+            .doc('shoes')
+            .set({
+              name: 'Shoes',
+            });
+
+          //Initialize empty backgrounds collection for this user, should contain default image
+          db.collection('users/' + cred.user.uid + '/backgrounds')
+            .doc('Default')
+            .set({
+              url: 'defaultBackgroundImageUrl',
+            });
+
+          //Initialize empty outfits collection for this user, contains one dummy outfit that should be hidden
+          db.collection('users/' + cred.user.uid + '/outfits')
+            .doc('DummyOutfit')
+            .set({
+              /*Note, outfits the user creates will have name,
+               *clothes collection, and image url initialized.
+               *Also maybe a "favorite" boolean field?
+               *This is just here to make the collection.*/
+              exists: true,
+            });
+
+          //Iniitialize clothes collections for each category with dummy clothing item that should be hidden
+          db.collection('users/' + cred.user.uid + '/categories/all/clothes')
+            .doc('DummyClothingItem')
+            .set({
+              exists: true,
+            });
+          db.collection('users/' + cred.user.uid + '/categories/hats/clothes')
+            .doc('DummyClothingItem')
+            .set({
+              exists: true,
+            });
+          db.collection('users/' + cred.user.uid + '/categories/shirts/clothes')
+            .doc('DummyClothingItem')
+            .set({
+              exists: true,
+            });
+          db.collection('users/' + cred.user.uid + '/categories/pants/clothes')
+            .doc('DummyClothingItem')
+            .set({
+              exists: true,
+            });
+          db.collection('users/' + cred.user.uid + '/categories/shoes/clothes')
+            .doc('DummyClothingItem')
+            .set({
+              exists: true,
+            });
         })
         .catch(error => {
           // Handle Errors here.

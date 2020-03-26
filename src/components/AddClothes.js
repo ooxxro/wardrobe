@@ -11,6 +11,7 @@ import cameraImg from '../images/camera.png';
 import starImg from '../images/star.png';
 import { Container, Row, Col } from 'react-bootstrap';
 import firebase from '../firebase';
+// import Webcam from 'react-webcam';
 const Card = styled.div`
   width: 76%;
   height: 80vh;
@@ -130,6 +131,7 @@ export default class AddClothes extends React.Component {
 
       if (file) {
         const fileType = file['type'];
+        console.log(file);
         // const uploadPath = userStore.currentUser.email + '/' + file[""];
         const validImageTypes = ['image/gif', 'image/jpeg', 'image/png'];
         if (validImageTypes.includes(fileType)) {
@@ -140,6 +142,53 @@ export default class AddClothes extends React.Component {
         }
       }
     };
+    // const videoConstraints = {
+    //   width: 400,
+    //   height: 400,
+    //   facingMode: 'user',
+    // };
+    // /*global Uint8Array, ArrayBuffer*/
+    // /*eslint no-undef: "error"*/
+    // // const convertBase64ToFile = function(image) {
+    //   const byteString = atob(image.split(',')[1]);
+    //   const ab = new ArrayBuffer(byteString.length);
+    //   const ia = new Uint8Array(ab);
+    //   for (let i = 0; i < byteString.length; i += 1) {
+    //     ia[i] = byteString.charCodeAt(i);
+    //   }
+    //   const newBlob = new Blob([ab], {
+    //     type: 'image/jpeg',
+    //   });
+    //   return newBlob;
+    // };
+    // const WebcamCapture = () => {
+    //   const webcamRef = React.useRef(null);
+    //   const capture = React.useCallback(() => {
+    //     const imageSrc = webcamRef.current.getScreenshot();
+    //     const file = convertBase64ToFile(imageSrc);
+    //     const uploadPath =
+    //       userStore.currentUser.email + '/' + imageSrc.substring(25, 36).replace('/', 'A');
+    //     let storageRef = firebase.storage().ref(uploadPath);
+    //     let task = storageRef.put(file);
+    //     task.on('state_changed', () => {
+    //       console.log('Upload image from camera snapshot completed!');
+    //     });
+    //   }, [webcamRef]);
+    //   return (
+    //     <>
+    //       <Webcam
+    //         audio={false}
+    //         height={720}
+    //         ref={webcamRef}
+    //         screenshotFormat="image/jpeg"
+    //         width={1280}
+    //         videoConstraints={videoConstraints}
+    //       />
+    //       <button onClick={capture}>Capture photo</button>
+    //     </>
+    //   );
+    // };
+
     return (
       <Card>
         <Container fluid>
@@ -195,6 +244,9 @@ export default class AddClothes extends React.Component {
               </TakePhoto>
             </Col>
           </Row>
+          {/* <Row>
+            <WebcamCapture />
+          </Row> */}
         </Container>
       </Card>
     );

@@ -122,10 +122,11 @@ export default class AddClothes extends React.Component {
   render() {
     const menu = <Hover>Make sure your clothes fit the background for background removal!</Hover>;
     const { userStore } = this.context;
+    console.log(userStore.currentUser);
 
     const handChange = e => {
       const file = e.target.files[0];
-      const uploadPath = userStore.currentUser.email + '/' + file['name'];
+      const uploadPath = userStore.currentUser.uid + '/' + file['name'];
       let storageRef = firebase.storage().ref(uploadPath);
       // let imageRef = storageRef.child('../images/arrow.png');
 

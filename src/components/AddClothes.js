@@ -11,6 +11,7 @@ import cameraImg from '../images/camera.png';
 import starImg from '../images/star.png';
 import { Container, Row, Col } from 'react-bootstrap';
 import firebase from '../firebase';
+import Popup from 'reactjs-popup';
 // import Webcam from 'react-webcam';
 const Card = styled.div`
   width: 76%;
@@ -48,14 +49,14 @@ const Card = styled.div`
     border-radius: 20px;
     width: 120px;
   }
-  .inputfile {
+  /* .inputfile {
     width: 0.1px;
     height: 0.1px;
     opacity: 0;
     overflow: hidden;
     position: absolute;
     z-index: -1;
-  }
+  } */
 `;
 const Hover = styled.div`
   background-color: #ffc5b4;
@@ -64,28 +65,6 @@ const Hover = styled.div`
   border-radius: 20px;
   margin: 5px;
   text-align: center;
-`;
-const Upload = styled(Button)`
-  background: #ffb3a0;
-  border-color: #ffb3a0;
-  margin-left: 90px;
-  height: 400px;
-  width: 400px;
-  border-radius: 20px;
-  img {
-    text-align: center;
-    width: 50%;
-    height: 50%;
-  }
-  span {
-    font-size: 30px;
-  }
-  div {
-    height: 5px;
-  }
-  label {
-    font-size: 30px;
-  }
 `;
 const TakePhoto = styled(Button)`
   background: #ffdacf;
@@ -150,7 +129,7 @@ export default class AddClothes extends React.Component {
     // };
     // /*global Uint8Array, ArrayBuffer*/
     // /*eslint no-undef: "error"*/
-    // // const convertBase64ToFile = function(image) {
+    // const convertBase64ToFile = function(image) {
     //   const byteString = atob(image.split(',')[1]);
     //   const ab = new ArrayBuffer(byteString.length);
     //   const ia = new Uint8Array(ab);
@@ -190,6 +169,74 @@ export default class AddClothes extends React.Component {
     //   );
     // };
 
+    const modal = {
+      fontSize: '12px',
+      borderRadius: '20px',
+      background: 'linear-gradient(90deg, #6e8fe7 0%, #8261e6 100%)',
+    };
+    const modalHeader = {
+      width: '100%',
+      fontSize: '18px',
+      textAlign: 'center',
+      padding: '5px',
+    };
+    const modalContent = {
+      width: '100%',
+      padding: '10px 5px',
+    };
+    const modalActions = {
+      width: '100%',
+      padding: '10px 5px',
+      margin: 'auto',
+      textAlign: 'center',
+    };
+    const modalClose = {
+      cursor: 'pointer',
+      position: 'absolute',
+      display: 'block',
+      padding: '2px 5px',
+      lineHeight: '20px',
+      right: '-10px',
+      top: '-10px',
+      fontSize: '24px',
+      background: '#ffffff',
+      borderRadius: '18px',
+      border: '1px solid #cfcece',
+    };
+    const UploadButton = {
+      background: '#ffb3a0',
+      borderColor: '#ffb3a0',
+      marginLeft: '90px',
+      height: '400px',
+      width: '400px',
+      borderRadius: '20px',
+    };
+
+    const imgStyle = {
+      textAlign: 'center',
+      width: '50%',
+      height: '50%',
+    };
+    const spanStyle = {
+      fontSize: '30px',
+    };
+    const divStyle = {
+      height: '15%',
+    };
+    const Upload = () => (
+      <div style={UploadButton}>
+        <div style={divStyle}></div>
+        <span style={spanStyle}>Click to upload image</span>
+        <div></div>
+
+        <img style={imgStyle} src={uploadImg} />
+      </div>
+    );
+    const transparent = {
+      background: '#ffdacf',
+      borderColor: '#ffdacf',
+    };
+
     return (
       <Card>
         <Container fluid>
@@ -215,20 +262,48 @@ export default class AddClothes extends React.Component {
           </Row>
           <Row className="cardBody">
             <Col sm={5}>
-              <Upload>
-                <input
-                  type="file"
-                  name="file"
-                  onChange={handChange}
-                  id="file"
-                  className="inputfile"
-                />
-                <label htmlFor="file">
-                  Click to upload image
-                  <div></div>
-                  <img src={uploadImg} />
-                </label>
-              </Upload>
+              <Popup
+                trigger={
+                  <Button style={transparent}>
+                    <Upload />
+                  </Button>
+                }
+                modal
+                style={modal}
+              >
+                {close => (
+                  <div style={modal}>
+                    <a style={modalClose} onClick={close}>
+                      &times;
+                    </a>
+                    <div style={modalHeader}> Please Select Image Here! </div>
+                    <div style={modalContent}>
+                      <input
+                        type="file"
+                        name="file"
+                        id="file"
+                        className="inputfile"
+                        onChange={file => {
+                          handChange(file);
+                          close();
+                        }}
+                      />
+                      <label htmlFor="file"></label>
+                    </div>
+                    <div style={modalActions}>
+                      <Button
+                        className="button"
+                        onClick={() => {
+                          console.log('modal closed ');
+                          close();
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Popup>
             </Col>
             <Col>
               <TakePhoto>

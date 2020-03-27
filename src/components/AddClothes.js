@@ -12,7 +12,8 @@ import starImg from '../images/star.png';
 import { Container, Row, Col } from 'react-bootstrap';
 import firebase from '../firebase';
 import Popup from 'reactjs-popup';
-// import Webcam from 'react-webcam';
+import Webcam from 'react-webcam';
+
 const Card = styled.div`
   width: 76%;
   height: 80vh;
@@ -49,14 +50,6 @@ const Card = styled.div`
     border-radius: 20px;
     width: 120px;
   }
-  /* .inputfile {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-  } */
 `;
 const Hover = styled.div`
   background-color: #ffc5b4;
@@ -66,108 +59,131 @@ const Hover = styled.div`
   margin: 5px;
   text-align: center;
 `;
-const TakePhoto = styled(Button)`
-  background: #ffdacf;
-  border-color: #ffdacf;
-  margin-left: 50px;
-  height: 400px;
-  width: 400px;
-  border-radius: 20px;
-  span {
-    font-size: 30px;
-  }
-  div {
-    height: 200px;
-    width: 200px;
-    background-color: #ffc774;
-    border-radius: 100%;
-    padding-right: 0;
-    padding-left: 3px;
-    img {
-      padding: 0;
-      margin-right: 0;
-      margin-top: 10%;
-      width: 80%;
-      height: 80%;
-    }
-  }
-`;
 
 @withRouter
 @observer
 export default class AddClothes extends React.Component {
   static contextType = StoreContext;
+  state = {
+    title: 'Add clothes',
+    categoryArr: '',
+    file: null,
+  };
+  onCatChange = e => this.setState({ categoryArr: e.target.value.split(',') });
+  onImgChange = e => this.setState({ file: e.target.files[0] });
+  onSubmit = e => e.preventDefault();
 
   render() {
     const menu = <Hover>Make sure your clothes fit the background for background removal!</Hover>;
     const { userStore } = this.context;
-    console.log(userStore.currentUser);
 
-    const handChange = e => {
-      const file = e.target.files[0];
-      const uploadPath = userStore.currentUser.uid + '/' + file['name'];
-      let storageRef = firebase.storage().ref(uploadPath);
-      // let imageRef = storageRef.child('../images/arrow.png');
-
+    const handChange = () => {
+      const file = this.state.file;
       if (file) {
+        const cates = this.state.categoryArr;
+        const uploadPath = userStore.currentUser.uid + '/' + file['name'];
+        const newData = {
+          createdTime: new Date().toLocaleDateString('en-GB', {
+            minute: 'numeric',
+            hour: 'numeric',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          }),
+          lastEditedTime: new Date().toLocaleDateString('en-GB', {
+            minute: 'numeric',
+            hour: 'numeric',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          }),
+          imagePath: uploadPath,
+          categories: cates,
+        };
         const fileType = file['type'];
-        console.log(file);
-        // const uploadPath = userStore.currentUser.email + '/' + file[""];
         const validImageTypes = ['image/gif', 'image/jpeg', 'image/png'];
+
+        //Firebase setup
+        let storageRef = firebase.storage().ref(uploadPath);
+        let clothRef = firebase
+          .firestore()
+          .collection('Users')
+          .doc(userStore.currentUser.uid)
+          .collection('Clothes');
+
         if (validImageTypes.includes(fileType)) {
-          let task = storageRef.put(file);
-          task.on('state_changed', () => {
-            console.log('complete!');
+          //fetch data from firebase
+          //1. check dup
+          clothRef.get().then(function(clothes) {
+            if (clothes.exists) {
+              console.log('Document data:', clothes.data());
+              return;
+            }
+          });
+          //2. add newData to storage and firestore
+          storageRef.put(file).then(function(snapshot) {
+            if (snapshot.state == 'success') {
+              clothRef.add(newData);
+              alert('Uploaded successed!');
+            } else {
+              alert('Error!');
+            }
           });
         }
+      } else {
+        alert('Image is reqired!');
       }
     };
-    // const videoConstraints = {
-    //   width: 400,
-    //   height: 400,
-    //   facingMode: 'user',
-    // };
-    // /*global Uint8Array, ArrayBuffer*/
-    // /*eslint no-undef: "error"*/
-    // const convertBase64ToFile = function(image) {
-    //   const byteString = atob(image.split(',')[1]);
-    //   const ab = new ArrayBuffer(byteString.length);
-    //   const ia = new Uint8Array(ab);
-    //   for (let i = 0; i < byteString.length; i += 1) {
-    //     ia[i] = byteString.charCodeAt(i);
-    //   }
-    //   const newBlob = new Blob([ab], {
-    //     type: 'image/jpeg',
-    //   });
-    //   return newBlob;
-    // };
-    // const WebcamCapture = () => {
-    //   const webcamRef = React.useRef(null);
-    //   const capture = React.useCallback(() => {
-    //     const imageSrc = webcamRef.current.getScreenshot();
-    //     const file = convertBase64ToFile(imageSrc);
-    //     const uploadPath =
-    //       userStore.currentUser.email + '/' + imageSrc.substring(25, 36).replace('/', 'A');
-    //     let storageRef = firebase.storage().ref(uploadPath);
-    //     let task = storageRef.put(file);
-    //     task.on('state_changed', () => {
-    //       console.log('Upload image from camera snapshot completed!');
-    //     });
-    //   }, [webcamRef]);
-    //   return (
-    //     <>
-    //       <Webcam
-    //         audio={false}
-    //         height={720}
-    //         ref={webcamRef}
-    //         screenshotFormat="image/jpeg"
-    //         width={1280}
-    //         videoConstraints={videoConstraints}
-    //       />
-    //       <button onClick={capture}>Capture photo</button>
-    //     </>
-    //   );
-    // };
+    const videoConstraints = {
+      width: '800px',
+      height: '800px',
+      facingMode: 'user',
+    };
+    /*global Uint8Array, ArrayBuffer*/
+    /*eslint no-undef: "error"*/
+    const convertBase64ToFile = function(image) {
+      const byteString = atob(image.split(',')[1]);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i += 1) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const newBlob = new Blob([ab], {
+        type: 'image/jpeg',
+      });
+      return newBlob;
+    };
+
+    const WebcamCapture = () => {
+      const webcamRef = React.useRef(null);
+      // const close = this.props.close;
+      const capture = React.useCallback(() => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        //const file = convertBase64ToFile(imageSrc);
+        this.setState({ file: convertBase64ToFile(imageSrc) });
+      }, [webcamRef]);
+      return (
+        <div style={modal}>
+          <Webcam
+            audio={false}
+            height={'100%'}
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            width={'100%'}
+            videoConstraints={videoConstraints}
+          />
+          <Button
+            onClick={() => {
+              capture();
+              console.log(this.props.close);
+              console.log('modal closed');
+            }}
+          >
+            Capture photo
+          </Button>
+        </div>
+      );
+    };
 
     const modal = {
       fontSize: '12px',
@@ -232,9 +248,51 @@ export default class AddClothes extends React.Component {
         <img style={imgStyle} src={uploadImg} />
       </div>
     );
-    const transparent = {
+
+    const photoButtonStyle = {
       background: '#ffdacf',
       borderColor: '#ffdacf',
+      marginLeft: '50px',
+      height: '400px',
+      width: '400px',
+      borderRadius: '20px',
+    };
+    const photoSpanStyle = {
+      fontSize: '30px',
+    };
+    const photoDivStyle = {
+      height: '200px',
+      width: '200px',
+      backgroundColor: '#ffc774',
+      borderRadius: '100%',
+      marginLeft: '25%',
+      paddingLeft: '3px',
+    };
+    const photoImgStyle = {
+      padding: 0,
+      marginRight: 0,
+      marginTop: '10%',
+      width: '80%',
+      height: '80%',
+    };
+    const TakePhoto = () => (
+      <div style={photoButtonStyle}>
+        <div style={divStyle}></div>
+        <span style={photoSpanStyle}>Click to take a picture</span>
+        <div style={photoDivStyle}>
+          <img style={photoImgStyle} src={cameraImg} />
+        </div>
+      </div>
+    );
+    const transparent = {
+      background: 'transparent',
+      borderColor: 'transparent',
+    };
+    const btnStyle = {
+      backgroundColor: 'white',
+      borderRadius: '10px',
+      borderColor: '#888',
+      width: '200px',
     };
 
     return (
@@ -245,7 +303,8 @@ export default class AddClothes extends React.Component {
             <Col sm={9}>
               <Row className="placeHolder"></Row>
               <FontAwesomeIcon icon={faPlus} className="icon" />
-              {'    '}Add clothes
+              {'    '}
+              {this.state.title}
             </Col>
             <Col sm={2} className="right">
               <Row className="placeHolder"></Row>
@@ -276,53 +335,82 @@ export default class AddClothes extends React.Component {
                     <a style={modalClose} onClick={close}>
                       &times;
                     </a>
-                    <div style={modalHeader}> Please Select Image Here! </div>
-                    <div style={modalContent}>
+                    <div style={modalHeader}> Please Select Image Here!</div>
+                    <form style={modalContent} onSubmit={this.onSubmit}>
+                      <span>Catogories:&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                      <input
+                        type="text"
+                        name="cat"
+                        placeholder="Seperate tags by comma, (Optional)"
+                        value={this.state.categoryArr}
+                        onChange={this.onCatChange}
+                        style={{ width: '30%' }}
+                      />
+                      <div></div>
                       <input
                         type="file"
                         name="file"
-                        id="file"
-                        className="inputfile"
-                        onChange={file => {
-                          handChange(file);
-                          close();
-                        }}
+                        value={this.state.image}
+                        onChange={this.onImgChange}
                       />
                       <label htmlFor="file"></label>
-                    </div>
-                    <div style={modalActions}>
-                      <Button
-                        className="button"
-                        onClick={() => {
-                          console.log('modal closed ');
-                          close();
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
+
+                      <div style={modalActions}>
+                        <input
+                          type="submit"
+                          value="submit"
+                          className="btn"
+                          style={btnStyle}
+                          onChange={handChange}
+                          onClick={() => {
+                            handChange();
+                            close();
+                          }}
+                        />
+                        <input
+                          className="btn"
+                          type="cancel"
+                          value="cancel"
+                          style={btnStyle}
+                          onChange={() => {
+                            console.log('modal closed');
+                            close();
+                          }}
+                          onClick={() => {
+                            console.log('modal closed');
+                            close();
+                          }}
+                        ></input>
+                      </div>
+                    </form>
                   </div>
                 )}
               </Popup>
             </Col>
             <Col>
-              <TakePhoto>
-                <span>Take a picture</span>
-                <Container>
-                  <Row>
-                    <Col>
-                      <div>
-                        <img src={cameraImg} />
-                      </div>
-                    </Col>
-                  </Row>
-                </Container>
-              </TakePhoto>
+              <Popup
+                trigger={
+                  <Button style={transparent}>
+                    <TakePhoto />
+                  </Button>
+                }
+                modal
+                style={modal}
+              >
+                {close => (
+                  <div>
+                    <WebcamCapture close={close} />
+                    <Button
+                      onClick={() => {
+                        console.log(close);
+                        close();
+                      }}
+                    />
+                  </div>
+                )}
+              </Popup>
             </Col>
           </Row>
-          {/* <Row>
-            <WebcamCapture />
-          </Row> */}
         </Container>
       </Card>
     );

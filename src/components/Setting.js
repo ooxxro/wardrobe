@@ -31,16 +31,16 @@ const Card1Content = styled.div`
   margin-left: auto;
   margin-right: auto;
   padding-bottom: 2rem;
-  .emailInput {
+  .emailForm input {
     border-radius: 4px;
     background-color: #ecf0f7;
     border: 1px solid #c3c4c8;
-    width: 72%;
+    width: 34.5%;
     margin-bottom: 20px;
     margin-right: 3%;
   }
 
-  .passwordInput {
+  .passwordForm input {
     border-radius: 4px;
     background-color: #ecf0f7;
     border: 1px solid #c3c4c8;
@@ -88,6 +88,14 @@ const Card2 = styled.div`
     padding-bottom: 2rem;
     width: 90%;
 
+    input {
+      border-radius: 4px;
+      background-color: #ecf0f7;
+      border: 1px solid #c3c4c8;
+      margin-bottom: 20px;
+      margin-right: 3%;
+    }
+
     .deleteAccountButton {
       background: #6247ce;
       &:hover {
@@ -116,14 +124,14 @@ export default class Setting extends React.Component {
             <StyledAvatar size="large" icon={<UserOutlined />} />
             <hr></hr>
             <form className="emailForm">
-              <label>Email</label>
+              <label>ChangeEmail</label>
               <br />
+              <input type="text" id="email" name="email" placeholder="New Email" />
               <input
-                className="emailInput"
-                type="text"
-                id="email"
-                name="email"
-                placeholder="Email"
+                type="password"
+                id="currentpassword1"
+                name="currentpassword1"
+                placeholder="Current Password"
               />
               <Button
                 className="saveEmailButton"
@@ -140,25 +148,22 @@ export default class Setting extends React.Component {
               <label>Change Password</label>
               <br />
               <input
-                className="passwordInput"
-                type="password"
-                id="currentpassword"
-                name="currentpassword"
-                placeholder="Current Password"
-              />
-              <input
-                className="passwordInput"
                 type="password"
                 id="newpassword"
                 name="newpassword"
                 placeholder="New Password"
               />
               <input
-                className="passwordInput"
                 type="password"
                 id="confirmpassword"
                 name="confirmpassword"
-                placeholder="Confirm Password"
+                placeholder="Confirm New Password"
+              />
+              <input
+                type="password"
+                id="currentpassword2"
+                name="currentpassword2"
+                placeholder="Current Password"
               />
               <Button
                 className="savePasswordButton"
@@ -178,15 +183,23 @@ export default class Setting extends React.Component {
           <div className="card2Content">
             <p>Once you delete, it will clear all of your data.</p>
             <p>Are you sure you want to delete your account?</p>
-            <Button
-              className="deleteAccountButton"
-              component={Link}
-              type="primary"
-              variant="contained"
-              color="primary"
-            >
-              DELETE MY ACCOUNT
-            </Button>
+            <form id="deleteAccountForm">
+              <input
+                type="password"
+                id="currentpassword3"
+                name="currentpassword3"
+                placeholder="Current Password"
+              />
+              <Button
+                className="deleteAccountButton"
+                component={Link}
+                type="primary"
+                variant="contained"
+                color="primary"
+              >
+                DELETE MY ACCOUNT
+              </Button>
+            </form>
           </div>
         </Card2>
       </Wrapper>

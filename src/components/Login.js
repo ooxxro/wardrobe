@@ -128,6 +128,19 @@ export default class Login extends React.Component {
     this.setState({ password: event.target.value });
   };
 
+  sendPasswordReset = () => {
+    firebase
+      .auth()
+      .sendPasswordResetEmail(this.state.email)
+      .then(function() {
+        message.success('Password reset email sent.');
+      })
+      .catch(error => {
+        // An error happened.
+        message.error(error.message);
+      });
+  };
+
   render() {
     return (
       <Wrapper>
@@ -164,7 +177,7 @@ export default class Login extends React.Component {
               </form>
 
               <p className="forgotLink">
-                <a href="">Forgot password?</a>
+                <a onClick={this.sendPasswordReset}>Forgot password?</a>
               </p>
 
               <Button

@@ -163,6 +163,7 @@ const ImgWrapper = styled.div`
     box-shadow: 2px 2px 8px 0.5px #dedede;
   }
 `;
+@withRouter
 export default class HomeWelcome extends React.Component {
   render() {
     return (

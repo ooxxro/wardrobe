@@ -2,7 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
-import { withRouter } from 'react-router-dom';
+import { Link, withRouter } from 'react-router-dom';
+import { Menu } from 'antd';
 
 const Wrapper = styled.div`
   display: flex;
@@ -41,7 +42,6 @@ const RightSide = styled.div`
   max-width: 800px;
   height: ${Card.height};
   padding-top: 25px;
-  padding-left: 25px;
 `;
 const TabContainer = styled.div`
   flex: 0.5;
@@ -51,18 +51,15 @@ const TabContainer = styled.div`
   max-width: 200px;
   height: ${Card.height};
 `;
-const Tab = styled.div`
+const Tab = styled(Menu.Item)`
   flex: 0.5;
   justify-content: center;
   align-items: center;
   text-align: center;
-  line-height: 100px;
-  max-width: ${TabContainer.maxWidth};
+  color: currentColor;
   height: 100px;
+  max-width: ${TabContainer.maxWidth};
   border-bottom: 1px solid currentColor;
-  &:hover {
-    background: #baaaff;
-  }
 `;
 const CardHeader = styled.div`
   display: flex;
@@ -70,13 +67,19 @@ const CardHeader = styled.div`
   justify-content: flex-start;
   align-items: center;
   width: ${RightSide.width};
+  font-size: 20px;
+  font-weight: 600;
   height: 150px;
   flex: 0.3;
+  padding-left: 25px;
 `;
 const SortButton = styled.div`
   flex: 1;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
   width: 100px;
-  height: 50px;
+  height: 40px;
   padding: 5px;
   margin: 25px;
   border: 1px solid currentColor;
@@ -88,7 +91,7 @@ const SortButton = styled.div`
 `;
 const ClothingRow = styled.div`
   display: flex;
-  flex:1;
+  flex: 1;
   flex-direction: row;
   justify-content: flex-start;
   align-items: center;
@@ -99,8 +102,13 @@ const ClothingRow = styled.div`
 @withRouter
 @observer
 export default class ClothesIndex extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      switched: false,
+    };
+  }
   static contextType = StoreContext;
-
   render() {
     // const links = [
     //   { to: 'all', text: 'All' },
@@ -109,16 +117,29 @@ export default class ClothesIndex extends React.Component {
     //   { to: 'pants', text: 'Pants' },
     //   { to: 'shoes', text: 'Shoes' },
     // ];
+
     return (
       <Wrapper>
         <Card>
           <LeftSidePanel>
             <TabContainer>
-              <Tab>ALL</Tab>
-              <Tab>Hats</Tab>
-              <Tab>Shirts</Tab>
-              <Tab>Pants</Tab>
-              <Tab>Shoes</Tab>
+              <Menu style={{ maxWidth: 200 }}>
+                <Tab style={{ height: 100, fontSize: 26 }}>
+                  <Link to="/my-wardrobe/all">All</Link>
+                </Tab>
+                <Tab style={{ height: 100, fontSize: 26 }} id="hats">
+                  <Link to="/my-wardrobe/hats">Hats</Link>
+                </Tab>
+                <Tab style={{ height: 100, fontSize: 26 }} id="shirts">
+                  <Link to="/my-wardrobe/shirts">Shirts</Link>
+                </Tab>
+                <Tab style={{ height: 100, fontSize: 26 }} id="pants">
+                  <Link to="/my-wardrobe/pants">Pants</Link>
+                </Tab>
+                <Tab style={{ height: 100, fontSize: 26 }} id="shoes">
+                  <Link to="/my-wardrobe/shoes">Shoes</Link>
+                </Tab>
+              </Menu>
             </TabContainer>
           </LeftSidePanel>
           <RightSide>

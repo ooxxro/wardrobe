@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { Link, withRouter } from 'react-router-dom';
-import { Menu } from 'antd';
+import { Menu, Dropdown } from 'antd';
 
 const Wrapper = styled.div`
   display: flex;
@@ -42,6 +42,7 @@ const RightSide = styled.div`
   max-width: 800px;
   height: ${Card.height};
   padding-top: 25px;
+  padding-left: 25px;
 `;
 const TabContainer = styled.div`
   flex: 0.5;
@@ -71,7 +72,6 @@ const CardHeader = styled.div`
   font-weight: 600;
   height: 150px;
   flex: 0.3;
-  padding-left: 25px;
 `;
 const SortButton = styled.div`
   flex: 1;
@@ -110,42 +110,42 @@ export default class ClothesIndex extends React.Component {
   }
   static contextType = StoreContext;
   render() {
-    // const links = [
-    //   { to: 'all', text: 'All' },
-    //   { to: 'hats', text: 'Hats' },
-    //   { to: 'shirts', text: 'Shirts' },
-    //   { to: 'pants', text: 'Pants' },
-    //   { to: 'shoes', text: 'Shoes' },
-    // ];
-
+    const links = [
+      { to: 'all', text: 'All' },
+      { to: 'hats', text: 'Hats' },
+      { to: 'shirts', text: 'Shirts' },
+      { to: 'pants', text: 'Pants' },
+      { to: 'shoes', text: 'Shoes' },
+    ];
+    const sortMenu = (
+      <Menu>
+        <Menu.Item>Date Modified</Menu.Item>
+        <Menu.Divider/>
+        <Menu.Item>Date Added</Menu.Item>
+        <Menu.Divider/>
+        <Menu.Item>Color</Menu.Item>
+      </Menu>
+    );
     return (
       <Wrapper>
         <Card>
           <LeftSidePanel>
             <TabContainer>
               <Menu style={{ maxWidth: 200 }}>
-                <Tab style={{ height: 100, fontSize: 26 }}>
-                  <Link to="/my-wardrobe/all">All</Link>
-                </Tab>
-                <Tab style={{ height: 100, fontSize: 26 }} id="hats">
-                  <Link to="/my-wardrobe/hats">Hats</Link>
-                </Tab>
-                <Tab style={{ height: 100, fontSize: 26 }} id="shirts">
-                  <Link to="/my-wardrobe/shirts">Shirts</Link>
-                </Tab>
-                <Tab style={{ height: 100, fontSize: 26 }} id="pants">
-                  <Link to="/my-wardrobe/pants">Pants</Link>
-                </Tab>
-                <Tab style={{ height: 100, fontSize: 26 }} id="shoes">
-                  <Link to="/my-wardrobe/shoes">Shoes</Link>
-                </Tab>
+                {links.map((link, i) => (
+                  <Tab style={{ height: 100, fontSize: 26}} key={i}>
+                    <Link to={`/my-wardrobe/${link.to}`}>{link.text}</Link>
+                  </Tab>
+                ))}
               </Menu>
             </TabContainer>
           </LeftSidePanel>
           <RightSide>
             <CardHeader>
               # of total items
-              <SortButton>Sort By</SortButton>
+              <Dropdown overlay={sortMenu} placement="bottomCenter">
+                <SortButton>Sort By</SortButton>
+              </Dropdown>
             </CardHeader>
             <ClothingRow></ClothingRow>
             <ClothingRow></ClothingRow>

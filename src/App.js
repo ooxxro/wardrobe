@@ -12,7 +12,7 @@ import MyWardrobe from './components/MyWardrobe';
 import ClothesIndex from './components/ClothesIndex';
 import ClothesDetail from './components/ClothesDetail';
 import AddClothes from './components/AddClothes';
-
+import 'bootstrap/dist/css/bootstrap.min.css';
 const myTheme = createMuiTheme({
   palette: {
     primary: {

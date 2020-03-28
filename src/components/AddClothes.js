@@ -13,6 +13,7 @@ import { Container, Row, Col } from 'react-bootstrap';
 import firebase from '../firebase';
 import Popup from 'reactjs-popup';
 import Webcam from 'react-webcam';
+import { message } from 'antd';
 
 const Card = styled.div`
   width: 76%;
@@ -69,7 +70,17 @@ export default class AddClothes extends React.Component {
     categoryArr: '',
     file: null,
   };
-  onCatChange = e => this.setState({ categoryArr: e.target.value.split(',') });
+
+  onCatChange = e => {
+    let arr = [];
+    arr = e.target.value.toLowerCase().split(',');
+    for (let i = 0; i < arr.length; i++) {
+      arr[i] = arr[i].trim();
+    }
+
+    this.setState({ categoryArr: arr });
+  };
+
   onImgChange = e => this.setState({ file: e.target.files[0] });
   onSubmit = e => e.preventDefault();
 
@@ -80,7 +91,7 @@ export default class AddClothes extends React.Component {
     const handChange = () => {
       const file = this.state.file;
       if (file) {
-        const cates = this.state.categoryArr;
+        const cates = this.state.categoryArr.concat('all');
         const uploadPath = userStore.currentUser.uid + '/' + file['name'];
         const newData = {
           createdTime: new Date().toLocaleDateString('en-GB', {
@@ -107,31 +118,50 @@ export default class AddClothes extends React.Component {
         let storageRef = firebase.storage().ref(uploadPath);
         let clothRef = firebase
           .firestore()
-          .collection('Users')
+          .collection('users')
           .doc(userStore.currentUser.uid)
-          .collection('Clothes');
+          .collection('clothes');
 
         if (validImageTypes.includes(fileType)) {
           //fetch data from firebase
           //1. check dup
-          clothRef.get().then(function(clothes) {
+          /*clothRef.get().then(function(clothes) {
             if (clothes.exists) {
               console.log('Document data:', clothes.data());
               return;
             }
-          });
+          });*/
+
           //2. add newData to storage and firestore
           storageRef.put(file).then(function(snapshot) {
             if (snapshot.state == 'success') {
-              clothRef.add(newData);
-              alert('Uploaded successed!');
+              //Document successfully uploaded
+              clothRef
+                .add(newData)
+                .then(function(docRef) {
+                  //Document successfully written to firestore
+                  //Add clothing item ID to corresponding categories in firestore
+                  for (let i = 0; i < newData.categories.length; i++) {
+                    let categoryRef = firebase
+                      .firestore()
+                      .collection('users/' + firebase.auth().currentUser.uid + '/categories')
+                      .doc(newData.categories[i]);
+                    categoryRef.update({
+                      clothes: firebase.firestore.FieldValue.arrayUnion(docRef.id),
+                    });
+                  }
+                })
+                .catch(function(error) {
+                  message.error(error);
+                });
+              message.success('Uploaded successfuly!');
             } else {
-              alert('Error!');
+              message.error('Error!');
             }
           });
         }
       } else {
-        alert('Image is reqired!');
+        message.error('Image is required!');
       }
     };
     const videoConstraints = {

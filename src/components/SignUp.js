@@ -136,31 +136,31 @@ export default class SignUp extends React.Component {
             .doc('all')
             .set({
               name: 'All',
-              clothes: ['dummyID'],
+              clothes: [],
             });
           db.collection('users/' + cred.user.uid + '/categories')
             .doc('hats')
             .set({
               name: 'Hats',
-              clothes: ['dummyID'],
+              clothes: [],
             });
           db.collection('users/' + cred.user.uid + '/categories')
             .doc('shirts')
             .set({
               name: 'Shirts',
-              clothes: ['dummyID'],
+              clothes: [],
             });
           db.collection('users/' + cred.user.uid + '/categories')
             .doc('pants')
             .set({
               name: 'Pants',
-              clothes: ['dummyID'],
+              clothes: [],
             });
           db.collection('users/' + cred.user.uid + '/categories')
             .doc('shoes')
             .set({
               name: 'Shoes',
-              clothes: ['dummyID'],
+              clothes: [],
             });
 
           //Initialize empty backgrounds collection for this user, should contain default image
@@ -170,27 +170,15 @@ export default class SignUp extends React.Component {
               url: 'defaultBackgroundImageUrl',
             });
 
-          //Initialize empty outfits collection for this user, contains one dummy outfit that should be hidden
-          db.collection('users/' + cred.user.uid + '/outfits')
-            .doc('DummyOutfit')
-            .set({
-              /*Note, outfits the user creates will have name,
-               *clothes ID array, and image url initialized.
-               *Also maybe a "favorite" boolean field?
-               *This is just here to make the collection.*/
-              exists: true,
-            });
+          /*Note, outfits the user creates will have name,
+           *clothes ID array, and image url initialized.
+           *Also maybe a "favorite" boolean field?
+           *The outfit collection is initialized when the user first makes an outfit.*/
 
-          //Initialize empty clothes collection for this user, contains one dummy clothing item
-          db.collection('users/' + cred.user.uid + '/clothes')
-            .doc('DummyClothingItem')
-            .set({
-              /*Note, clothes the user creates will have name,
-               *category ID array, image url, created timestamp,
-               *and last updated timestamp initialized.
-               *This is just here to make the collection.*/
-              exists: true,
-            });
+          /*Note, clothes the user creates will have name,
+           *category ID array, image url, created timestamp,
+           *and last updated timestamp initialized.
+           *The clothes collection is initialized when the user first makes a clothing item.*/
 
           history.replace('/');
         })

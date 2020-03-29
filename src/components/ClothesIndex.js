@@ -4,7 +4,14 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { Link, withRouter } from 'react-router-dom';
 import { Menu, Dropdown } from 'antd';
+import firebase from 'firebase';
 
+// Data objects
+const db = firebase.firestore(); // database object
+const userCollection = db.collection('users'); // users collection
+const auth = firebase.auth();
+
+// DOM Elements
 const Wrapper = styled.div`
   display: flex;
   justify-content: center;
@@ -105,10 +112,23 @@ export default class ClothesIndex extends React.Component {
   constructor() {
     super();
     this.state = {
-      switched: false,
+      location: 'all'
     };
   }
   static contextType = StoreContext;
+  handleClick = (event) =>  {
+    this.setState({location: event.key});
+  }
+  async getCategoryData() {
+    await this.setState({location: this.props.location.pathname.split('/')[2]}); // set current location
+    userCollection.doc(`${auth.currentUser.uid}`).collection(`categories`).doc(this.state.location)
+    .onSnapshot(function(doc) {
+      console.log("Current data: ", doc.data())
+    });
+  }
+  componentDidMount() {
+    this.getCategoryData();
+  }
   render() {
     const links = [
       { to: 'all', text: 'All' },
@@ -131,9 +151,9 @@ export default class ClothesIndex extends React.Component {
         <Card>
           <LeftSidePanel>
             <TabContainer>
-              <Menu style={{ maxWidth: 200 }}>
-                {links.map((link, i) => (
-                  <Tab style={{ height: 100, fontSize: 26}} key={i}>
+              <Menu onClick={(event) => this.handleClick(event)} style={{ maxWidth: 200 }}>
+                {links.map((link) => (
+                  <Tab style={{ height: 100, fontSize: 26}} key={link.to}>
                     <Link to={`/my-wardrobe/${link.to}`}>{link.text}</Link>
                   </Tab>
                 ))}

@@ -60,17 +60,24 @@ const Hover = styled.div`
   margin: 5px;
   text-align: center;
 `;
+// const previewText = styled.div`
+//   width: 100%;
+// `;
 
 @withRouter
 @observer
 export default class AddClothes extends React.Component {
   static contextType = StoreContext;
-  state = {
-    title: 'Add clothes',
-    categoryArr: '',
-    file: null,
-  };
-
+  constructor(props) {
+    super(props);
+    this.state = {
+      title: 'Add clothes',
+      categoryArr: '',
+      file: '',
+      imagePreviewUrl: '',
+      snapshotString: '',
+    };
+  }
   onCatChange = e => {
     let arr = [];
     arr = e.target.value.toLowerCase().split(',');
@@ -82,18 +89,82 @@ export default class AddClothes extends React.Component {
   };
 
   onImgChange = e => this.setState({ file: e.target.files[0] });
-  onSubmit = e => e.preventDefault();
+  onSubmit = e => {
+    e.preventDefault();
+    this.setState({
+      categoryArr: '',
+      file: null,
+    });
+  };
+  clearSate = () => this.setState({ categoryArr: '', file: '', imagePreviewUrl: '' });
 
+  handleImageChange(e) {
+    e.preventDefault();
+
+    let reader = new FileReader();
+    let file = e.target.files[0];
+
+    reader.onloadend = () => {
+      this.setState({
+        file: file,
+        imagePreviewUrl: reader.result,
+      });
+    };
+
+    reader.readAsDataURL(file);
+  }
   render() {
     const menu = <Hover>Make sure your clothes fit the background for background removal!</Hover>;
     const { userStore } = this.context;
+    let { imagePreviewUrl } = this.state;
+    let $imagePreview = null;
+
+    if (imagePreviewUrl) {
+      $imagePreview = (
+        <div>
+          <Container style={{ height: '33vh', border: 'dotted' }}>
+            <Row></Row>
+            <Row>
+              <Col>
+                <img src={imagePreviewUrl} />
+              </Col>
+            </Row>
+            <Row style={{ height: '33%' }}></Row>
+          </Container>
+        </div>
+      );
+    } else {
+      $imagePreview = (
+        <div>
+          <Container style={{ height: '33vh', border: 'dotted' }}>
+            <Row style={{ height: '33%' }}></Row>
+            <Row>
+              <Col></Col>
+              <Col sm={8} style={{ fontSize: '15px', border: 'dotted', textAlign: 'center' }}>
+                Image Preview
+              </Col>
+              <Col></Col>
+            </Row>
+            <Row style={{ height: '33%' }}></Row>
+          </Container>
+        </div>
+      );
+    }
 
     const handChange = () => {
       const file = this.state.file;
       if (file) {
         let all = ['all'];
-        const cates = this.state.categoryArr;
-        const uploadPath = userStore.currentUser.uid + '/' + file['name'];
+        const cates = this.state.categoryArr.concat('all');
+        let uploadPath;
+        if (file['name']) {
+          uploadPath = userStore.currentUser.uid + '/' + file['name'];
+        } else {
+          uploadPath =
+            userStore.currentUser.uid +
+            '/' +
+            this.state.snapshotString.substring(25, 36).replace('/', 'A');
+        }
         const newData = {
           createdTime: new Date().toLocaleDateString('en-GB', {
             minute: 'numeric',
@@ -124,16 +195,9 @@ export default class AddClothes extends React.Component {
           .collection('clothes');
 
         if (validImageTypes.includes(fileType)) {
-          //fetch data from firebase
-          //1. check dup
-          /*clothRef.get().then(function(clothes) {
-            if (clothes.exists) {
-              console.log('Document data:', clothes.data());
-              return;
-            }
-          });*/
-
-          //2. add newData to storage and firestore
+          clothRef.get().then(function(clothes) {
+            if (clothes.exists) return;
+          });
           storageRef.put(file).then(function(snapshot) {
             if (snapshot.state == 'success') {
               //Document successfully uploaded
@@ -153,6 +217,7 @@ export default class AddClothes extends React.Component {
                       });
                     }
                   }
+                  this.clearSate();
                 })
                 .catch(function(error) {
                   message.error(error.message);
@@ -164,12 +229,12 @@ export default class AddClothes extends React.Component {
           });
         }
       } else {
-        message.error('Image is required!');
+        alert('Image is reqired!');
       }
     };
     const videoConstraints = {
-      width: '800px',
-      height: '800px',
+      width: '400px',
+      height: '400px',
       facingMode: 'user',
     };
     /*global Uint8Array, ArrayBuffer*/
@@ -187,34 +252,94 @@ export default class AddClothes extends React.Component {
       return newBlob;
     };
 
-    const WebcamCapture = () => {
+    const WebcamCapture = e => {
       const webcamRef = React.useRef(null);
-      // const close = this.props.close;
-      const capture = React.useCallback(() => {
-        const imageSrc = webcamRef.current.getScreenshot();
-        //const file = convertBase64ToFile(imageSrc);
-        this.setState({ file: convertBase64ToFile(imageSrc) });
-      }, [webcamRef]);
-      return (
-        <div style={modal}>
+      let convertedFile = null;
+      let webcam = null;
+      if (this.state.imagePreviewUrl) {
+        webcam = null;
+      } else {
+        webcam = (
           <Webcam
             audio={false}
             height={'100%'}
             ref={webcamRef}
             screenshotFormat="image/jpeg"
             width={'100%'}
+            style={{ top: '0', padding: '0' }}
             videoConstraints={videoConstraints}
           />
-          <Button
-            onClick={() => {
-              capture();
-              console.log(this.props.close);
-              console.log('modal closed');
-            }}
-          >
-            Capture photo
-          </Button>
-        </div>
+        );
+      }
+      const capture = React.useCallback(() => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        if (!imageSrc) return;
+        convertedFile = convertBase64ToFile(imageSrc);
+        this.setState({ snapshotString: imageSrc });
+        let reader = new FileReader();
+
+        reader.onloadend = () => {
+          this.setState({
+            file: convertedFile,
+            imagePreviewUrl: reader.result,
+          });
+        };
+
+        reader.readAsDataURL(convertedFile);
+      }, [webcamRef]);
+      return (
+        <form style={modal} onSubmit={this.onSubmit}>
+          <Container>
+            <Row>
+              <Col style={{ height: '50vh', padding: '0' }}>{webcam}</Col>
+              <Col style={{ height: '50vh', marginTop: '0' }}>{$imagePreview}</Col>
+            </Row>
+            <Row>
+              <Col>
+                <Button onClick={capture}>Capture photo</Button>
+              </Col>
+              <Col>
+                <span>Catogories:&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <input
+                  type="text"
+                  name="cat"
+                  placeholder="Seperate tags by comma (Optional)"
+                  value={this.state.categoryArr}
+                  onChange={this.onCatChange}
+                  style={{ width: '100%' }}
+                />
+              </Col>
+              <Col>
+                <input
+                  type="submit"
+                  value="submit"
+                  className="btn"
+                  style={btnStyle}
+                  onChange={handChange}
+                  onClick={() => {
+                    handChange();
+                    this.clearSate();
+                    e.close();
+                  }}
+                />
+                <input
+                  className="btn"
+                  type="cancel"
+                  value="cancel"
+                  style={btnStyle}
+                  onChange={() => {
+                    this.clearSate();
+                    e.close();
+                  }}
+                  onClick={() => {
+                    this.clearSate();
+                    e.close();
+                  }}
+                />
+              </Col>
+            </Row>
+          </Container>
+        </form>
       );
     };
 
@@ -397,6 +522,7 @@ export default class AddClothes extends React.Component {
                           onChange={handChange}
                           onClick={() => {
                             handChange();
+                            this.clearSate();
                             close();
                           }}
                         />
@@ -406,14 +532,14 @@ export default class AddClothes extends React.Component {
                           value="cancel"
                           style={btnStyle}
                           onChange={() => {
-                            console.log('modal closed');
+                            this.clearSate();
                             close();
                           }}
                           onClick={() => {
-                            console.log('modal closed');
+                            this.clearSate();
                             close();
                           }}
-                        ></input>
+                        />
                       </div>
                     </form>
                   </div>
@@ -433,12 +559,6 @@ export default class AddClothes extends React.Component {
                 {close => (
                   <div>
                     <WebcamCapture close={close} />
-                    <Button
-                      onClick={() => {
-                        console.log(close);
-                        close();
-                      }}
-                    />
                   </div>
                 )}
               </Popup>

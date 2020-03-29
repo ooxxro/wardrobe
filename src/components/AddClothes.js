@@ -91,7 +91,8 @@ export default class AddClothes extends React.Component {
     const handChange = () => {
       const file = this.state.file;
       if (file) {
-        const cates = this.state.categoryArr.concat('all');
+        let all = ['all'];
+        const cates = this.state.categoryArr;
         const uploadPath = userStore.currentUser.uid + '/' + file['name'];
         const newData = {
           createdTime: new Date().toLocaleDateString('en-GB', {
@@ -109,7 +110,7 @@ export default class AddClothes extends React.Component {
             year: 'numeric',
           }),
           imagePath: uploadPath,
-          categories: cates,
+          categories: all.concat(cates),
         };
         const fileType = file['type'];
         const validImageTypes = ['image/gif', 'image/jpeg', 'image/png'];
@@ -142,17 +143,19 @@ export default class AddClothes extends React.Component {
                   //Document successfully written to firestore
                   //Add clothing item ID to corresponding categories in firestore
                   for (let i = 0; i < newData.categories.length; i++) {
-                    let categoryRef = firebase
-                      .firestore()
-                      .collection('users/' + firebase.auth().currentUser.uid + '/categories')
-                      .doc(newData.categories[i]);
-                    categoryRef.update({
-                      clothes: firebase.firestore.FieldValue.arrayUnion(docRef.id),
-                    });
+                    if (newData.categories[i].length > 0) {
+                      let categoryRef = firebase
+                        .firestore()
+                        .collection('users/' + firebase.auth().currentUser.uid + '/categories')
+                        .doc(newData.categories[i]);
+                      categoryRef.update({
+                        clothes: firebase.firestore.FieldValue.arrayUnion(docRef.id),
+                      });
+                    }
                   }
                 })
                 .catch(function(error) {
-                  message.error(error);
+                  message.error(error.message);
                 });
               message.success('Uploaded successfuly!');
             } else {

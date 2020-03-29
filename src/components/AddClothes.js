@@ -217,6 +217,8 @@ export default class AddClothes extends React.Component {
                       });
                     }
                   }
+
+                  //clear state data
                   this.clearSate();
                 })
                 .catch(function(error) {

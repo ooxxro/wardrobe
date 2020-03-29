@@ -1,7 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Button } from '@material-ui/core';
-import { Link } from 'react-router-dom';
 import { UserOutlined } from '@ant-design/icons'; //Should be User's current avatar
 import { Avatar } from 'antd';
 import { message } from 'antd';
@@ -167,7 +166,31 @@ export default class Setting extends React.Component {
   };
 
   onDeleteAccount = () => {
-    //Nothing yet - should remove all traces of user from auth, firestore, and storage
+    const { history } = this.props;
+
+    let user = firebase.auth().currentUser;
+    const credential = firebase.auth.EmailAuthProvider.credential(
+      user.email,
+      this.state.currentpassword3
+    );
+    user
+      .reauthenticateWithCredential(credential)
+      .then(() => {
+        //Remove user doc from Firestore
+        let db = firebase.firestore();
+        db.collection('users')
+          .doc(user.uid)
+          .delete();
+        //Remove folder for user in storage - impossible?
+        //Finally delete user from Auth
+        user.delete();
+        message.success('Account deleted successfully.');
+        history.push('/');
+      })
+      .catch(error => {
+        // Handle Errors here.
+        message.error(error.message);
+      });
   };
 
   handleNewEmailChange = event => {
@@ -219,8 +242,6 @@ export default class Setting extends React.Component {
               />
               <Button
                 className="saveEmailButton"
-                component={Link}
-                type="primary"
                 variant="contained"
                 color="primary"
                 onClick={this.onChangeEmail}
@@ -255,8 +276,6 @@ export default class Setting extends React.Component {
               />
               <Button
                 className="savePasswordButton"
-                component={Link}
-                type="primary"
                 variant="contained"
                 color="primary"
                 onClick={this.onChangePassword}
@@ -282,8 +301,6 @@ export default class Setting extends React.Component {
               />
               <Button
                 className="deleteAccountButton"
-                component={Link}
-                type="primary"
                 variant="contained"
                 color="primary"
                 onClick={this.onDeleteAccount}

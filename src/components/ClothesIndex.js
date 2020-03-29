@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { Link, withRouter } from 'react-router-dom';
-import { Menu, Dropdown } from 'antd';
+import { Menu, Dropdown, Card } from 'antd';
 import firebase from 'firebase';
 
 // Data objects
@@ -17,7 +17,7 @@ const Wrapper = styled.div`
   justify-content: center;
   align-items: center;
 `;
-const Card = styled.div`
+const ContainerCard = styled.div`
   display: inline-flex;
   flex-direction: row;
   flex: 1;
@@ -37,7 +37,7 @@ const LeftSidePanel = styled.div`
   justify-content: flex-start;
   align-content: center;
   max-width: 200px;
-  height: ${Card.height};
+  height: ${ContainerCard.height};
   padding-top: 25px;
   border-right: 1px solid currentColor;
 `;
@@ -47,7 +47,7 @@ const RightSide = styled.div`
   justify-content: flex-start;
   align-content: center;
   max-width: 800px;
-  height: ${Card.height};
+  height: ${ContainerCard.height};
   padding-top: 25px;
   padding-left: 25px;
 `;
@@ -57,7 +57,7 @@ const TabContainer = styled.div`
   flex-direction: column;
   justify-content: center;
   max-width: 200px;
-  height: ${Card.height};
+  height: ${ContainerCard.height};
 `;
 const Tab = styled(Menu.Item)`
   flex: 0.5;
@@ -100,11 +100,18 @@ const ClothingRow = styled.div`
   display: flex;
   flex: 1;
   flex-direction: row;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
+  text-align: center;
   width: ${RightSide.width};
   height: 200px;
   border-bottom: 1px solid currentColor;
+`;
+const ClothingItem = styled(Card)`
+  display: flex;
+  flex: 1;
+  width: 200px;
+  height: 200px;
 `;
 @withRouter
 @observer
@@ -112,7 +119,8 @@ export default class ClothesIndex extends React.Component {
   constructor() {
     super();
     this.state = {
-      location: 'all'
+      location: 'all',
+      items: []
     };
   }
   static contextType = StoreContext;
@@ -120,14 +128,34 @@ export default class ClothesIndex extends React.Component {
     this.setState({location: event.key});
   }
   async getCategoryData() {
-    await this.setState({location: this.props.location.pathname.split('/')[2]}); // set current location
-    userCollection.doc(`${auth.currentUser.uid}`).collection(`categories`).doc(this.state.location)
-    .onSnapshot(function(doc) {
-      console.log("Current data: ", doc.data())
-    });
+    await this.setState({ location: this.props.location.pathname.split('/')[2] }); // set current location
+    return await userCollection.doc(`${auth.currentUser.uid}`)
+    .collection(`categories`).doc(this.state.location).get()
+    .then(function(doc) {
+      if (doc.exists) {
+        return doc.data();
+      }
+      else {
+        console.log("No data exists");
+      }
+    })
+    .catch(function(error) {
+        console.log("error occured: ", error);
+      });
+  }
+  async handleData() {
+    let clothesPromise = await this.getCategoryData().then(function(data) { return data;});
+    await this.setState({items: clothesPromise.clothes});
+    console.log(this.state.items);
   }
   componentDidMount() {
-    this.getCategoryData();
+    this.handleData()
+    // this.setState({items: this.getCategoryData()});
+    // userCollection.doc(`${auth.currentUser.uid}`).collection(`categories`).doc(this.state.location)
+    //   .onSnapshot(function (doc) {
+    //     //List the data 
+    //     // console.log("Current data: ", doc.data());
+    //   })
   }
   render() {
     const links = [
@@ -146,9 +174,10 @@ export default class ClothesIndex extends React.Component {
         <Menu.Item>Color</Menu.Item>
       </Menu>
     );
+    console.log(this.state.items);
     return (
       <Wrapper>
-        <Card>
+        <ContainerCard>
           <LeftSidePanel>
             <TabContainer>
               <Menu onClick={(event) => this.handleClick(event)} style={{ maxWidth: 200 }}>
@@ -167,28 +196,17 @@ export default class ClothesIndex extends React.Component {
                 <SortButton>Sort By</SortButton>
               </Dropdown>
             </CardHeader>
-            <ClothingRow></ClothingRow>
-            <ClothingRow></ClothingRow>
-            <ClothingRow></ClothingRow>
+            <ClothingRow>
+            { this.state.items[0] != null ? 
+              this.state.items.map((item, i) => (
+                <ClothingItem  title={item} hoverable={true} key={i}/>
+              ))
+              :
+              <p>Sorry, there are no items saved in this category</p>
+            }
+            </ClothingRow>
           </RightSide>
-        </Card>
-        {/* <h2>Hi! This is Clothes Index Page</h2>
-
-        <div>
-          go to
-          <Link to="/clothes-detail">Clothes Detail Page</Link>
-        </div>*/}
-
-        {/* <div>
-          links to other categories:
-          <ul>
-            {links.map((link, i) => (
-              <li key={i}>
-                <Link to={`/my-wardrobe/${link.to}`}>{link.text}</Link>
-              </li>
-            ))}
-          </ul>
-        </div> */}
+        </ContainerCard>
       </Wrapper>
     );
   }

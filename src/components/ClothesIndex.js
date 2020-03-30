@@ -48,6 +48,7 @@ const RightSide = styled.div`
   align-items: center;
   max-width: 800px;
   height: ${ContainerCard.height};
+  padding-left: 20px;
 `;
 const TabContainer = styled.div`
   flex: 0.5;
@@ -120,12 +121,14 @@ export default class ClothesIndex extends React.Component {
       location: 'all',
       items: [],
       itemUrls: [],
-      itemPaths: []
+      itemPaths: [],
+      fetched: false
     };
   }
   static contextType = StoreContext;
   handleClick = (event) =>  {
     this.setState({location: event.key});
+    this.setState({fetched: false});
     this.handleData(event.key);
   }
   async getCategoryData(location) {
@@ -168,11 +171,11 @@ export default class ClothesIndex extends React.Component {
           .getDownloadURL()
           .then(function(url) {
             imageURLs.push(url);
-            console.log(url)
+            console.log(url);
           });
         });
       });
-      vm.setState({itemPaths: imagePaths, itemUrls: imageURLs});
+      vm.setState({itemPaths: imagePaths, itemUrls: imageURLs, fetched: true});
     });
   }
 
@@ -218,9 +221,12 @@ export default class ClothesIndex extends React.Component {
   }
   componentDidMount() {
     this.setState({ location: this.props.location.pathname.split('/')[2] }); // set current location
-    this.handleData(this.props.location.pathname.split('/')[2] );
+    this.handleData(this.props.location.pathname.split('/')[2]);
   }
   render() {
+    // if (this.state.fetched) {  // Add a loading screen to wait for data to fully resolve
+    //   return (<></>)
+    // }
     const links = [
       { to: 'all', text: 'All' },
       { to: 'hats', text: 'Hats' },

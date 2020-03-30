@@ -143,6 +143,10 @@ export default class ClothesIndex extends React.Component {
         console.log("error occured: ", error);
       });
   }
+  /**
+   * This function handles the data returned from getCategoryData
+   * such that the Promise returned resolves the data.
+   */
   async handleData() {
     let clothesPromise = await this.getCategoryData().then(function(data) { return data;});
     await this.setState({items: clothesPromise.clothes});
@@ -150,7 +154,6 @@ export default class ClothesIndex extends React.Component {
   }
   componentDidMount() {
     this.handleData()
-    // this.setState({items: this.getCategoryData()});
     // userCollection.doc(`${auth.currentUser.uid}`).collection(`categories`).doc(this.state.location)
     //   .onSnapshot(function (doc) {
     //     //List the data 

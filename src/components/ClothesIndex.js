@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { Link, withRouter } from 'react-router-dom';
-import { Menu, Dropdown, Card } from 'antd';
+import { Menu, Dropdown, /*Card*/ } from 'antd';
 import firebase from 'firebase';
 
 // Data objects
@@ -45,11 +45,9 @@ const RightSide = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-content: center;
+  align-items: center;
   max-width: 800px;
   height: ${ContainerCard.height};
-  padding-top: 25px;
-  padding-left: 25px;
 `;
 const TabContainer = styled.div`
   flex: 0.5;
@@ -85,7 +83,7 @@ const SortButton = styled.div`
   justify-content: center;
   align-items: center;
   text-align: center;
-  width: 100px;
+  max-width: 100px;
   height: 40px;
   padding: 5px;
   margin: 25px;
@@ -107,12 +105,12 @@ const ClothingRow = styled.div`
   height: 200px;
   border-bottom: 1px solid currentColor;
 `;
-const ClothingItem = styled(Card)`
-  display: flex;
-  flex: 1;
-  width: 200px;
-  height: 200px;
-`;
+// const ClothingItem = styled(Card)`
+//   display: flex;
+//   flex: 0.3;
+//   max-width: 250px;
+//   height: 200px;
+// `;
 @withRouter
 @observer
 export default class ClothesIndex extends React.Component {
@@ -120,45 +118,107 @@ export default class ClothesIndex extends React.Component {
     super();
     this.state = {
       location: 'all',
-      items: []
+      items: [],
+      itemUrls: [],
+      itemPaths: []
     };
   }
   static contextType = StoreContext;
   handleClick = (event) =>  {
     this.setState({location: event.key});
+    this.handleData(event.key);
   }
-  async getCategoryData() {
-    await this.setState({ location: this.props.location.pathname.split('/')[2] }); // set current location
+  async getCategoryData(location) {
     return await userCollection.doc(`${auth.currentUser.uid}`)
-    .collection(`categories`).doc(this.state.location).get()
+    .collection(`categories`).doc(location).get()
     .then(function(doc) {
       if (doc.exists) {
         return doc.data();
       }
       else {
-        console.log("No data exists");
+        alert("No data exists");
       }
     })
     .catch(function(error) {
-        console.log("error occured: ", error);
+        alert("error occured: ", error);
       });
   }
   /**
    * This function handles the data returned from getCategoryData
    * such that the Promise returned resolves the data.
    */
-  async handleData() {
-    let clothesPromise = await this.getCategoryData().then(function(data) { return data;});
-    await this.setState({items: clothesPromise.clothes});
-    console.log(this.state.items);
+  async handleData(location) {
+    let imagePaths = [];
+    let imageURLs = [];
+    let vm = this;
+    await this.getCategoryData(location)
+    .then(function(data) { 
+      vm.setState({items: data.clothes});
+      let storageRef = firebase.storage().ref();
+      data.clothes.forEach(imgID => {
+        userCollection
+        .doc(`${auth.currentUser.uid}`)
+        .collection('clothes')
+        .doc(imgID)
+        .get()
+        .then(function(res) {
+          imagePaths.push(res.data().imagePath);
+          storageRef
+          .child(res.data().imagePath)
+          .getDownloadURL()
+          .then(function(url) {
+            imageURLs.push(url);
+            console.log(url)
+          });
+        });
+      });
+      vm.setState({itemPaths: imagePaths, itemUrls: imageURLs});
+    });
+  }
+
+  /**
+   * Function defines how clothing is displayed
+   */
+  displayData() {
+    let numItems = this.state.items.length;
+    let $items = this.state.itemUrls;
+    if (numItems / 3 === 0) {
+      if ($items[0] != null) {
+        return (
+          <>
+        {this.state.itemUrls.map((url, i) => (
+          // <ClothingItem title={i} cover={<img src={url} />} hoverable={true} key={i}/>
+          <img style={{width: 200, height: 200}} src={url} key={i} />
+        ))}
+        </>
+        );
+      }
+      else {
+        return <p>Sorry, there are no items saved in this category</p>
+      }
+    }
+    else {
+      let content = [];
+        for (let j = 0; j < numItems / 3; j++) {
+          content[j] = $items.slice(j * 3, 3 * (j + 1));
+        }
+        return (
+          <>
+          {content.map((item, i) => (
+            <ClothingRow key={i}>
+              {item.map((url, j) => (
+                // <ClothingItem title={j} cover={<img src={url} />} hoverable={true} key={j} />
+                <img style={{width: 200, height: 200}} src={url} key={j} />
+              ))}
+            </ClothingRow>
+          ))}
+          </>
+        );
+    }
   }
   componentDidMount() {
-    this.handleData()
-    // userCollection.doc(`${auth.currentUser.uid}`).collection(`categories`).doc(this.state.location)
-    //   .onSnapshot(function (doc) {
-    //     //List the data 
-    //     // console.log("Current data: ", doc.data());
-    //   })
+    this.setState({ location: this.props.location.pathname.split('/')[2] }); // set current location
+    this.handleData(this.props.location.pathname.split('/')[2] );
   }
   render() {
     const links = [
@@ -177,7 +237,6 @@ export default class ClothesIndex extends React.Component {
         <Menu.Item>Color</Menu.Item>
       </Menu>
     );
-    console.log(this.state.items);
     return (
       <Wrapper>
         <ContainerCard>
@@ -194,20 +253,14 @@ export default class ClothesIndex extends React.Component {
           </LeftSidePanel>
           <RightSide>
             <CardHeader>
-              # of total items
+              {this.state.items.length} {this.state.items.length === 1 ? `item` : `items`}
               <Dropdown overlay={sortMenu} placement="bottomCenter">
                 <SortButton>Sort By</SortButton>
               </Dropdown>
             </CardHeader>
-            <ClothingRow>
-            { this.state.items[0] != null ? 
-              this.state.items.map((item, i) => (
-                <ClothingItem  title={item} hoverable={true} key={i}/>
-              ))
-              :
-              <p>Sorry, there are no items saved in this category</p>
+            {
+              this.displayData()
             }
-            </ClothingRow>
           </RightSide>
         </ContainerCard>
       </Wrapper>

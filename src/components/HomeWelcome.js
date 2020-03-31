@@ -8,7 +8,7 @@ import pantImg from '../images/welcome-jeans.svg';
 import shoeImg from '../images/welcome-shoe.svg';
 import arrowImg from '../images/arrow.png';
 import { Button } from '@material-ui/core';
-import { Link, withRouter } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Wrapper = styled.div``;
 const Hero = styled.section`

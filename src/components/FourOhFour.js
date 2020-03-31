@@ -13,8 +13,10 @@ const Wrapper = styled.div`
   }
 `;
 
-export default () => (
-  <Wrapper>
-    <h1>Oops! 404 Not Found...</h1>
-  </Wrapper>
-);
+export default function FourOhFour() {
+  return (
+    <Wrapper>
+      <h1>Oops! 404 Not Found...</h1>
+    </Wrapper>
+  );
+}

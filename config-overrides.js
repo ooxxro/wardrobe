@@ -5,7 +5,7 @@ const {
   addDecoratorsLegacy,
   useEslintRc,
 } = require('customize-cra');
-const theme = require('./src/theme');
+const { theme } = require('./src/theme');
 
 module.exports = override(
   fixBabelImports('import', {

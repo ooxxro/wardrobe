@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "test-utils": ["./src/test-utils.js"]
+    }
+  },
+  "exclude": ["node_modules", "build", "coverage", "dist"]
+}

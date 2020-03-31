@@ -1,7 +1,7 @@
 import React from 'react';
 import { Switch, Route } from 'react-router-dom';
-import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
-import theme from './theme';
+import { ThemeProvider } from '@material-ui/core/styles';
+import { MuiTheme } from './theme';
 import Layout from './components/Layout';
 import FourOhFour from './components/FourOhFour';
 import Home from './components/Home';
@@ -13,22 +13,10 @@ import ClothesIndex from './components/ClothesIndex';
 import ClothesDetail from './components/ClothesDetail';
 import AddClothes from './components/AddClothes';
 import 'bootstrap/dist/css/bootstrap.min.css';
-const myTheme = createMuiTheme({
-  palette: {
-    primary: {
-      main: theme.primary,
-    },
-    // secondary: '',
-    // error: '',
-    // warning: '',
-    // info: '',
-    // success: '',
-  },
-});
 
 function App() {
   return (
-    <ThemeProvider theme={myTheme}>
+    <ThemeProvider theme={MuiTheme}>
       <Layout>
         <Switch>
           <Route path="/" exact component={Home} />

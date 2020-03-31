@@ -1,0 +1,11 @@
+// this file is only used for jest test, not the app
+{
+  "plugins": [
+    ["@babel/plugin-proposal-decorators", {
+      "legacy": true
+    }],
+    ["@babel/plugin-proposal-class-properties", {
+      "loose": true
+    }]
+  ]
+}

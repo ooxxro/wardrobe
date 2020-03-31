@@ -1,8 +1,16 @@
 # Wardrobe
 
-> This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## README for Iteration 1 Progress Report
+
+Online Website: [https://wardrobe.rocks](https://wardrobe.rocks).  
+To build the application, you need node.js and npm installed.  
+After cloning this repo, run `npm install` to install dependencies.  
+Run `npm start` to start the development server.  
+Run `npm test` to run unit tests.
 
 ## Getting Started
+
+> This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 #### node.js and npm
 

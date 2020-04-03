@@ -4,6 +4,7 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { Link, withRouter } from 'react-router-dom';
 import { Menu, Dropdown, /*Card*/ } from 'antd';
+import {LoadingOutlined} from '@ant-design/icons';
 import firebase from 'firebase';
 
 // Data objects
@@ -22,7 +23,7 @@ const ContainerCard = styled.div`
   flex-direction: row;
   flex: 1;
   max-width: 1000px;
-  height: 800px;
+  height: 700px;
   margin: 10px;
   border-radius: 20px;
   font-size: 26px;
@@ -44,9 +45,8 @@ const LeftSidePanel = styled.div`
 const RightSide = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  max-width: 800px;
+  justify-content: center;
+  width: 800px;
   height: ${ContainerCard.height};
   padding-left: 20px;
 `;
@@ -119,9 +119,9 @@ export default class ClothesIndex extends React.Component {
     super();
     this.state = {
       location: 'all',
-      items: [],
-      itemUrls: [],
-      itemPaths: [],
+      items: [],    // Array of data objects for each item
+      itemUrls: [], // Urls of each item
+      itemPaths: [], // Storage image path for each item
       fetched: false
     };
   }
@@ -129,7 +129,6 @@ export default class ClothesIndex extends React.Component {
   handleClick = (event) =>  {
     this.setState({location: event.key});
     this.setState({fetched: false});
-    this.handleData(event.key);
   }
   async getCategoryData(location) {
     return await userCollection.doc(`${auth.currentUser.uid}`)
@@ -149,34 +148,54 @@ export default class ClothesIndex extends React.Component {
   /**
    * This function handles the data returned from getCategoryData
    * such that the Promise returned resolves the data.
+   * Currently is not working because the itemUrls ends up with no data in the array.
    */
-  async handleData(location) {
-    let imagePaths = [];
-    let imageURLs = [];
+  getData = (location) => {
+    if (this.state.fetched) return;
     let vm = this;
-    await this.getCategoryData(location)
-    .then(function(data) { 
+    let imagePaths = [];
+    let imageURLs = Array();
+    this.getCategoryData(location)
+    .then(function(data) {
       vm.setState({items: data.clothes});
       let storageRef = firebase.storage().ref();
-      data.clothes.forEach(imgID => {
-        userCollection
-        .doc(`${auth.currentUser.uid}`)
-        .collection('clothes')
-        .doc(imgID)
-        .get()
-        .then(function(res) {
-          imagePaths.push(res.data().imagePath);
-          storageRef
-          .child(res.data().imagePath)
-          .getDownloadURL()
-          .then(function(url) {
-            imageURLs.push(url);
-            console.log(url);
+      data.clothes.forEach(async (imgID) => {
+        await userCollection
+          .doc(`${auth.currentUser.uid}`)
+          .collection('clothes')
+          .doc(imgID)
+          .get()
+          .then(function(res) {
+            imagePaths.push(res.data().imagePath);
+            storageRef
+            .child(res.data().imagePath)
+            .getDownloadURL()
+            .then(function(url) {
+              imageURLs.push(url);
+            });
           });
         });
-      });
       vm.setState({itemPaths: imagePaths, itemUrls: imageURLs, fetched: true});
     });
+    
+    //   // data.clothes.forEach(imgID => {
+    //   //   userCollection
+    //   //   .doc(`${auth.currentUser.uid}`)
+    //   //   .collection('clothes')
+    //   //   .doc(imgID)
+    //   //   .get()
+    //   //   .then(async function(res) {
+    //   //     imagePaths.push(res.data().imagePath);
+    //   //     storageRef
+    //   //     .child(res.data().imagePath)
+    //   //     .getDownloadURL()
+    //   //     .then(function(url) {
+    //   //       imageURLs.push(url);
+    //   //     });
+    //   //   });
+      // });
+    // });
+    // this.setState({fetched: true});
   }
 
   /**
@@ -221,12 +240,8 @@ export default class ClothesIndex extends React.Component {
   }
   componentDidMount() {
     this.setState({ location: this.props.location.pathname.split('/')[2] }); // set current location
-    this.handleData(this.props.location.pathname.split('/')[2]);
   }
   render() {
-    // if (this.state.fetched) {  // Add a loading screen to wait for data to fully resolve
-    //   return (<></>)
-    // }
     const links = [
       { to: 'all', text: 'All' },
       { to: 'hats', text: 'Hats' },
@@ -243,6 +258,15 @@ export default class ClothesIndex extends React.Component {
         <Menu.Item>Color</Menu.Item>
       </Menu>
     );
+    /**
+     * Here I am checking if itemUrls is being set. 
+     */
+    this.getData(this.state.location);
+    const imageURLs = this.state.itemUrls;
+    // console.log("Images count: ", imageURLs.length);
+    // console.log(imageURLs); // Shows an array that is empty but when you expand it, it shows all the items
+    // console.log(this.state.items); // Shows the imgIDs
+    // console.log("Items count: ", this.state.items.length); 
     return (
       <Wrapper>
         <ContainerCard>
@@ -264,9 +288,15 @@ export default class ClothesIndex extends React.Component {
                 <SortButton>Sort By</SortButton>
               </Dropdown>
             </CardHeader>
+            <div style={{display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center", flex: 1}}>
             {
-              this.displayData()
+              this.state.fetched /*(imageURLs.length === this.state.items.length)*/ ? // Only load if all the images have been set in itemUrls
+              imageURLs.map((url, i) => (
+                <img style={{width: 200, height: 250}} src={url} key={i} />
+              ))
+               : <LoadingOutlined style={{fontSize:100}} />
             }
+            </div>
           </RightSide>
         </ContainerCard>
       </Wrapper>

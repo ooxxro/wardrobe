@@ -12,6 +12,9 @@ import MyWardrobe from './components/MyWardrobe';
 import ClothesIndex from './components/ClothesIndex';
 import ClothesDetail from './components/ClothesDetail';
 import AddClothes from './components/AddClothes';
+import Design from './components/Design';
+import Random from './components/Random';
+import MyFavorites from './components/MyFavorites';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
@@ -30,6 +33,11 @@ function App() {
           <Route path="/add-clothes" exact component={AddClothes} />
           <Route path="/clothes-detail" exact component={ClothesDetail} />
 
+          <Route path="/design" exact component={Design} />
+
+          <Route path="/random" exact component={Random} />
+
+          <Route path="/my-favorites" exact component={MyFavorites} />
           <Route path="*" component={FourOhFour} />
         </Switch>
       </Layout>

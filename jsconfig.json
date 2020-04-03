@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "experimentalDecorators": true,
     "baseUrl": "./src",
     "paths": {
       "test-utils": ["./src/test-utils.js"]

@@ -95,10 +95,10 @@ export default class HomeMain extends React.Component {
               Wardrobe
             </span>
           </LinkCard>
-          <LinkCard to="#" className="design">
+          <LinkCard to="/design" className="design">
             <span>Design</span>
           </LinkCard>
-          <LinkCard to="#" className="my-favorite">
+          <LinkCard to="/my-favorites" className="my-favorite">
             <span>
               My
               <br />
@@ -108,7 +108,7 @@ export default class HomeMain extends React.Component {
           <LinkCard to="/add-clothes" className="add-clothes">
             <span>Add Clothes</span>
           </LinkCard>
-          <LinkCard to="#" className="random">
+          <LinkCard to="/random" className="random">
             <span>Random</span>
           </LinkCard>
         </Left>

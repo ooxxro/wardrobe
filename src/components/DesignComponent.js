@@ -3,9 +3,18 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
-import { Button, SvgIcon, IconButton, Zoom } from '@material-ui/core';
-import Tooltip from '@material-ui/core/Tooltip';
+import {
+  Button,
+  SvgIcon,
+  IconButton,
+  Zoom,
+  FormControlLabel,
+  Checkbox,
+  Tooltip,
+  Popover,
+} from '@material-ui/core';
 import userBgImg from '../images/userBgImg.jpg';
+import IOSSwitch from './IOSSwitch';
 import { ReactComponent as UndoIcon } from '../images/undo.svg';
 import { ReactComponent as LockIcon } from '../images/lock.svg';
 import { ReactComponent as FilterIcon } from '../images/filter.svg';
@@ -125,6 +134,22 @@ const UpperIcon = styled.div`
   }
 `;
 
+const Lock = styled.div`
+  background: #fecdda;
+  padding: 6px;
+  .lockItem {
+    padding: 5px 10px;
+    font-size: 14px;
+    &:not(:last-child) {
+      border-bottom: 0.5px solid #ff7298;
+    }
+    .MuiSwitch-root {
+      margin: 0;
+      margin-right: 10px;
+    }
+  }
+`;
+
 const ChooseClothes = styled.div`
   margin-left: 25px;
   width: 250px;
@@ -132,11 +157,35 @@ const ChooseClothes = styled.div`
   background: #cde6fe;
   border-radius: 20px;
   .filter {
-    background: #cbbfff;
+    background: #d8d0fc;
     border: 0.5px solid white;
     &:hover {
-      background: #c0b2ff;
+      background: #cbbfff;
     }
+  }
+`;
+const CheckboxoxList = styled.div`
+  padding: 0 6px;
+  background: #d8d0fc;
+  .filterItem {
+    padding-right: 11px;
+    font-size: 14px;
+    &:not(:last-child) {
+      border-bottom: 0.5px solid #8c72ff;
+    }
+    span {
+      font-size: 14px;
+    }
+  }
+  .MuiFormControlLabel-root {
+    margin: 0;
+  }
+  .MuiSvgIcon-root {
+    color: #7d64e1;
+  }
+  svg {
+    width: 22px;
+    height: 22px;
   }
 `;
 
@@ -144,6 +193,14 @@ const ChooseClothes = styled.div`
 @observer
 export default class DesignComponent extends React.Component {
   static contextType = StoreContext;
+
+  state = {
+    open: false,
+    // filter
+    turnon: false,
+    summer: false,
+    pink: false,
+  };
 
   onSave = () => {};
 
@@ -156,7 +213,7 @@ export default class DesignComponent extends React.Component {
       <Wrapper>
         {from === 'edit' && (
           <GoBack>
-            <Tooltip title="Go back" TransitionComponent={Zoom} placement="top">
+            <Tooltip arrow title="Go back" TransitionComponent={Zoom} placement="top">
               <IconButton className="goBack">
                 <SvgIcon fontSize="small">
                   <GoBackIcon />
@@ -177,21 +234,58 @@ export default class DesignComponent extends React.Component {
         </Picture>
         <IconCol>
           <UpperIcon>
-            <Tooltip title="Undo" TransitionComponent={Zoom} placement="top">
+            <Tooltip arrow title="Undo" TransitionComponent={Zoom} placement="top">
               <IconButton className="undo">
                 <SvgIcon fontSize="small">
                   <UndoIcon />
                 </SvgIcon>
               </IconButton>
             </Tooltip>
-            <Tooltip title="Lock categories" TransitionComponent={Zoom} placement="top">
-              <IconButton className="lock">
+            <Tooltip arrow title="Lock categories" TransitionComponent={Zoom} placement="top">
+              <IconButton
+                ref={el => (this.lockBtnRef = el)}
+                className="lock"
+                onClick={() => this.setState({ open: true })}
+              >
                 <SvgIcon fontSize="small">
                   <LockIcon />
                 </SvgIcon>
               </IconButton>
             </Tooltip>
+            <Popover
+              open={this.state.open}
+              anchorEl={this.lockBtnRef}
+              onClose={() => this.setState({ open: false })}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'center',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'center',
+              }}
+            >
+              <Lock>
+                <div className="lockItem">
+                  <IOSSwitch name="checkedB" />
+                  Hat
+                </div>
+                <div className="lockItem">
+                  <IOSSwitch name="checkedB" />
+                  Shirt
+                </div>
+                <div className="lockItem">
+                  <IOSSwitch name="checkedB" />
+                  Pants
+                </div>
+                <div className="lockItem">
+                  <IOSSwitch name="checkedB" />
+                  Shoes
+                </div>
+              </Lock>
+            </Popover>
           </UpperIcon>
+
           <Save>
             {from === 'design' ? (
               <Button className="save" variant="contained" onClick={this.onSave}>
@@ -205,13 +299,60 @@ export default class DesignComponent extends React.Component {
           </Save>
         </IconCol>
         <ChooseClothes>
-          <Tooltip title="Filter categories" TransitionComponent={Zoom} placement="top">
-            <IconButton className="filter">
+          <Tooltip arrow title="Filter categories" TransitionComponent={Zoom} placement="top">
+            <IconButton
+              className="filter"
+              ref={el => (this.filterBtnRef = el)}
+              onClick={() => this.setState({ turnon: true })}
+            >
               <SvgIcon fontSize="small">
                 <FilterIcon />
               </SvgIcon>
             </IconButton>
           </Tooltip>
+          <Popover
+            open={this.state.turnon}
+            anchorEl={this.filterBtnRef}
+            onClose={() => this.setState({ turnon: false })}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'center',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'center',
+            }}
+          >
+            {/* TODO: show all user defined tags */}
+            <CheckboxoxList>
+              <div className="filterItem">
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={this.state.summer}
+                      onChange={() => this.setState(state => ({ summer: !state.summer }))}
+                      name="summer"
+                      color="primary"
+                    />
+                  }
+                  label="Summer"
+                />
+              </div>
+              <div className="filterItem">
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={this.state.pink}
+                      onChange={() => this.setState(state => ({ pink: !state.pink }))}
+                      name="pink"
+                      color="primary"
+                    />
+                  }
+                  label="Pink"
+                />
+              </div>
+            </CheckboxoxList>
+          </Popover>
         </ChooseClothes>
       </Wrapper>
     );

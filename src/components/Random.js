@@ -123,7 +123,7 @@ const Lock = styled.div`
     padding: 5px 10px;
     font-size: 14px;
     &:not(:last-child) {
-      border-bottom: 0.5px solid red;
+      border-bottom: 0.5px solid #ff7298;
     }
     .MuiSwitch-root {
       margin: 0;

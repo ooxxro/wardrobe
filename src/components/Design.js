@@ -3,8 +3,12 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
-import { Button } from '@material-ui/core';
+import { Button, SvgIcon, IconButton, Zoom } from '@material-ui/core';
+import Tooltip from '@material-ui/core/Tooltip';
 import userBgImg from '../images/userBgImg.jpg';
+import { ReactComponent as UndoIcon } from '../images/undo.svg';
+import { ReactComponent as LockIcon } from '../images/lock.svg';
+import { ReactComponent as FilterIcon } from '../images/filter.svg';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -45,9 +49,12 @@ const Random = styled.div`
     }
   }
 `;
-const Picture = styled.div``;
+const Picture = styled.div`
+  display: flex;
+  align-items: center;
+`;
 const ImgWrapper = styled.div`
-  width: 280px;
+  width: 300px;
   height: 400px;
   img {
     object-fit: cover;
@@ -56,12 +63,15 @@ const ImgWrapper = styled.div`
     border-radius: 40px;
   }
 `;
-const Save = styled.div`
+const IconCol = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   flex-direction: column;
   margin-left: 25px;
+`;
+
+const Save = styled.div`
   .save {
     width: 60px;
     height: 60px;
@@ -70,17 +80,73 @@ const Save = styled.div`
     background: #aef0f7;
     font-size: 16px;
     font-weight: bold;
-    /* text-align: center;
-    line-height: 60px; */
+    text-align: center;
+    line-height: 60px;
     border-radius: 50%;
     color: #212121;
+    padding: 0;
+    min-width: 60px;
     &:hover {
       background: #95f5ff;
       color: #212121;
     }
   }
 `;
-const Clothes = styled.div``;
+const UpperIcon = styled.div`
+  margin-top: 30px;
+  display: flex;
+  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
+  .undo {
+    background: #f7d49e;
+    margin-bottom: 10px;
+    &:hover {
+      background: #fcce88;
+    }
+  }
+  .lock {
+    margin-left: 10px;
+    background: #fecdda;
+    &:hover {
+      background: #fcbbcc;
+    }
+  }
+`;
+const Clothes = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin-left: 25px;
+`;
+// const UpIcon = styled.div`
+//   margin-bottom: 10px;
+//   .undo {
+//     background: #f7d49e;
+//     &:hover {
+//       background: #fcce88;
+//     }
+//   }
+//   .lock {
+//     margin-left: 10px;
+//     background: #fecdda;
+//     &:hover {
+//       background: #fcbbcc;
+//     }
+//   }
+// `;
+const ChooseClothes = styled.div`
+  width: 250px;
+  height: 400px;
+  background: #cde6fe;
+  border-radius: 20px;
+  .filter {
+    background: #cbbfff;
+    border: 0.5px solid white;
+    &:hover {
+      background: #c0b2ff;
+    }
+  }
+`;
 
 @withRouter
 @observer
@@ -101,12 +167,52 @@ export default class Design extends React.Component {
               <img src={userBgImg} />
             </ImgWrapper>
           </Picture>
-          <Save>
-            <Button className="save" variant="contained">
-              Save
-            </Button>
-          </Save>
-          <Clothes></Clothes>
+          <IconCol>
+            <UpperIcon>
+              <Tooltip title="Undo" TransitionComponent={Zoom} placement="top">
+                <IconButton className="undo">
+                  <SvgIcon fontSize="small">
+                    <UndoIcon />
+                  </SvgIcon>
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Lock Categories" TransitionComponent={Zoom} placement="top">
+                <IconButton className="lock">
+                  <SvgIcon fontSize="small">
+                    <LockIcon />
+                  </SvgIcon>
+                </IconButton>
+              </Tooltip>
+            </UpperIcon>
+            <Save>
+              <Button className="save" variant="contained">
+                Save
+              </Button>
+            </Save>
+          </IconCol>
+          <Clothes>
+            {/* <UpIcon>
+              <IconButton className="undo">
+                <SvgIcon fontSize="small">
+                  <UndoIcon />
+                </SvgIcon>
+              </IconButton>
+              <IconButton className="lock">
+                <SvgIcon fontSize="small">
+                  <LockIcon />
+                </SvgIcon>
+              </IconButton>
+            </UpIcon> */}
+            <ChooseClothes>
+              <Tooltip title="Filter Categories" TransitionComponent={Zoom} placement="top">
+                <IconButton className="filter">
+                  <SvgIcon fontSize="small">
+                    <FilterIcon />
+                  </SvgIcon>
+                </IconButton>
+              </Tooltip>
+            </ChooseClothes>
+          </Clothes>
         </Content>
       </Wrapper>
     );

@@ -15,6 +15,7 @@ import AddClothes from './components/AddClothes';
 import Design from './components/Design';
 import Random from './components/Random';
 import MyFavorites from './components/MyFavorites';
+import MyFavoritesEdit from './components/MyFavoritesEdit';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
           <Route path="/random" exact component={Random} />
 
           <Route path="/my-favorites" exact component={MyFavorites} />
+          <Route path="/my-favorites/:outfitId/edit" exact component={MyFavoritesEdit} />
           <Route path="*" component={FourOhFour} />
         </Switch>
       </Layout>

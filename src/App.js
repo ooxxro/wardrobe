@@ -16,7 +16,6 @@ import Design from './components/Design';
 import Random from './components/Random';
 import MyFavorites from './components/MyFavorites';
 import MyFavoritesEdit from './components/MyFavoritesEdit';
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
   return (

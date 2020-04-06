@@ -19,6 +19,7 @@ import { ReactComponent as UndoIcon } from '../images/undo.svg';
 import { ReactComponent as LockIcon } from '../images/lock.svg';
 import { ReactComponent as FilterIcon } from '../images/filter.svg';
 import { ReactComponent as GoBackIcon } from '../images/goback.svg';
+import { ReactComponent as EditPicIcon } from '../images/editpic.svg';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -72,6 +73,29 @@ const Random = styled.div`
 const Picture = styled.div`
   display: flex;
   align-items: center;
+  position: relative;
+  &:hover {
+    .editPic {
+      transition: 0.4s;
+      opacity: 1;
+    }
+  }
+`;
+
+const EditPic = styled.div`
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  .editPic {
+    opacity: 0;
+    transition: 0.4s;
+    background: #e3ddff;
+    font-size: 16px;
+    padding: 5px;
+    &:hover {
+      background: #d7cffc;
+    }
+  }
 `;
 const ImgWrapper = styled.div`
   width: 300px;
@@ -231,6 +255,15 @@ export default class DesignComponent extends React.Component {
           <ImgWrapper>
             <img src={userBgImg} />
           </ImgWrapper>
+          <EditPic>
+            <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
+              <IconButton className="editPic" size="small">
+                <SvgIcon fontSize="inherit">
+                  <EditPicIcon />
+                </SvgIcon>
+              </IconButton>
+            </Tooltip>
+          </EditPic>
         </Picture>
         <IconCol>
           <UpperIcon>

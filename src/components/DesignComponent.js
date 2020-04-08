@@ -3,6 +3,7 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
+import SimpleDialog from './SimpleDialog';
 import {
   Button,
   SvgIcon,
@@ -224,21 +225,53 @@ export default class DesignComponent extends React.Component {
     turnon: false,
     summer: false,
     pink: false,
+    // dialogs
+    dialogOpen: false,
+    goBackDialogOpen: false,
   };
 
-  onSave = () => {};
+  onSave = () => {
+    this.setState({ dialogOpen: true });
+  };
 
-  onEditDone = () => {};
+  onEditDone = () => {
+    this.setState({ dialogOpen: true });
+  };
 
   render() {
     const { from } = this.props;
+    const { dialogOpen, goBackDialogOpen } = this.state;
+    let buttonsZone;
+    let goBackButtonsZone = [
+      { text: 'Cancel, Continue Editing', onClick: () => {} },
+      { text: 'Exit without Saving', exit: true, onClick: () => {} },
+    ];
+    // let description;
+
+    if (from === 'design') {
+      buttonsZone = [
+        { text: 'Download', onClick: () => {} },
+        { text: 'Save to My Favorites', onClick: () => {} },
+        { text: 'Exit without Saving', exit: true, onClick: () => {} },
+      ];
+    } else {
+      buttonsZone = [
+        { text: 'Download', onClick: () => {} },
+        { text: 'Save to Current', onClick: () => {} },
+        { text: 'Save as New', onClick: () => {} },
+        { text: 'Exit without Saving', exit: true, onClick: () => {} },
+      ];
+    }
 
     return (
       <Wrapper>
         {from === 'edit' && (
           <GoBack>
             <Tooltip arrow title="Go back" TransitionComponent={Zoom} placement="top">
-              <IconButton className="goBack">
+              <IconButton
+                className="goBack"
+                onClick={() => this.setState({ goBackDialogOpen: true })}
+              >
                 <SvgIcon fontSize="small">
                   <GoBackIcon />
                 </SvgIcon>
@@ -387,6 +420,26 @@ export default class DesignComponent extends React.Component {
             </CheckboxoxList>
           </Popover>
         </ChooseClothes>
+
+        <SimpleDialog
+          open={dialogOpen}
+          type="success"
+          buttons={buttonsZone}
+          onClose={() => this.setState({ dialogOpen: false })}
+        />
+        <SimpleDialog
+          open={goBackDialogOpen}
+          type="warning"
+          description={
+            <span>
+              Are you sure
+              <br />
+              you want to exit without saving?
+            </span>
+          }
+          buttons={goBackButtonsZone}
+          onClose={() => this.setState({ goBackDialogOpen: false })}
+        />
       </Wrapper>
     );
   }

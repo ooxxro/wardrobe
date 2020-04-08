@@ -3,6 +3,7 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
+import SimpleDialog from './SimpleDialog';
 import { Button } from '@material-ui/core';
 import filterImg from '../images/filter.svg';
 import userBgImg from '../images/userBgImg.jpg';
@@ -137,7 +138,25 @@ const Lock = styled.div`
 export default class Random extends React.Component {
   static contextType = StoreContext;
 
+  state = {
+    open: false,
+    dialogOpen: false,
+  };
+
+  onDone = () => {
+    this.setState({ dialogOpen: true });
+  };
+
   render() {
+    const { dialogOpen } = this.state;
+
+    let buttonsZone = [
+      { text: 'Download', onClick: () => {} },
+      { text: 'Save to My Favorites', onClick: () => {} },
+      { text: 'Go to Design', onClick: () => {} },
+      { text: 'Exit without Saving', exit: true, onClick: () => {} },
+    ];
+
     return (
       <Wrapper>
         <Up>
@@ -181,11 +200,18 @@ export default class Random extends React.Component {
                 Shoes
               </div>
             </Lock>
-            <Button className="done" variant="contained">
+            <Button className="done" variant="contained" onClick={this.onDone}>
               Done
             </Button>
           </Right>
         </Down>
+
+        <SimpleDialog
+          open={dialogOpen}
+          type="success"
+          buttons={buttonsZone}
+          onClose={() => this.setState({ dialogOpen: false })}
+        />
       </Wrapper>
     );
   }

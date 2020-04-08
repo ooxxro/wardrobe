@@ -19,6 +19,11 @@ const Wrapper = styled.div`
   background-color: #fff;
   position: relative;
   text-align: center;
+  .desc {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
 `;
 const Star = styled.div`
   position: absolute;
@@ -38,39 +43,32 @@ const SuccessCircle = styled.div`
 `;
 
 const NextStep = styled.div`
-  padding: 0 160px 50px 160px;
+  padding: 10px 160px 40px;
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
   flex-direction: column;
-  .next {
-    width: 184px;
-    margin-top: 10px;
+  button {
+    min-width: 184px;
+    margin-bottom: 12px;
     text-transform: none;
-    background: #aef0f7;
     border-radius: 19px;
     padding: 5px 16px;
     font-size: 14px;
-    color: #212121;
     font-weight: bold;
+    color: #212121;
     &:hover {
-      background: #7ceaf5;
       color: #212121;
     }
   }
+  .next {
+    background: #aef0f7;
+    &:hover {
+      background: #7ceaf5;
+    }
+  }
   .exit {
-    width: 184px;
-    margin-top: 10px;
     background: #bdadfd;
-    text-transform: none;
-    border-radius: 19px;
-    padding: 5px 16px;
-    font-size: 14px;
-    color: #212121;
-    font-weight: bold;
     &:hover {
       background: #b4a2ff;
-      color: #212121;
     }
   }
 `;
@@ -96,7 +94,7 @@ export default class SimpleDialog extends React.Component {
     onClose(value);
   };
   render() {
-    const { open, description } = this.props;
+    const { open, buttons, onClose, description } = this.props;
 
     return (
       <Dialog onClose={this.handleClose} open={open}>
@@ -107,23 +105,24 @@ export default class SimpleDialog extends React.Component {
           <SuccessCircle className="circle">
             <Success />
           </SuccessCircle>
-          <div>{description}</div>
+          {description && <div className="desc">{description}</div>}
+
           <NextStep>
-            <Button className="next" variant="contained">
-              Download
-            </Button>
-            <Button className="next" variant="contained">
-              Save to My Favorites
-            </Button>
-            <Button className="next" variant="contained">
-              Go to Design
-            </Button>
-            <Button className="exit" variant="contained">
-              Exit without Saving
-            </Button>
+            {buttons &&
+              buttons.map((button, i) => (
+                <Button
+                  key={i}
+                  className={button.exit ? 'exit' : 'next'}
+                  variant="contained"
+                  onClick={button.onClick}
+                >
+                  {button.text}
+                </Button>
+              ))}
           </NextStep>
+
           <Close className="close">
-            <IconButton className="closeIcon" size="small">
+            <IconButton className="closeIcon" size="small" onClick={onClose}>
               <SvgIcon fontSize="inherit">
                 <CloseIcon />
               </SvgIcon>

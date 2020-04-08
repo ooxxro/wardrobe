@@ -4,14 +4,13 @@ import React from 'react';
 import { Button, SvgIcon, IconButton, Dialog } from '@material-ui/core';
 import styled from 'styled-components';
 import Success from './Success';
-import triangleImg from '../images/triangle.png';
+import Warning from './Warning';
+import triangleImg from '../images/triangle.svg';
+import splashImg from '../images/splash.svg';
 import starImg from '../images/star.svg';
 import { ReactComponent as CloseIcon } from '../images/close.svg';
 
 const Wrapper = styled.div`
-  /* TODO:  */
-  /* width: 480px;
-  height: 380px; */
   background-image: url(${triangleImg});
   background-position: center;
   background-size: 100% 100%;
@@ -19,39 +18,65 @@ const Wrapper = styled.div`
   background-color: #fff;
   position: relative;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 0;
+
+  .star,
+  .splash {
+    position: absolute;
+    z-index: -1;
+  }
+  .star {
+    top: -16px;
+    left: -10px;
+    width: 170px;
+    height: auto;
+    transform: rotate(130deg);
+  }
+  .splash {
+    top: 0;
+    left: 0;
+    width: 130px;
+    height: auto;
+  }
+
+  .close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    .closeIcon {
+      padding: 8px;
+      font-size: 12px;
+    }
+  }
+
   .desc {
     font-size: 16px;
     font-weight: bold;
-    margin-bottom: 20px;
+    margin: 10px 0 20px;
   }
 `;
-const Star = styled.div`
-  position: absolute;
-  top: -16px;
-  left: -10px;
-  width: 170px;
-  height: auto;
-  transform: rotate(130deg);
-`;
 
-const SuccessCircle = styled.div`
+const IconWrapper = styled.div`
   padding-top: 50px;
-  /* position: absolute;
-  top: 44px;
-  right: 169px; */
-  transform: scale(0.8);
+  display: inline-block;
+  .success {
+    transform: scale(0.8);
+  }
 `;
 
-const NextStep = styled.div`
-  padding: 10px 160px 40px;
-  display: flex;
+const ButtonsWrapper = styled.div`
+  padding: 10px 60px 40px;
+  display: inline-flex;
   flex-direction: column;
   button {
     min-width: 184px;
     margin-bottom: 12px;
     text-transform: none;
     border-radius: 19px;
-    padding: 5px 16px;
+    padding: 5px 20px;
     font-size: 14px;
     font-weight: bold;
     color: #212121;
@@ -73,16 +98,6 @@ const NextStep = styled.div`
   }
 `;
 
-const Close = styled.div`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  .closeIcon {
-    padding: 8px;
-    font-size: 12px;
-  }
-`;
-
 export default class SimpleDialog extends React.Component {
   handleClose = () => {
     const { onClose, selectedValue } = this.props;
@@ -94,20 +109,35 @@ export default class SimpleDialog extends React.Component {
     onClose(value);
   };
   render() {
-    const { open, buttons, onClose, description } = this.props;
+    const { open, buttons, onClose, description, type } = this.props;
 
     return (
-      <Dialog onClose={this.handleClose} open={open}>
+      <Dialog fullWidth maxWidth="xs" onClose={this.handleClose} open={open}>
         <Wrapper>
-          <Star>
-            <img src={starImg} />
-          </Star>
-          <SuccessCircle className="circle">
-            <Success />
-          </SuccessCircle>
+          {/* top left image */}
+          {type === 'success' && <img className="star" src={starImg} />}
+          {type === 'warning' && <img className="splash" src={splashImg} />}
+
+          {/* top right close button */}
+          <span className="close">
+            <IconButton className="closeIcon" size="small" onClick={onClose}>
+              <SvgIcon fontSize="inherit">
+                <CloseIcon />
+              </SvgIcon>
+            </IconButton>
+          </span>
+
+          {/* top center icon */}
+          <IconWrapper>
+            {type === 'success' && <Success />}
+            {type === 'warning' && <Warning />}
+          </IconWrapper>
+
+          {/* description */}
           {description && <div className="desc">{description}</div>}
 
-          <NextStep>
+          {/* buttons */}
+          <ButtonsWrapper>
             {buttons &&
               buttons.map((button, i) => (
                 <Button
@@ -119,15 +149,7 @@ export default class SimpleDialog extends React.Component {
                   {button.text}
                 </Button>
               ))}
-          </NextStep>
-
-          <Close className="close">
-            <IconButton className="closeIcon" size="small" onClick={onClose}>
-              <SvgIcon fontSize="inherit">
-                <CloseIcon />
-              </SvgIcon>
-            </IconButton>
-          </Close>
+          </ButtonsWrapper>
         </Wrapper>
       </Dialog>
     );

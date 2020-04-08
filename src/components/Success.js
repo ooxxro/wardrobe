@@ -68,7 +68,6 @@ const iconLineLong = keyframes`
 const SuccessCheckmark = styled.div`
   height: 88px;
   width: 88px;
-  margin: 0 auto;
   border-radius: 50%;
   overflow: hidden;
   background: #fff;
@@ -155,7 +154,7 @@ export default class Success extends React.Component {
 
   render() {
     return (
-      <SuccessCheckmark>
+      <SuccessCheckmark className="success">
         <div className="check-icon">
           <span className="icon-line line-tip"></span>
           <span className="icon-line line-long"></span>

@@ -3,6 +3,7 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
+import SimpleDialog from './SimpleDialog';
 import {
   Button,
   SvgIcon,
@@ -224,14 +225,20 @@ export default class DesignComponent extends React.Component {
     turnon: false,
     summer: false,
     pink: false,
+    todo: false,
   };
 
-  onSave = () => {};
+  onSave = () => {
+    this.setState({ todo: true });
+  };
 
-  onEditDone = () => {};
+  onEditDone = () => {
+    this.setState({ todo: true });
+  };
 
   render() {
     const { from } = this.props;
+    const { todo } = this.state;
 
     return (
       <Wrapper>
@@ -387,6 +394,7 @@ export default class DesignComponent extends React.Component {
             </CheckboxoxList>
           </Popover>
         </ChooseClothes>
+        <SimpleDialog open={todo} onClose={() => this.setState({ todo: false })} />
       </Wrapper>
     );
   }

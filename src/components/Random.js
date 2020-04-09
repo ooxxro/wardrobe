@@ -3,12 +3,17 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
+
+import { Button, Popover, FormControlLabel, Checkbox, Tooltip, Zoom } from '@material-ui/core';
+import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
+
+import IOSSwitch from './IOSSwitch';
 import SimpleDialog from './SimpleDialog';
-import { Button } from '@material-ui/core';
+import ProgressBar from './ProgressBar';
+
 import filterImg from '../images/filter.svg';
 import userBgImg from '../images/userBgImg.jpg';
 import lockImg from '../images/lock.svg';
-import IOSSwitch from './IOSSwitch';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -19,7 +24,9 @@ const Wrapper = styled.div`
 `;
 const Up = styled.div`
   padding-top: 20px;
-  font-size: 20px;
+  font-size: 30px;
+  font-family: 'Gaegu', cursive;
+  color: #fff;
 `;
 
 const Down = styled.div`
@@ -73,6 +80,52 @@ const Left = styled.div`
     }
   }
 `;
+
+const CheckboxoxList = styled.div`
+  padding: 0 6px;
+  background: #d8d0fc;
+  position: relative;
+  .filterIcon {
+    display: flex;
+    justify-content: center;
+    padding: 11px 0 5px;
+    img {
+      width: 22px;
+      height: 22px;
+    }
+  }
+  .filterItem {
+    padding-right: 11px;
+    font-size: 14px;
+    &:not(:last-child) {
+      border-bottom: 0.5px solid #8c72ff;
+    }
+    span {
+      font-size: 14px;
+    }
+  }
+  .MuiFormControlLabel-root {
+    margin: 0;
+  }
+  .MuiSvgIcon-root {
+    color: #7d64e1;
+  }
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+  .help {
+    cursor: pointer;
+    padding: 3px;
+    width: 22px;
+    height: 22px;
+    color: #656565;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+  }
+`;
+
 const Middle = styled.div`
   padding-bottom: 10px;
 `;
@@ -96,8 +149,8 @@ const Right = styled.div`
     margin-bottom: 30px;
     text-transform: capitalize;
     background: #aef0f7;
-    border-radius: 19px;
-    padding: 7px 16px;
+    border-radius: 21px;
+    padding: 7px 20px;
     font-size: 16px;
     font-weight: bold;
     color: #212121;
@@ -139,16 +192,51 @@ export default class Random extends React.Component {
   static contextType = StoreContext;
 
   state = {
-    open: false,
-    dialogOpen: false,
+    timer: 0,
+    // filter
+    turnon: false,
+    summer: false,
+    pink: false,
+    // dialogs
+    doneDialogOpen: false,
+  };
+
+  componentDidMount() {
+    // setup timer
+    this.setTimer();
+  }
+
+  componentWillUnmount() {
+    // destroy timer
+    this.clearTimer();
+  }
+
+  setTimer = () => {
+    this.clearTimer();
+    this.setState({ timer: 0 });
+    this.interval = setInterval(() => {
+      if (this.state.timer >= 180) {
+        this.clearTimer();
+        this.setState({ doneDialogOpen: true });
+      } else {
+        this.setState(state => ({ timer: state.timer + 1 }));
+      }
+    }, 1000);
+  };
+
+  clearTimer = () => {
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
   };
 
   onDone = () => {
-    this.setState({ dialogOpen: true });
+    this.setState({ doneDialogOpen: true });
   };
 
   render() {
-    const { dialogOpen } = this.state;
+    const { doneDialogOpen } = this.state;
 
     let buttonsZone = [
       { text: 'Download', onClick: () => {} },
@@ -161,13 +249,74 @@ export default class Random extends React.Component {
       <Wrapper>
         <Up>
           <span>Create your outfit within 3 mins! Go Go!</span>
+          <ProgressBar percent={(this.state.timer / 180) * 100} />
         </Up>
         <Down>
           <Left>
-            <Button className="filter" variant="contained">
+            <Button
+              className="filter"
+              variant="contained"
+              ref={el => (this.filterBtnRef = el)}
+              onClick={() => this.setState({ turnon: true })}
+            >
               <img src={filterImg} />
               Filter
             </Button>
+            <Popover
+              open={this.state.turnon}
+              anchorEl={this.filterBtnRef}
+              onClose={() => this.setState({ turnon: false })}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'center',
+              }}
+              transformOrigin={{
+                vertical: 'bottom',
+                horizontal: 'center',
+              }}
+            >
+              {/* TODO: show all user defined tags */}
+              <CheckboxoxList>
+                <div className="filterIcon">
+                  <img src={filterImg} />
+                </div>
+                <Tooltip
+                  arrow
+                  title="Toggle filters to restrict Random from choosing in these categories."
+                  TransitionComponent={Zoom}
+                  placement="top"
+                >
+                  <HelpOutlineIcon className="help" />
+                </Tooltip>
+                <div className="filterItem">
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={this.state.summer}
+                        onChange={() => this.setState(state => ({ summer: !state.summer }))}
+                        name="summer"
+                        color="primary"
+                      />
+                    }
+                    label="Summer"
+                  />
+                </div>
+                <div className="filterItem">
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={this.state.pink}
+                        onChange={() => this.setState(state => ({ pink: !state.pink }))}
+                        name="pink"
+                        color="primary"
+                      />
+                    }
+                    label="Pink"
+                  />
+                </div>
+              </CheckboxoxList>
+            </Popover>
+
             <Button className="random" variant="contained">
               Random
             </Button>
@@ -207,10 +356,10 @@ export default class Random extends React.Component {
         </Down>
 
         <SimpleDialog
-          open={dialogOpen}
+          open={doneDialogOpen}
           type="success"
           buttons={buttonsZone}
-          onClose={() => this.setState({ dialogOpen: false })}
+          onClose={() => this.setState({ doneDialogOpen: false })}
         />
       </Wrapper>
     );

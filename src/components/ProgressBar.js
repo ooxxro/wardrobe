@@ -49,7 +49,7 @@ const Wrapper = styled.div`
     }
     &:after {
       top: 3px;
-      width: 98%;
+      width: calc(100% - 10px);
       left: 50%;
       transform: translateX(-50%);
       height: 4px;

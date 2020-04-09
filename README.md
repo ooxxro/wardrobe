@@ -1,5 +1,7 @@
 # Wardrobe
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/dd13f707-aa91-4842-a4ab-a0e6bbc475f4/deploy-status)](https://app.netlify.com/sites/mywardrobe/deploys)
+
 ## README for Iteration 1 Progress Report
 
 Online Website: [https://wardrobe.rocks](https://wardrobe.rocks).  

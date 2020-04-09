@@ -224,8 +224,6 @@ export default class DesignComponent extends React.Component {
     open: false,
     // filter
     turnon: false,
-    summer: false,
-    pink: false,
     tagdata: [],
     tagtoggled: [],
     // dialogs
@@ -457,33 +455,6 @@ export default class DesignComponent extends React.Component {
                   />
                 </div>
               ))}
-
-              <div className="filterItem">
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={this.state.summer}
-                      onChange={() => this.setState(state => ({ summer: !state.summer }))}
-                      name="summer"
-                      color="primary"
-                    />
-                  }
-                  label="Summer"
-                />
-              </div>
-              <div className="filterItem">
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={this.state.pink}
-                      onChange={() => this.setState(state => ({ pink: !state.pink }))}
-                      name="pink"
-                      color="primary"
-                    />
-                  }
-                  label="Pink"
-                />
-              </div>
             </CheckboxoxList>
           </Popover>
         </ChooseClothes>

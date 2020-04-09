@@ -21,6 +21,7 @@ import { ReactComponent as LockIcon } from '../images/lock.svg';
 import { ReactComponent as FilterIcon } from '../images/filter.svg';
 import { ReactComponent as GoBackIcon } from '../images/goback.svg';
 import { ReactComponent as EditPicIcon } from '../images/editpic.svg';
+import firebase from '../firebase';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -225,9 +226,59 @@ export default class DesignComponent extends React.Component {
     turnon: false,
     summer: false,
     pink: false,
+    tagdata: [],
+    tagtoggled: [],
     // dialogs
     dialogOpen: false,
     goBackDialogOpen: false,
+  };
+
+  //Upon rendering the page, creates a state array of tags
+  //using the docs specified in the user's categories
+  //collection.
+  componentDidMount() {
+    this.getTagData();
+  }
+
+  getTagData = () => {
+    let db = firebase.firestore();
+    let tags = [];
+    let toggled = [];
+
+    db.collection('users/' + firebase.auth().currentUser.uid + '/categories')
+      .get()
+      .then(function(querySnapshot) {
+        querySnapshot.forEach(function(doc) {
+          let tag = doc.data().name;
+
+          //When it's possible to add new categories,
+          //we'll also suppress Hats, Pants, Shirts, Shoes
+          if (tag != 'All') {
+            tags.push(tag);
+
+            //Corresponding array that keeps track of
+            //whether or not each tag is checked (toggled)
+            toggled.push(false);
+          }
+        });
+      });
+
+    this.setState({ tagdata: tags, tagtoggled: toggled });
+  };
+
+  onSelectTag = i => {
+    this.setState(state => {
+      const tagtoggled = state.tagtoggled.map((item, j) => {
+        if (j === i) {
+          return !item;
+        } else {
+          return item;
+        }
+      });
+      return {
+        tagtoggled,
+      };
+    });
   };
 
   onSave = () => {
@@ -262,7 +313,6 @@ export default class DesignComponent extends React.Component {
         { text: 'Exit without Saving', exit: true, onClick: () => {} },
       ];
     }
-
     return (
       <Wrapper>
         {from === 'edit' && (
@@ -369,7 +419,9 @@ export default class DesignComponent extends React.Component {
             <IconButton
               className="filter"
               ref={el => (this.filterBtnRef = el)}
-              onClick={() => this.setState({ turnon: true })}
+              onClick={() => {
+                this.setState({ turnon: true });
+              }}
             >
               <SvgIcon fontSize="small">
                 <FilterIcon />
@@ -389,8 +441,23 @@ export default class DesignComponent extends React.Component {
               horizontal: 'center',
             }}
           >
-            {/* TODO: show all user defined tags */}
+            {/* show all user defined tags */}
             <CheckboxoxList>
+              {(this.state.tagdata || []).map((tag, index) => (
+                <div className="filterItem" key={tag}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name={tag}
+                        color="primary"
+                        onChange={() => this.onSelectTag(index)}
+                      />
+                    }
+                    label={tag}
+                  />
+                </div>
+              ))}
+
               <div className="filterItem">
                 <FormControlLabel
                   control={

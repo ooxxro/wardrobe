@@ -1,83 +1,107 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { StoreContext } from '../stores';
-import { withRouter } from 'react-router-dom';
-import firebase from '../firebase';
 import styled from 'styled-components';
-import loginImg from '../images/login.png';
-import { Button } from '@material-ui/core';
-import { Link } from 'react-router-dom';
 import { message } from 'antd';
+import { Button, TextField } from '@material-ui/core';
+import { withRouter, Link } from 'react-router-dom';
+import { StoreContext } from '../stores';
+import firebase from '../firebase';
+import loginImg from '../images/login.png';
 
 const Wrapper = styled.div`
-  width: 100%;
+  max-width: 900px;
+  margin: 50px auto 100px;
 `;
 const Card = styled.div`
-  display: table;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  align-content: stretch;
   background: #fff;
-  box-shadow: 3px 3px 8px 0.5px #444444;
-  margin: 75px auto;
-  width: 90%;
+  box-shadow: 4px 4px 8px 0.5px #5d4381;
 `;
 const Left = styled.div`
   background-color: #dfeaf5;
-  float: left;
-  width: 50%;
+  flex: 1 0 0;
+  position: relative;
   h2 {
     font-weight: bold;
-    font-size: 30px;
-    padding: 2rem 2rem;
+    font-size: 22px;
+    color: #212121;
+    padding: 26px 34px;
+    line-height: 26px;
+    margin-bottom: 320px;
   }
   img {
-    width: 50%;
+    width: 250px;
+    opacity: 0.9;
+    position: absolute;
+    bottom: -20px;
+    left: 0;
   }
 `;
 const Right = styled.div`
-  float: left;
-  width: 50%;
+  flex: 1 0 0;
   text-align: center;
 `;
 
 const RightContent = styled.div`
-  display: table;
-  width: 80%;
-  font-size: 15px;
+  padding: 70px 40px;
+  display: flex;
+  flex-direction: column;
+  /* align-items: center; */
 
-  margin: 0px auto;
-  form {
-    text-align: left;
-  }
-
-  label {
-    display: inline-block;
-    margin-top: 10px;
-    margin-bottom: 10px;
-  }
-  input {
-    border-radius: 4px;
-    background-color: #ecf0f7;
-    border: 1px solid rgba(0, 0, 0, 0.65);
-    padding: 5px;
-    width: 100%;
-  }
-
-  .loginbutton {
-    display: inline-block;
-    margin-bottom: 10px;
-    border-radius: 19px;
-    padding: 7px 28px;
-    background: #6247ce;
-    width: auto;
-    &:hover {
-      color: #fff;
-      background-color: #6247ce;
+  /* style material-ui TextField */
+  .MuiFormControl-root {
+    margin: 0 40px 24px;
+    .MuiOutlinedInput-root {
+      overflow: hidden;
+      &:hover {
+        .MuiOutlinedInput-notchedOutline {
+          border-color: #7d64e1;
+        }
+      }
+    }
+    .MuiOutlinedInput-input {
+      background: #ecf0f7;
     }
   }
+`;
+const ForgetPW = styled.div`
+  text-align: right;
+  margin: -18px 40px 40px 0;
+  .forgetPW {
+    font-size: 10px;
+    color: #22b3cc;
+    &:hover {
+      color: #22b3cc;
+      text-decoration: none;
+    }
+  }
+`;
 
-  .forgotLink {
-    text-align: right;
-    margin-top: 10px;
-    width: auto;
+const LoginBTN = styled.div`
+  .loginbutton {
+    border-radius: 19px;
+    padding: 7px 28px;
+    background: #7d64e1;
+    margin-bottom: 20px;
+    &:hover {
+      color: #fff;
+      background-color: #775ce3;
+    }
+  }
+`;
+
+const ToSignUp = styled.div`
+  .toSignUp {
+    margin-left: 5px;
+    font-size: 14px;
+    color: #22b3cc;
+    &:hover {
+      color: #22b3cc;
+      text-decoration: none;
+    }
   }
 `;
 
@@ -86,10 +110,10 @@ const RightContent = styled.div`
 export default class Login extends React.Component {
   static contextType = StoreContext;
 
-  constructor(props) {
-    super(props);
-    this.state = { email: '', password: '' };
-  }
+  state = {
+    email: '',
+    password: '',
+  };
 
   onLogin = () => {
     const { history } = this.props;
@@ -132,7 +156,7 @@ export default class Login extends React.Component {
     firebase
       .auth()
       .sendPasswordResetEmail(this.state.email)
-      .then(function() {
+      .then(() => {
         message.success('Password reset email sent.');
       })
       .catch(error => {
@@ -151,47 +175,49 @@ export default class Login extends React.Component {
           </Left>
           <Right>
             <RightContent>
-              <form id="loginForm">
-                <label>Email </label>
-                <br />
-                <input
-                  type="text"
-                  id="email"
-                  name="email"
-                  placeholder="Email"
-                  value={this.state.email}
-                  onChange={this.handleEmailChange}
-                />
-                <br />
-                <label>Password </label>
-                <br />
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  placeholder="Password"
-                  value={this.state.password}
-                  onChange={this.handlePasswordChange}
-                />
-                <br />
-              </form>
+              <TextField
+                id="login-email"
+                label="Email"
+                type="email"
+                autoComplete="email"
+                variant="outlined"
+                size="small"
+                value={this.state.email}
+                onChange={e => this.setState({ email: e.target.value })}
+              />
+              <TextField
+                id="outlined-password-input"
+                label="Password"
+                type="password"
+                autoComplete="current-password"
+                variant="outlined"
+                size="small"
+                value={this.state.password}
+                onChange={e => this.setState({ password: e.target.value })}
+              />
+              <ForgetPW>
+                <Link to="#" className="forgetPW" onClick={this.sendPasswordReset}>
+                  Forgot password?
+                </Link>
+              </ForgetPW>
 
-              <p className="forgotLink">
-                <a onClick={this.sendPasswordReset}>Forgot password?</a>
-              </p>
+              <LoginBTN>
+                <Button
+                  className="loginbutton"
+                  onClick={this.onLogin}
+                  variant="contained"
+                  color="primary"
+                >
+                  LOGIN
+                </Button>
+              </LoginBTN>
 
-              <Button
-                className="loginbutton"
-                onClick={this.onLogin}
-                variant="contained"
-                color="primary"
-              >
-                LOGIN
-              </Button>
-
-              <p>
-                Don&apos;t have an account? <Link to="/signup"> Sign Up</Link>
-              </p>
+              <ToSignUp>
+                <span>Don&apos;t have an account?</span>
+                <Link to="/signup" className="toSignUp">
+                  Sign Up
+                </Link>
+              </ToSignUp>
             </RightContent>
           </Right>
         </Card>

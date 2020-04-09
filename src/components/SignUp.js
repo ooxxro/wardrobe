@@ -1,77 +1,94 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { StoreContext } from '../stores';
-import { withRouter } from 'react-router-dom';
-import firebase from '../firebase';
 import styled from 'styled-components';
-import signupImg from '../images/signup.png';
-import { Button } from '@material-ui/core';
-import { Link } from 'react-router-dom';
 import { message } from 'antd';
+import { Button, TextField } from '@material-ui/core';
+import { withRouter, Link } from 'react-router-dom';
+import { StoreContext } from '../stores';
+import firebase from '../firebase';
+import signupImg from '../images/signup.png';
 
 const Wrapper = styled.div`
-  width: 100%;
+  max-width: 900px;
+  margin: 50px auto 74px;
 `;
 
 const Card = styled.div`
-  display: table;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  align-content: stretch;
   background: #fff;
-  box-shadow: 3px 3px 8px 0.5px #444444;
-  margin: 75px auto;
-  width: 90%;
+  box-shadow: 4px 4px 8px 0.5px #5d4381;
 `;
 const Left = styled.div`
   background-color: #dfeaf5;
-  float: left;
-  width: 50%;
+  flex: 1 0 0;
+  position: relative;
   h2 {
+    font-size: 22px;
     font-weight: bold;
-    font-size: 30px;
-    padding: 2rem 2rem;
+    line-height: 26px;
+    color: #212121;
+    padding: 26px 34px;
+    margin-bottom: 320px;
   }
   img {
-    width: 50%;
+    width: 220px;
+    opacity: 0.9;
+    position: absolute;
+    bottom: 0;
+    left: 0;
   }
 `;
 const Right = styled.div`
-  float: left;
-  width: 50%;
+  flex: 1 0 0;
   text-align: center;
 `;
 
 const RightContent = styled.div`
-  display: table;
-  width: 80%;
-  font-size: 15px;
+  padding: 50px 36px;
+  display: flex;
+  flex-direction: column;
 
-  margin: 0px auto;
-  form {
-    text-align: left;
+  /* style material-ui TextField */
+  .MuiFormControl-root {
+    margin: 0 40px 18px;
+    .MuiOutlinedInput-root {
+      overflow: hidden;
+      &:hover {
+        .MuiOutlinedInput-notchedOutline {
+          border-color: #7d64e1;
+        }
+      }
+    }
+    .MuiOutlinedInput-input {
+      background: #ecf0f7;
+    }
   }
+`;
 
-  label {
-    display: inline-block;
-    margin-top: 10px;
-    margin-bottom: 10px;
-  }
-  input {
-    border-radius: 4px;
-    background-color: #ecf0f7;
-    border: 1px solid rgba(0, 0, 0, 0.65);
-    padding: 5px;
-    width: 100%;
-  }
-
-  .signupbutton {
-    display: inline-block;
-    margin-bottom: 10px;
+const SignUpBTN = styled.div`
+  .signUpButton {
     border-radius: 19px;
     padding: 7px 28px;
-    background: #6247ce;
-    width: auto;
+    background: #7d64e1;
+    margin: 16px 0;
     &:hover {
       color: #fff;
-      background-color: #6247ce;
+      background-color: #775ce3;
+    }
+  }
+`;
+
+const ToLogin = styled.div`
+  .toLogin {
+    margin-left: 5px;
+    font-size: 14px;
+    color: #22b3cc;
+    &:hover {
+      color: #22b3cc;
+      text-decoration: none;
     }
   }
 `;
@@ -215,62 +232,66 @@ export default class SignUp extends React.Component {
           </Left>
           <Right>
             <RightContent>
-              <form id="signUpForm">
-                <label>Email: </label>
-                <input
-                  type="text"
-                  id="email"
-                  name="email"
-                  placeholder="Email"
-                  value={this.state.email}
-                  onChange={this.handleEmailChange}
-                />
-                <br />
-                <label>Display Name: </label>
-                <input
-                  type="text"
-                  id="displayname"
-                  name="displayname"
-                  placeholder="Display Name"
-                  value={this.state.displayname}
-                  onChange={this.handleDisplayNameChange}
-                />
-                <br />
-                <label>Password: </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  placeholder="Password"
-                  value={this.state.password}
-                  onChange={this.handlePasswordChange}
-                />
-                <br />
-                <label>Verify Password: </label>
-                <input
-                  type="password"
-                  id="verifypassword"
-                  name="verifypassword"
-                  placeholder="Verify Password"
-                  value={this.state.verifypassword}
-                  onChange={this.handleVerifyPasswordChange}
-                />
-                <br />
-              </form>
+              <TextField
+                id="login-email"
+                label="Email"
+                type="email"
+                autoComplete="email"
+                variant="outlined"
+                size="small"
+                value={this.state.email}
+                onChange={e => this.setState({ email: e.target.value })}
+              />
+              <TextField
+                id="display-name"
+                label="Display Name"
+                type="name"
+                autoComplete="name"
+                variant="outlined"
+                size="small"
+                value={this.state.displayname}
+                onChange={e => this.setState({ displayname: e.target.value })}
+              />
 
-              <br />
-              <Button
-                className="signupbutton"
-                onClick={this.onSignup}
-                variant="contained"
-                color="primary"
-              >
-                SIGN UP
-              </Button>
+              <TextField
+                id="password-input"
+                label="Password"
+                type="password"
+                autoComplete="current-password"
+                variant="outlined"
+                size="small"
+                value={this.state.password}
+                onChange={e => this.setState({ password: e.target.value })}
+              />
 
-              <p>
-                Or go back to <Link to="/login">login</Link>
-              </p>
+              <TextField
+                id="password-verified"
+                label="Verify Password"
+                type="password"
+                autoComplete="password"
+                variant="outlined"
+                size="small"
+                value={this.state.verifypassword}
+                onChange={e => this.setState({ verifypassword: e.target.value })}
+              />
+
+              <SignUpBTN>
+                <Button
+                  className="signUpButton"
+                  onClick={this.onSignup}
+                  variant="contained"
+                  color="primary"
+                >
+                  SIGN UP
+                </Button>
+              </SignUpBTN>
+
+              <ToLogin>
+                <span>Or go back to</span>
+                <Link to="/login" className="toLogin">
+                  Login
+                </Link>
+              </ToLogin>
             </RightContent>
           </Right>
         </Card>

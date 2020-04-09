@@ -49,7 +49,6 @@ const RightContent = styled.div`
   padding: 70px 40px;
   display: flex;
   flex-direction: column;
-  /* align-items: center; */
 
   /* style material-ui TextField */
   .MuiFormControl-root {

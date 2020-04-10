@@ -164,6 +164,11 @@ export default class Login extends React.Component {
       });
   };
 
+  canSubmit = () => {
+    const { email, password } = this.state;
+    return email && password && email.trim() && password.trim();
+  };
+
   render() {
     return (
       <Wrapper>
@@ -183,6 +188,9 @@ export default class Login extends React.Component {
                 size="small"
                 value={this.state.email}
                 onChange={e => this.setState({ email: e.target.value })}
+                onKeyPress={e => {
+                  if (e.key === 'Enter' && this.canSubmit()) this.onLogin();
+                }}
               />
               <TextField
                 id="outlined-password-input"
@@ -193,6 +201,9 @@ export default class Login extends React.Component {
                 size="small"
                 value={this.state.password}
                 onChange={e => this.setState({ password: e.target.value })}
+                onKeyPress={e => {
+                  if (e.key === 'Enter' && this.canSubmit()) this.onLogin();
+                }}
               />
               <ForgetPW>
                 <Link to="#" className="forgetPW" onClick={this.sendPasswordReset}>

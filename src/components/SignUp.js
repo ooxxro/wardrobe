@@ -10,7 +10,7 @@ import signupImg from '../images/signup.png';
 
 const Wrapper = styled.div`
   max-width: 900px;
-  margin: 50px auto 74px;
+  margin: 50px auto 70px;
 `;
 
 const Card = styled.div`
@@ -47,7 +47,7 @@ const Right = styled.div`
 `;
 
 const RightContent = styled.div`
-  padding: 50px 36px;
+  padding: 50px 40px 38px;
   display: flex;
   flex-direction: column;
 
@@ -73,7 +73,7 @@ const SignUpBTN = styled.div`
     border-radius: 19px;
     padding: 7px 28px;
     background: #7d64e1;
-    margin: 16px 0;
+    margin: 10px 0 14px;
     &:hover {
       color: #fff;
       background-color: #775ce3;
@@ -100,7 +100,7 @@ export default class SignUp extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = { email: '', password: '', verifypassword: '', displayname: '' };
+    this.state = { email: '', password: '', verifyPassword: '', displayName: '' };
   }
 
   onSignup = () => {
@@ -109,8 +109,8 @@ export default class SignUp extends React.Component {
     if (
       this.state.email === '' ||
       this.state.password === '' ||
-      this.state.verifypassword === '' ||
-      this.state.displayname === ''
+      this.state.verifyPassword === '' ||
+      this.state.displayName === ''
     ) {
       let errorString = 'Please enter the following fields:\n';
 
@@ -118,7 +118,7 @@ export default class SignUp extends React.Component {
         errorString += 'Email\n';
       }
 
-      if (this.state.displayname === '') {
+      if (this.state.displayName === '') {
         errorString += 'Display Name\n';
       }
 
@@ -126,12 +126,12 @@ export default class SignUp extends React.Component {
         errorString += 'Password\n';
       }
 
-      if (this.state.verifypassword === '') {
+      if (this.state.verifyPassword === '') {
         errorString += 'Verification Password\n';
       }
 
       message.error(errorString);
-    } else if (this.state.password !== this.state.verifypassword) {
+    } else if (this.state.password !== this.state.verifyPassword) {
       message.error('Your password and verification password do not match.');
     } else {
       let db = firebase.firestore();
@@ -144,7 +144,7 @@ export default class SignUp extends React.Component {
             .doc(cred.user.uid)
             .set({
               //Set display name, note that we already have user email and id by this point
-              displayName: this.state.displayname,
+              displayName: this.state.displayName,
             });
 
           //Iniitialize categories collection for this user
@@ -206,23 +206,8 @@ export default class SignUp extends React.Component {
     }
   };
 
-  handleEmailChange = event => {
-    this.setState({ email: event.target.value });
-  };
-
-  handlePasswordChange = event => {
-    this.setState({ password: event.target.value });
-  };
-
-  handleVerifyPasswordChange = event => {
-    this.setState({ verifypassword: event.target.value });
-  };
-
-  handleDisplayNameChange = event => {
-    this.setState({ displayname: event.target.value });
-  };
-
   render() {
+    const { password, verifyPassword } = this.state;
     return (
       <Wrapper>
         <Card>
@@ -233,6 +218,7 @@ export default class SignUp extends React.Component {
           <Right>
             <RightContent>
               <TextField
+                required
                 id="login-email"
                 label="Email"
                 type="email"
@@ -243,36 +229,46 @@ export default class SignUp extends React.Component {
                 onChange={e => this.setState({ email: e.target.value })}
               />
               <TextField
+                required
                 id="display-name"
                 label="Display Name"
-                type="name"
+                type="text"
                 autoComplete="name"
                 variant="outlined"
                 size="small"
-                value={this.state.displayname}
-                onChange={e => this.setState({ displayname: e.target.value })}
+                value={this.state.displayName}
+                onChange={e => this.setState({ displayName: e.target.value })}
               />
 
               <TextField
+                required
                 id="password-input"
                 label="Password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 variant="outlined"
                 size="small"
-                value={this.state.password}
+                value={password}
                 onChange={e => this.setState({ password: e.target.value })}
               />
 
               <TextField
+                required
+                error={!!verifyPassword && password !== verifyPassword}
+                helperText={
+                  verifyPassword && password !== verifyPassword ? 'Password does not match' : ' '
+                }
                 id="password-verified"
                 label="Verify Password"
                 type="password"
-                autoComplete="password"
+                autoComplete="new-password"
                 variant="outlined"
                 size="small"
-                value={this.state.verifypassword}
-                onChange={e => this.setState({ verifypassword: e.target.value })}
+                value={verifyPassword}
+                onChange={e => this.setState({ verifyPassword: e.target.value })}
+                onKeyPress={e => {
+                  if (e.key === 'Enter') this.onSignup();
+                }}
               />
 
               <SignUpBTN>

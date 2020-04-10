@@ -220,6 +220,12 @@ const { TabPane } = Tabs;
 const ClothesMenu = styled.div`
   margin-left: 5%;
   margin-right: 5%;
+  .clothingItem {
+    width: 48%;
+    margin: 1%;
+    border: 2px solid #fbe644;
+    height: 100px;
+  }
 `;
 
 @withRouter
@@ -510,7 +516,6 @@ export default class DesignComponent extends React.Component {
             </CheckboxoxList>
           </Popover>
 
-          {/* TODO: Display images for clothing items from firestore */}
           <ClothesMenu>
             <Tabs defaultActiveKey="0" type="card" onChange={this.onSelectTab.bind(this)}>
               <TabPane tab="All" key="0">
@@ -531,7 +536,7 @@ export default class DesignComponent extends React.Component {
                   }
 
                   if (includesAllFilters) {
-                    return <img src={url} key={index} />;
+                    return <img className="clothingItem" src={url} key={index} />;
                   }
                 })}
               </TabPane>
@@ -553,7 +558,7 @@ export default class DesignComponent extends React.Component {
                   }
 
                   if (includesAllFilters) {
-                    return <img src={url} key={index} />;
+                    return <img className="clothingItem" src={url} key={index} />;
                   }
                 })}
               </TabPane>
@@ -575,7 +580,7 @@ export default class DesignComponent extends React.Component {
                   }
 
                   if (includesAllFilters) {
-                    return <img src={url} key={index} />;
+                    return <img className="clothingItem" src={url} key={index} />;
                   }
                 })}
               </TabPane>
@@ -597,7 +602,7 @@ export default class DesignComponent extends React.Component {
                   }
 
                   if (includesAllFilters) {
-                    return <img src={url} key={index} />;
+                    return <img className="clothingItem" src={url} key={index} />;
                   }
                 })}
               </TabPane>
@@ -619,7 +624,7 @@ export default class DesignComponent extends React.Component {
                   }
 
                   if (includesAllFilters) {
-                    return <img src={url} key={index} />;
+                    return <img className="clothingItem" src={url} key={index} />;
                   }
                 })}
               </TabPane>

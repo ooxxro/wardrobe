@@ -22,6 +22,7 @@ import { ReactComponent as FilterIcon } from '../images/filter.svg';
 import { ReactComponent as GoBackIcon } from '../images/goback.svg';
 import { ReactComponent as EditPicIcon } from '../images/editpic.svg';
 import firebase from '../firebase';
+import { Tabs } from 'antd';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -215,6 +216,12 @@ const CheckboxoxList = styled.div`
   }
 `;
 
+const { TabPane } = Tabs;
+const ClothesMenu = styled.div`
+  margin-left: 5%;
+  margin-right: 5%;
+`;
+
 @withRouter
 @observer
 export default class DesignComponent extends React.Component {
@@ -229,15 +236,36 @@ export default class DesignComponent extends React.Component {
     // dialogs
     dialogOpen: false,
     goBackDialogOpen: false,
+    //clothing images + corresponding categories
+    clothesimages: [],
+    clothescategories: [], //2D array of categories
   };
 
-  //Upon rendering the page, creates a state array of tags
-  //using the docs specified in the user's categories
-  //collection.
+  //Execute upon rendering the page
   componentDidMount() {
     this.getTagData();
+    this.getClothesData();
   }
 
+  getClothesData = () => {
+    let db = firebase.firestore();
+    let images = [];
+    let categories = [];
+
+    db.collection('users/' + firebase.auth().currentUser.uid + '/clothes')
+      .get()
+      .then(function(querySnapshot) {
+        querySnapshot.forEach(function(doc) {
+          categories.push(doc.data().categories);
+          images.push(doc.data().imagePath);
+        });
+      });
+
+    this.setState({ clothesimages: images, clothescategories: categories });
+  };
+
+  //creates a state array of tags using the docs specified
+  //in the user's categories collection.
   getTagData = () => {
     let db = firebase.firestore();
     let tags = [];
@@ -278,6 +306,21 @@ export default class DesignComponent extends React.Component {
       };
     });
   };
+
+  onSelectTab(key) {
+    this.setState(state => {
+      const tagtoggled = state.tagtoggled.map((item, j) => {
+        if (j === key - 1) {
+          return (item = true);
+        } else {
+          return (item = false);
+        }
+      });
+      return {
+        tagtoggled,
+      };
+    });
+  }
 
   onSave = () => {
     this.setState({ dialogOpen: true });
@@ -457,6 +500,27 @@ export default class DesignComponent extends React.Component {
               ))}
             </CheckboxoxList>
           </Popover>
+
+          {/* TODO: Get images for clothing items from firestore */}
+          <ClothesMenu>
+            <Tabs defaultActiveKey="0" type="card" onChange={this.onSelectTab.bind(this)}>
+              <TabPane tab="All" key="0">
+                All
+              </TabPane>
+              <TabPane tab="Hats" key="1">
+                Hats
+              </TabPane>
+              <TabPane tab="Pants" key="2">
+                Pants
+              </TabPane>
+              <TabPane tab="Shirts" key="3">
+                Shirts
+              </TabPane>
+              <TabPane tab="Shoes" key="4">
+                Shoes
+              </TabPane>
+            </Tabs>
+          </ClothesMenu>
         </ChooseClothes>
 
         <SimpleDialog

@@ -1,9 +1,11 @@
 import React from 'react';
+import { StoreContext } from '../stores';
 import styled from 'styled-components';
 import { Button } from '@material-ui/core';
 import { UserOutlined } from '@ant-design/icons'; //Should be User's current avatar
 import { Avatar } from 'antd';
 import { message } from 'antd';
+// import Popup from 'reactjs-popup';
 import firebase from '../firebase';
 
 const Wrapper = styled.div`
@@ -50,6 +52,15 @@ const Card1Content = styled.div`
     margin-right: 3%;
   }
 
+  .editAvatarForm input {
+    border-radius: 4px;
+    background-color: #ecf0f7;
+    border: 1px solid #c3c4c8;
+    width: 42.5%;
+    margin-bottom: 20px;
+    margin-right: 3%;
+  }
+
   .saveEmailButton {
     width: 10%;
     background: #6247ce;
@@ -60,6 +71,15 @@ const Card1Content = styled.div`
   }
 
   .savePasswordButton {
+    width: 10%;
+    background: #6247ce;
+    &:hover {
+      color: #fff;
+      background-color: #6247ce;
+    }
+  }
+
+  .editAvatarButton {
     width: 10%;
     background: #6247ce;
     &:hover {
@@ -113,6 +133,7 @@ const StyledAvatar = styled(Avatar)`
 `;
 
 export default class Setting extends React.Component {
+  static contextType = StoreContext;
   constructor(props) {
     super(props);
     this.state = {
@@ -122,8 +143,18 @@ export default class Setting extends React.Component {
       currentpassword1: '',
       currentpassword2: '',
       currentpassword3: '',
+      avatarEdit: false,
+      avatarLocation: null,
     };
   }
+
+  editAvatar = () => {
+    this.setState({ avatarEdit: !this.state.avatarEdit });
+  };
+
+  cancelEditAvatar = () => {
+    this.setState({ avatarEdit: false });
+  };
 
   onChangeEmail = () => {
     let user = firebase.auth().currentUser;
@@ -193,6 +224,13 @@ export default class Setting extends React.Component {
       });
   };
 
+  onSubmit = e => {
+    e.preventDefault();
+    this.setState({
+      avatarLocation: e.target.value,
+    });
+  };
+
   handleNewEmailChange = event => {
     this.setState({ newemail: event.target.value });
   };
@@ -211,17 +249,92 @@ export default class Setting extends React.Component {
   handleCurrentPassword3Change = event => {
     this.setState({ currentpassword3: event.target.value });
   };
+  onImgChange = event => {
+    this.setState({ avatarLocation: event.target.files[0] });
+  };
 
   render() {
+    const { userStore } = this.context;
+    const username = userStore.currentUser.email;
+
+    const handChange = () => {
+      const file = this.state.avatarLocation;
+      if (file) {
+        let uploadPath;
+        if (file['name']) {
+          uploadPath = userStore.currentUser.uid + '/' + file['name'];
+        } else {
+          uploadPath =
+            userStore.currentUser.uid + '/' + file.substring(12, file.size).replace('/', 'A');
+        }
+        this.setState({ avatarLocation: uploadPath });
+
+        let storageRef = firebase.storage().ref(uploadPath);
+        storageRef.put(file);
+
+        let user = firebase.auth().currentUser;
+        user
+          // .updateProfile({
+          //   //test image
+          //   photoURL:
+          //     'https://cdn3.f-cdn.com/contestentries/1376995/30494909/5b566bc71d308_thumb900.jpg',
+          // })
+          .updateProfile({ photoURL: uploadPath })
+          .then(() => {
+            message.success('here is the location: ' + uploadPath + ', ' + user.photoURL);
+          })
+          .catch(error => {
+            // Handle Errors here.
+            message.error(error.message);
+          });
+        this.setState({ avatarEdit: false });
+        // this.setState({ avatarLocation: null });
+      } else {
+        alert('Image is required!');
+      }
+    };
+
     return (
       <Wrapper>
         <Card1>
           <h2>Account Settings</h2>
           <Card1Content>
             <hr></hr>
-            <label>Avatar</label>
+            <label> {username} </label>
             <br></br>
-            <StyledAvatar size="large" icon={<UserOutlined />} />
+            <StyledAvatar
+              size="large"
+              icon={<UserOutlined />}
+              onClick={this.editAvatar}
+            ></StyledAvatar>
+            <form
+              className="editAvatarForm"
+              style={{ display: this.state.avatarEdit ? 'block' : 'none' }}
+              onSubmit={this.onSubmit}
+            >
+              <label>Upload New Avatar</label> <br></br>
+              <input
+                type="file"
+                id="avatarLocation"
+                name="avatarLocation"
+                placeholder="New Avi"
+                onChange={this.onImgChange}
+                value={this.state.image}
+              ></input>
+              <label htmlFor="file"></label>
+            </form>
+            <Button
+              onClick={handChange}
+              style={{ display: this.state.avatarEdit ? 'block' : 'none' }}
+            >
+              SAVE
+            </Button>
+            <Button
+              onClick={this.cancelEditAvatar}
+              style={{ display: this.state.avatarEdit ? 'block' : 'none' }}
+            >
+              CANCEL
+            </Button>
             <hr></hr>
             <form className="emailForm">
               <label>Change Email</label>

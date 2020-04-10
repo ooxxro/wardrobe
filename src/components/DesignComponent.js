@@ -236,9 +236,10 @@ export default class DesignComponent extends React.Component {
     // dialogs
     dialogOpen: false,
     goBackDialogOpen: false,
-    //clothing images + corresponding categories
+    //clothing image URLs + corresponding categories
     clothesimages: [],
     clothescategories: [], //2D array of categories
+    storagePaths: [], //paths for the images from storage
   };
 
   //Execute upon rendering the page
@@ -501,23 +502,118 @@ export default class DesignComponent extends React.Component {
             </CheckboxoxList>
           </Popover>
 
-          {/* TODO: Get images for clothing items from firestore */}
+          {/* TODO: Display images for clothing items from firestore */}
           <ClothesMenu>
             <Tabs defaultActiveKey="0" type="card" onChange={this.onSelectTab.bind(this)}>
               <TabPane tab="All" key="0">
-                All
+                {(this.state.clothesimages || []).map((url, index) => {
+                  let includesAllFilters = true;
+
+                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
+                    if (this.state.tagtoggled[i]) {
+                      if (
+                        !this.state.clothescategories[index].includes(
+                          this.state.tagdata[i].toLowerCase()
+                        )
+                      ) {
+                        includesAllFilters = false;
+                        break;
+                      }
+                    }
+                  }
+
+                  if (includesAllFilters) {
+                    return <img src={url} key={index} />;
+                  }
+                })}
               </TabPane>
               <TabPane tab="Hats" key="1">
-                Hats
+                {(this.state.clothesimages || []).map((url, index) => {
+                  let includesAllFilters = true;
+
+                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
+                    if (this.state.tagtoggled[i]) {
+                      if (
+                        !this.state.clothescategories[index].includes(
+                          this.state.tagdata[i].toLowerCase()
+                        )
+                      ) {
+                        includesAllFilters = false;
+                        break;
+                      }
+                    }
+                  }
+
+                  if (includesAllFilters) {
+                    return <img src={url} key={index} />;
+                  }
+                })}
               </TabPane>
               <TabPane tab="Pants" key="2">
-                Pants
+                {(this.state.clothesimages || []).map((url, index) => {
+                  let includesAllFilters = true;
+
+                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
+                    if (this.state.tagtoggled[i]) {
+                      if (
+                        !this.state.clothescategories[index].includes(
+                          this.state.tagdata[i].toLowerCase()
+                        )
+                      ) {
+                        includesAllFilters = false;
+                        break;
+                      }
+                    }
+                  }
+
+                  if (includesAllFilters) {
+                    return <img src={url} key={index} />;
+                  }
+                })}
               </TabPane>
               <TabPane tab="Shirts" key="3">
-                Shirts
+                {(this.state.clothesimages || []).map((url, index) => {
+                  let includesAllFilters = true;
+
+                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
+                    if (this.state.tagtoggled[i]) {
+                      if (
+                        !this.state.clothescategories[index].includes(
+                          this.state.tagdata[i].toLowerCase()
+                        )
+                      ) {
+                        includesAllFilters = false;
+                        break;
+                      }
+                    }
+                  }
+
+                  if (includesAllFilters) {
+                    return <img src={url} key={index} />;
+                  }
+                })}
               </TabPane>
               <TabPane tab="Shoes" key="4">
-                Shoes
+                {(this.state.clothesimages || []).map((url, index) => {
+                  let includesAllFilters = true;
+
+                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
+                    if (this.state.tagtoggled[i]) {
+                      if (
+                        !this.state.clothescategories[index].includes(
+                          this.state.tagdata[i].toLowerCase()
+                        )
+                      ) {
+                        includesAllFilters = false;
+                        break;
+                      }
+                    }
+                  }
+
+                  if (includesAllFilters) {
+                    return <img src={url} key={index} />;
+                  }
+                })}
               </TabPane>
             </Tabs>
           </ClothesMenu>

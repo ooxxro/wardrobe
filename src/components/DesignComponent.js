@@ -236,10 +236,10 @@ export default class DesignComponent extends React.Component {
     // dialogs
     dialogOpen: false,
     goBackDialogOpen: false,
-    //clothing image URLs + corresponding categories
+    //clothing image paths + corresponding categories
     clothesimages: [],
     clothescategories: [], //2D array of categories
-    storagePaths: [], //paths for the images from storage
+    storageUrls: [], //URLs for the images from storage
   };
 
   //Execute upon rendering the page
@@ -250,8 +250,10 @@ export default class DesignComponent extends React.Component {
 
   getClothesData = () => {
     let db = firebase.firestore();
+    let storageRef = firebase.storage().ref();
     let images = [];
     let categories = [];
+    let urls = [];
 
     db.collection('users/' + firebase.auth().currentUser.uid + '/clothes')
       .get()
@@ -259,10 +261,16 @@ export default class DesignComponent extends React.Component {
         querySnapshot.forEach(function(doc) {
           categories.push(doc.data().categories);
           images.push(doc.data().imagePath);
+          storageRef
+            .child(doc.data().imagePath)
+            .getDownloadURL()
+            .then(function(url) {
+              urls.push(url);
+            });
         });
       });
 
-    this.setState({ clothesimages: images, clothescategories: categories });
+    this.setState({ clothesimages: images, clothescategories: categories, storageUrls: urls });
   };
 
   //creates a state array of tags using the docs specified
@@ -506,7 +514,7 @@ export default class DesignComponent extends React.Component {
           <ClothesMenu>
             <Tabs defaultActiveKey="0" type="card" onChange={this.onSelectTab.bind(this)}>
               <TabPane tab="All" key="0">
-                {(this.state.clothesimages || []).map((url, index) => {
+                {(this.state.storageUrls || []).map((url, index) => {
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -528,7 +536,7 @@ export default class DesignComponent extends React.Component {
                 })}
               </TabPane>
               <TabPane tab="Hats" key="1">
-                {(this.state.clothesimages || []).map((url, index) => {
+                {(this.state.storageUrls || []).map((url, index) => {
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -550,7 +558,7 @@ export default class DesignComponent extends React.Component {
                 })}
               </TabPane>
               <TabPane tab="Pants" key="2">
-                {(this.state.clothesimages || []).map((url, index) => {
+                {(this.state.storageUrls || []).map((url, index) => {
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -572,7 +580,7 @@ export default class DesignComponent extends React.Component {
                 })}
               </TabPane>
               <TabPane tab="Shirts" key="3">
-                {(this.state.clothesimages || []).map((url, index) => {
+                {(this.state.storageUrls || []).map((url, index) => {
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -594,7 +602,7 @@ export default class DesignComponent extends React.Component {
                 })}
               </TabPane>
               <TabPane tab="Shoes" key="4">
-                {(this.state.clothesimages || []).map((url, index) => {
+                {(this.state.storageUrls || []).map((url, index) => {
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {

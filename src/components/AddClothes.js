@@ -9,48 +9,21 @@ import { Dropdown, Button } from 'antd';
 import uploadImg from '../images/upload-cloud.png';
 import cameraImg from '../images/camera.png';
 import starImg from '../images/star.png';
-import { Container, Row, Col } from 'react-bootstrap';
 import firebase from '../firebase';
 import Popup from 'reactjs-popup';
 import Webcam from 'react-webcam';
 import { message } from 'antd';
 
+const Wrapper = styled.div`
+  width: 75%;
+  margin-left: auto;
+  margin-right: auto;
+`;
+
 const Card = styled.div`
-  width: 76%;
-  height: 80vh;
-  margin-top: 2%;
-  margin-left: 12%;
-  margin-bottom: 0%;
-  border-radius: 20px;
-  font-size: 26px;
-  font-weight: bold;
+  width: 100%;
+  border-radius: 30px;
   background-color: #ffdacf;
-  .cardHead {
-    white-space: pre;
-    height: 15vh;
-    .icon {
-      font-weight: 100;
-      color: white;
-    }
-  }
-  .cardBody {
-    width: 100%;
-  }
-  .right {
-    img {
-      right: 0;
-      height: 30px;
-      width: 30px;
-    }
-  }
-  .placeHolder {
-    height: 20%;
-  }
-  .tips {
-    background-color: #ffb3a0;
-    border-radius: 20px;
-    width: 120px;
-  }
 `;
 const Hover = styled.div`
   background-color: #ffc5b4;
@@ -64,6 +37,69 @@ const Hover = styled.div`
 //   width: 100%;
 // `;
 
+const Top = styled.div`
+  display: inline;
+
+  .plusSign {
+    margin-left: 3vh;
+    margin-top: 1vh;
+    font-size: 30px;
+    font-weight: 100;
+    color: white;
+    display: inline-block;
+  }
+  .titleStyle {
+    font-size: 30px;
+    font-weight: 10px;
+    display: inline-block;
+    white-space: pre;
+  }
+
+  .starIcon {
+    float: right;
+    margin-right: 3vh;
+    margin-top: 1vh;
+    font-size: 30px;
+    background-color: #ffc5b4;
+    border-radius: 30px;
+    white-space: pre;
+  }
+  .starStyle {
+    margin-top: -0.5vh;
+    height: 5vh;
+  }
+  .tipStyle {
+    margin-top: 3vh;
+  }
+`;
+const Content = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: left;
+`;
+const Left = styled.div`
+  width: 50%;
+  height: 70vh;
+  margin: 0;
+  margin-left: 8%;
+  margin-top: 10vh;
+  padding: 0;
+  text-align: center;
+`;
+const Right = styled.div`
+  width: 50%;
+  font-size: 20px;
+  margin: 0;
+  margin-right: 12.5%;
+  .label {
+    font-size: 14px;
+    color: #838383;
+  }
+  .addTagButton {
+    border-radius: 10px;
+    background-color: #e2dcfe;
+  }
+`;
 @withRouter
 @observer
 export default class AddClothes extends React.Component {
@@ -71,11 +107,16 @@ export default class AddClothes extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      title: 'Add clothes',
       categoryArr: '',
       file: '',
       imagePreviewUrl: '',
       snapshotString: '',
+      defaultCate: '',
+      captured: false,
+      isHat: false,
+      isPants: false,
+      isShoes: false,
+      isShirt: false,
     };
   }
   onCatChange = e => {
@@ -96,7 +137,60 @@ export default class AddClothes extends React.Component {
       file: null,
     });
   };
-  clearSate = () => this.setState({ categoryArr: '', file: '', imagePreviewUrl: '' });
+  clearSate = () =>
+    this.setState({
+      categoryArr: '',
+      file: '',
+      imagePreviewUrl: '',
+      defaultCate: '',
+      isHat: false,
+      isPants: false,
+      isShirt: false,
+      isShoes: false,
+    });
+  setHat = () => {
+    this.setState({
+      defaultCate: 'hat',
+      isHat: true,
+      isPants: false,
+      isShirt: false,
+      isShoes: false,
+    });
+    this.printState();
+  };
+  setPants = () => {
+    this.setState({
+      defaultCate: 'pants',
+      isHat: false,
+      isPants: true,
+      isShirt: false,
+      isShoes: false,
+    });
+  };
+  setShirt = () => {
+    this.setState({
+      defaultCate: 'shirt',
+      isHat: false,
+      isPants: false,
+      isShirt: true,
+      isShoes: false,
+    });
+  };
+  setShoes = () => {
+    this.setState({
+      defaultCate: 'shoes',
+      isHat: false,
+      isPants: false,
+      isShirt: false,
+      isShoes: true,
+    });
+  };
+  handleDefaultCate = () => {
+    this.printState();
+  };
+  printState = () => {
+    console.log(this.state.defaultCate);
+  };
 
   handleImageChange(e) {
     e.preventDefault();
@@ -117,36 +211,13 @@ export default class AddClothes extends React.Component {
     const menu = <Hover>Make sure your clothes fit the background for background removal!</Hover>;
     const { userStore } = this.context;
     let { imagePreviewUrl } = this.state;
-    let $imagePreview = null;
+    let { isHat, isPants, isShirt, isShoes } = this.state;
 
+    let $imagePreview = null;
     if (imagePreviewUrl) {
       $imagePreview = (
-        <div>
-          <Container style={{ height: '33vh', border: 'dotted' }}>
-            <Row></Row>
-            <Row>
-              <Col>
-                <img src={imagePreviewUrl} />
-              </Col>
-            </Row>
-            <Row style={{ height: '33%' }}></Row>
-          </Container>
-        </div>
-      );
-    } else {
-      $imagePreview = (
-        <div>
-          <Container style={{ height: '33vh', border: 'dotted' }}>
-            <Row style={{ height: '33%' }}></Row>
-            <Row>
-              <Col></Col>
-              <Col sm={8} style={{ fontSize: '15px', border: 'dotted', textAlign: 'center' }}>
-                Image Preview
-              </Col>
-              <Col></Col>
-            </Row>
-            <Row style={{ height: '33%' }}></Row>
-          </Container>
+        <div style={{ height: '100%', width: '100%', textAlign: 'center' }}>
+          <img src={imagePreviewUrl} style={{ height: '100%' }} />
         </div>
       );
     }
@@ -154,8 +225,13 @@ export default class AddClothes extends React.Component {
     const handChange = () => {
       const file = this.state.file;
       if (file) {
-        let all = ['all'];
-        const cates = this.state.categoryArr.concat('all');
+        if (!this.state.defaultCate) {
+          message.error('Need to select one default category');
+        }
+        let temp = ['all'];
+        temp.push(this.state.defaultCate);
+        const cates = temp.concat(this.state.categoryArr);
+
         let uploadPath;
         if (file['name']) {
           uploadPath = userStore.currentUser.uid + '/' + file['name'];
@@ -181,7 +257,7 @@ export default class AddClothes extends React.Component {
             year: 'numeric',
           }),
           imagePath: uploadPath,
-          categories: all.concat(cates),
+          categories: cates,
         };
         const fileType = file['type'];
         const validImageTypes = ['image/gif', 'image/jpeg', 'image/png'];
@@ -193,43 +269,42 @@ export default class AddClothes extends React.Component {
           .collection('users')
           .doc(userStore.currentUser.uid)
           .collection('clothes');
-
-        if (validImageTypes.includes(fileType)) {
-          clothRef.get().then(function(clothes) {
-            if (clothes.exists) return;
-          });
-          storageRef.put(file).then(function(snapshot) {
-            if (snapshot.state == 'success') {
-              //Document successfully uploaded
-              clothRef
-                .add(newData)
-                .then(function(docRef) {
-                  //Document successfully written to firestore
-                  //Add clothing item ID to corresponding categories in firestore
-                  for (let i = 0; i < newData.categories.length; i++) {
-                    if (newData.categories[i].length > 0) {
-                      let categoryRef = firebase
-                        .firestore()
-                        .collection('users/' + firebase.auth().currentUser.uid + '/categories')
-                        .doc(newData.categories[i]);
-                      categoryRef.update({
-                        clothes: firebase.firestore.FieldValue.arrayUnion(docRef.id),
-                      });
-                    }
-                  }
-
-                  //clear state data
-                  this.clearSate();
-                })
-                .catch(function(error) {
-                  message.error(error.message);
-                });
-              message.success('Uploaded successfuly!');
+        clothRef.get().then(function(clothes) {
+          if (!clothes.exists && validImageTypes.includes(fileType)) {
+            if (validImageTypes.includes(fileType)) {
+              storageRef.put(file).then(function(snapshot) {
+                if (snapshot.state == 'success') {
+                  //Document successfully uploaded
+                  clothRef
+                    .add(newData)
+                    .then(function(docRef) {
+                      //Document successfully written to firestore
+                      //Add clothing item ID to corresponding categories in firestore
+                      for (let i = 0; i < newData.categories.length; i++) {
+                        if (newData.categories[i].length > 0) {
+                          let categoryRef = firebase
+                            .firestore()
+                            .collection('users/' + firebase.auth().currentUser.uid + '/categories')
+                            .doc(newData.categories[i]);
+                          categoryRef.update({
+                            clothes: firebase.firestore.FieldValue.arrayUnion(docRef.id),
+                          });
+                        }
+                      }
+                    })
+                    .catch(function(error) {
+                      message.error(error.message);
+                    });
+                } else {
+                  message.error('Error!');
+                }
+                message.success('Upload completed!');
+              });
             } else {
-              message.error('Error!');
+              message.error('File type is incorrect!');
             }
-          });
-        }
+          }
+        });
       } else {
         alert('Image is reqired!');
       }
@@ -239,8 +314,6 @@ export default class AddClothes extends React.Component {
       height: '400px',
       facingMode: 'user',
     };
-    /*global Uint8Array, ArrayBuffer*/
-    /*eslint no-undef: "error"*/
     const convertBase64ToFile = function(image) {
       const byteString = atob(image.split(',')[1]);
       const ab = new ArrayBuffer(byteString.length);
@@ -274,6 +347,10 @@ export default class AddClothes extends React.Component {
         );
       }
       const capture = React.useCallback(() => {
+        if (this.state.captured) {
+          return null;
+        }
+        this.setState({ captured: true });
         const imageSrc = webcamRef.current.getScreenshot();
         if (!imageSrc) return;
         convertedFile = convertBase64ToFile(imageSrc);
@@ -291,56 +368,121 @@ export default class AddClothes extends React.Component {
       }, [webcamRef]);
       return (
         <form style={modal} onSubmit={this.onSubmit}>
-          <Container>
-            <Row>
-              <Col style={{ height: '50vh', padding: '0' }}>{webcam}</Col>
-              <Col style={{ height: '50vh', marginTop: '0' }}>{$imagePreview}</Col>
-            </Row>
-            <Row>
-              <Col>
-                <Button onClick={capture}>Capture photo</Button>
-              </Col>
-              <Col>
-                <span>Catogories:&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                <input
-                  type="text"
-                  name="cat"
-                  placeholder="Seperate tags by comma (Optional)"
-                  value={this.state.categoryArr}
-                  onChange={this.onCatChange}
-                  style={{ width: '100%' }}
-                />
-              </Col>
-              <Col>
-                <input
-                  type="submit"
-                  value="submit"
-                  className="btn"
-                  style={btnStyle}
-                  onChange={handChange}
-                  onClick={() => {
-                    handChange();
-                    this.clearSate();
-                    e.close();
-                  }}
-                />
-                <input
-                  className="btn"
-                  type="cancel"
-                  value="cancel"
-                  style={btnStyle}
-                  onChange={() => {
-                    this.clearSate();
-                    e.close();
-                  }}
-                  onClick={() => {
-                    this.clearSate();
-                    e.close();
-                  }}
-                />
-              </Col>
-            </Row>
-          </Container>
+          <div
+            style={{
+              padding: '0',
+              margin: '0',
+              width: '100%',
+              height: '65%',
+            }}
+          >
+            {webcam}
+            {$imagePreview}
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <Button
+              onClick={capture}
+              style={{
+                fontSize: '15px',
+                fontWeight: 'bold',
+                marginTop: '5px',
+                borderRadius: '30px',
+              }}
+            >
+              Capture photo
+            </Button>
+          </div>
+          <div style={modalActions}>
+            <div style={{ display: 'inline-block' }}>
+              <span style={{ fontSize: '15px', fontWeight: 'bold' }}>
+                Custom Categories:&nbsp;&nbsp;&nbsp;&nbsp;
+              </span>
+            </div>
+            <input
+              type="text"
+              name="cat"
+              placeholder="Seperate tags by comma (Optional)"
+              value={this.state.categoryArr}
+              onChange={this.onCatChange}
+              style={{ width: '60%', display: 'inline-block' }}
+            />
+            <div></div>
+            <input
+              className="btn"
+              type="hat"
+              value="hat"
+              style={hatStyle}
+              onChange={() => {
+                this.setHat();
+              }}
+              onClick={() => {
+                this.setHat();
+              }}
+            />
+            <input
+              className="btn"
+              type="shirt"
+              value="shirt"
+              style={shirtStyle}
+              onChange={() => {
+                this.setShirt();
+              }}
+              onClick={() => {
+                this.setShirt();
+              }}
+            />
+            <input
+              className="btn"
+              type="pants"
+              value="pants"
+              style={pantsStyle}
+              onChange={() => {
+                this.setPants();
+              }}
+              onClick={() => {
+                this.setPants();
+              }}
+            />
+            <input
+              className="btn"
+              type="shoes"
+              value="shoes"
+              style={shoesStyle}
+              onChange={() => {
+                this.setShoes();
+              }}
+              onClick={() => {
+                this.setShoes();
+              }}
+            />
+            <div></div>
+            <input
+              type="submit"
+              value="submit"
+              className="btn"
+              style={btnStyle}
+              onChange={handChange}
+              onClick={() => {
+                handChange();
+                this.clearSate();
+                e.close();
+              }}
+            />
+            <input
+              className="btn"
+              type="cancel"
+              value="cancel"
+              style={btnStyle}
+              onChange={() => {
+                this.clearSate();
+                e.close();
+              }}
+              onClick={() => {
+                this.clearSate();
+                e.close();
+              }}
+            />
+          </div>
         </form>
       );
     };
@@ -348,6 +490,9 @@ export default class AddClothes extends React.Component {
     const modal = {
       fontSize: '12px',
       borderRadius: '20px',
+      height: '67vh',
+      margin: '0',
+      padding: '0',
       background: 'linear-gradient(90deg, #6e8fe7 0%, #8261e6 100%)',
     };
     const modalHeader = {
@@ -382,29 +527,26 @@ export default class AddClothes extends React.Component {
     const UploadButton = {
       background: '#ffb3a0',
       borderColor: '#ffb3a0',
-      marginLeft: '90px',
-      height: '400px',
-      width: '400px',
+      width: '100%',
+      height: '100%',
       borderRadius: '20px',
     };
 
     const imgStyle = {
       textAlign: 'center',
-      width: '50%',
-      height: '50%',
+      width: '60%',
     };
     const spanStyle = {
       fontSize: '30px',
     };
     const divStyle = {
-      height: '15%',
+      height: '10%',
     };
     const Upload = () => (
       <div style={UploadButton}>
         <div style={divStyle}></div>
         <span style={spanStyle}>Click to upload image</span>
         <div></div>
-
         <img style={imgStyle} src={uploadImg} />
       </div>
     );
@@ -412,75 +554,152 @@ export default class AddClothes extends React.Component {
     const photoButtonStyle = {
       background: '#ffdacf',
       borderColor: '#ffdacf',
-      marginLeft: '50px',
-      height: '400px',
-      width: '400px',
+      marginLeft: '3vw',
+      height: '100%',
+      width: '100%',
       borderRadius: '20px',
     };
     const photoSpanStyle = {
       fontSize: '30px',
     };
-    const photoDivStyle = {
-      height: '200px',
-      width: '200px',
-      backgroundColor: '#ffc774',
-      borderRadius: '100%',
-      marginLeft: '25%',
-      paddingLeft: '3px',
-    };
-    const photoImgStyle = {
-      padding: 0,
-      marginRight: 0,
-      marginTop: '10%',
-      width: '80%',
-      height: '80%',
-    };
+    // const photoDivStyle = {
+    //   height: '200px',
+    //   width: '200px',
+    //   backgroundColor: '#ffc774',
+    //   borderRadius: '100%',
+    //   marginLeft: '25%',
+    //   paddingLeft: '3px',
+    // };
+    // const photoImgStyle = {
+    //   padding: 0,
+    //   marginRight: 0,
+    //   marginTop: '10%',
+    //   width: '80%',
+    //   height: '80%',
+    // };
     const TakePhoto = () => (
       <div style={photoButtonStyle}>
-        <div style={divStyle}></div>
         <span style={photoSpanStyle}>Click to take a picture</span>
-        <div style={photoDivStyle}>
-          <img style={photoImgStyle} src={cameraImg} />
-        </div>
+        <div></div>
+        <img style={imgStyle} src={cameraImg} />
       </div>
     );
     const transparent = {
       background: 'transparent',
       borderColor: 'transparent',
+      height: '50vh',
+      width: '30vw',
+      margin: '0',
+      padding: '0',
     };
     const btnStyle = {
       backgroundColor: 'white',
       borderRadius: '10px',
       borderColor: '#888',
       width: '200px',
+      textAlign: 'center',
+      margin: '10px',
     };
+    let hatStyle = null;
+    let pantsStyle = null;
+    let shirtStyle = null;
+    let shoesStyle = null;
+    if (isHat) {
+      hatStyle = {
+        borderRadius: '50px',
+        width: '100px',
+        textAlign: 'center',
+        backgroundColor: '#8B1EF9',
+        borderColor: 'transparent',
+        margin: '10px',
+      };
+    } else {
+      hatStyle = {
+        backgroundColor: 'white',
+        borderRadius: '50px',
+        width: '100px',
+        textAlign: 'center',
+        borderColor: 'transparent',
+        margin: '10px',
+      };
+    }
+
+    if (isPants) {
+      pantsStyle = {
+        borderRadius: '50px',
+        width: '100px',
+        textAlign: 'center',
+        backgroundColor: '#8B1EF9',
+        borderColor: 'transparent',
+        margin: '10px',
+      };
+    } else {
+      pantsStyle = {
+        backgroundColor: 'white',
+        borderRadius: '50px',
+        width: '100px',
+        textAlign: 'center',
+        borderColor: 'transparent',
+        margin: '10px',
+      };
+    }
+    if (isShirt) {
+      shirtStyle = {
+        borderRadius: '50px',
+        width: '100px',
+        textAlign: 'center',
+        backgroundColor: '#8B1EF9',
+        borderColor: 'transparent',
+        margin: '10px',
+      };
+    } else {
+      shirtStyle = {
+        backgroundColor: 'white',
+        borderRadius: '50px',
+        width: '100px',
+        textAlign: 'center',
+        borderColor: 'transparent',
+        margin: '10px',
+      };
+    }
+    if (isShoes) {
+      shoesStyle = {
+        borderRadius: '50px',
+        width: '100px',
+        textAlign: 'center',
+        backgroundColor: '#8B1EF9',
+        borderColor: 'transparent',
+        margin: '10px',
+      };
+    } else {
+      shoesStyle = {
+        backgroundColor: 'white',
+        borderRadius: '50px',
+        width: '100px',
+        textAlign: 'center',
+        borderColor: 'transparent',
+        margin: '10px',
+      };
+    }
 
     return (
-      <Card>
-        <Container fluid>
-          <Row className="cardHead">
-            <Col sm={1}></Col>
-            <Col sm={9}>
-              <Row className="placeHolder"></Row>
-              <FontAwesomeIcon icon={faPlus} className="icon" />
-              {'    '}
-              {this.state.title}
-            </Col>
-            <Col sm={2} className="right">
-              <Row className="placeHolder"></Row>
+      <Wrapper>
+        <Card>
+          <Top>
+            <FontAwesomeIcon icon={faPlus} className="plusSign" />
+            <div className="titleStyle">{'   '}Add Clothes</div>
+            <div className="starIcon">
               <Dropdown overlay={menu} placement="bottomRight">
                 <div className="tips">
                   {'  '}
-                  <img src={starImg} />
-                  {'  '}
-                  <span>Tips</span>
+                  <img src={starImg} className="starStyle" /> <span className="tipStyle">Tips</span>
                   {'  '}
                 </div>
               </Dropdown>
-            </Col>
-          </Row>
-          <Row className="cardBody">
-            <Col sm={5}>
+            </div>
+          </Top>
+          <Content>
+            <Left>
               <Popup
                 trigger={
                   <Button style={transparent}>
@@ -488,7 +707,6 @@ export default class AddClothes extends React.Component {
                   </Button>
                 }
                 modal
-                style={modal}
               >
                 {close => (
                   <div style={modal}>
@@ -497,7 +715,7 @@ export default class AddClothes extends React.Component {
                     </a>
                     <div style={modalHeader}> Please Select Image Here!</div>
                     <form style={modalContent} onSubmit={this.onSubmit}>
-                      <span>Catogories:&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                      <span>Custom Categories:&nbsp;&nbsp;&nbsp;&nbsp;</span>
                       <input
                         type="text"
                         name="cat"
@@ -516,6 +734,55 @@ export default class AddClothes extends React.Component {
                       <label htmlFor="file"></label>
 
                       <div style={modalActions}>
+                        <input
+                          className="btn"
+                          type="hat"
+                          value="hat"
+                          style={hatStyle}
+                          onChange={() => {
+                            this.setHat();
+                          }}
+                          onClick={() => {
+                            this.setHat();
+                          }}
+                        />
+                        <input
+                          className="btn"
+                          type="shirt"
+                          value="shirt"
+                          style={shirtStyle}
+                          onChange={() => {
+                            this.setShirt();
+                          }}
+                          onClick={() => {
+                            this.setShirt();
+                          }}
+                        />
+                        <input
+                          className="btn"
+                          type="pants"
+                          value="pants"
+                          style={pantsStyle}
+                          onChange={() => {
+                            this.setPants();
+                          }}
+                          onClick={() => {
+                            this.setPants();
+                          }}
+                        />
+                        <input
+                          className="btn"
+                          type="shoes"
+                          value="shoes"
+                          style={shoesStyle}
+                          onChange={() => {
+                            this.setShoes();
+                          }}
+                          onClick={() => {
+                            this.setShoes();
+                          }}
+                        />
+                        <div></div>
                         <input
                           type="submit"
                           value="submit"
@@ -547,8 +814,8 @@ export default class AddClothes extends React.Component {
                   </div>
                 )}
               </Popup>
-            </Col>
-            <Col>
+            </Left>
+            <Right>
               <Popup
                 trigger={
                   <Button style={transparent}>
@@ -564,10 +831,10 @@ export default class AddClothes extends React.Component {
                   </div>
                 )}
               </Popup>
-            </Col>
-          </Row>
-        </Container>
-      </Card>
+            </Right>
+          </Content>
+        </Card>
+      </Wrapper>
     );
   }
 }

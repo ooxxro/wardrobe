@@ -2,11 +2,20 @@ import React from 'react';
 import { observer } from 'mobx-react';
 import styled from 'styled-components';
 import { message } from 'antd';
-import { Button, TextField } from '@material-ui/core';
+import {
+  Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from '@material-ui/core';
 import { withRouter, Link } from 'react-router-dom';
 import { StoreContext } from '../stores';
 import firebase from '../firebase';
 import loginImg from '../images/login.png';
+import Loading from './Loading';
 
 const Wrapper = styled.div`
   max-width: 900px;
@@ -110,8 +119,11 @@ export default class Login extends React.Component {
   static contextType = StoreContext;
 
   state = {
+    loading: false,
     email: '',
     password: '',
+    forgotDialogOpen: false,
+    forgotPasswordEmail: '',
   };
 
   onLogin = () => {
@@ -143,23 +155,21 @@ export default class Login extends React.Component {
     }
   };
 
-  handleEmailChange = event => {
-    this.setState({ email: event.target.value });
-  };
+  onForgotPasswordSubmit = () => {
+    if (!this.state.forgotPasswordEmail.trim()) return;
 
-  handlePasswordChange = event => {
-    this.setState({ password: event.target.value });
-  };
+    this.setState({ loading: true });
 
-  sendPasswordReset = () => {
     firebase
       .auth()
-      .sendPasswordResetEmail(this.state.email)
+      .sendPasswordResetEmail(this.state.forgotPasswordEmail)
       .then(() => {
+        this.setState({ loading: false, forgotDialogOpen: false, forgotPasswordEmail: '' });
         message.success('Password reset email sent.');
       })
       .catch(error => {
         // An error happened.
+        this.setState({ loading: false });
         message.error(error.message);
       });
   };
@@ -170,8 +180,12 @@ export default class Login extends React.Component {
   };
 
   render() {
+    const { loading } = this.state;
+
     return (
       <Wrapper>
+        <Loading loading={loading} />
+
         <Card>
           <Left>
             <h2>Login to Wardrobe</h2>
@@ -206,7 +220,11 @@ export default class Login extends React.Component {
                 }}
               />
               <ForgetPW>
-                <Link to="#" className="forgetPW" onClick={this.sendPasswordReset}>
+                <Link
+                  to="#"
+                  className="forgetPW"
+                  onClick={() => this.setState({ forgotDialogOpen: true })}
+                >
                   Forgot password?
                 </Link>
               </ForgetPW>
@@ -231,6 +249,42 @@ export default class Login extends React.Component {
             </RightContent>
           </Right>
         </Card>
+
+        {/* forgot password dialog */}
+        <Dialog
+          open={this.state.forgotDialogOpen}
+          onClose={() => this.setState({ forgotDialogOpen: false })}
+          aria-labelledby="form-dialog-title"
+        >
+          <DialogTitle id="form-dialog-title">Forgot Password?</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Enter your email address and we will send you a password reset link.
+            </DialogContentText>
+            <TextField
+              autoFocus
+              margin="dense"
+              id="forgot-email"
+              label="Email"
+              type="email"
+              fullWidth
+              value={this.state.forgotPasswordEmail}
+              onChange={e => this.setState({ forgotPasswordEmail: e.target.value })}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => this.setState({ forgotDialogOpen: false })} color="primary">
+              Cancel
+            </Button>
+            <Button
+              disabled={loading || !this.state.forgotPasswordEmail.trim()}
+              onClick={this.onForgotPasswordSubmit}
+              color="primary"
+            >
+              Submit
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Wrapper>
     );
   }

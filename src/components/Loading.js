@@ -4,7 +4,9 @@ import SyncLoader from 'react-spinners/SyncLoader';
 import { Backdrop } from '@material-ui/core';
 
 const StyledBackdrop = styled(Backdrop)`
-  z-index: 1;
+  &.MuiBackdrop-root {
+    z-index: 1301;
+  }
 `;
 
 export default function Loading({

@@ -153,8 +153,8 @@ export default class Setting extends React.Component {
     } = this.context;
 
     this.setState({
-      displayName: currentUser.displayName,
-      email: currentUser.email,
+      displayName: currentUser.displayName || '',
+      email: currentUser.email || '',
     });
   }
 

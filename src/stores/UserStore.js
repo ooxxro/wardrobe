@@ -10,7 +10,11 @@ class UserStore {
 
   @action
   setUser(user) {
-    this.currentUser = { ...user };
+    if (user) {
+      this.currentUser = { ...user };
+    } else {
+      this.currentUser = null;
+    }
   }
 }
 

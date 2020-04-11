@@ -1,7 +1,7 @@
 const { createMuiTheme } = require('@material-ui/core/styles');
 
 const theme = {
-  primary: '#7D64E1',
+  primary: '#7d64e1',
 };
 
 exports.theme = theme;

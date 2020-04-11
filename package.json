@@ -36,6 +36,7 @@
     "react-dom": "^16.13.0",
     "react-router-dom": "^5.1.2",
     "react-scripts": "3.4.0",
+    "react-spinners": "^0.8.1",
     "react-webcam": "^5.0.1",
     "reactjs-popup": "^1.5.0",
     "styled-components": "^5.0.1",

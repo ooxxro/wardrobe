@@ -253,46 +253,45 @@ export default class Setting extends React.Component {
     this.setState({ avatarLocation: event.target.files[0] });
   };
 
+  handChange = () => {
+    const { userStore } = this.context;
+    const file = this.state.avatarLocation;
+    if (file) {
+      let uploadPath;
+      if (file['name']) {
+        uploadPath = userStore.currentUser.uid + '/' + file['name'];
+      } else {
+        uploadPath =
+          userStore.currentUser.uid + '/' + file.substring(12, file.size).replace('/', 'A');
+      }
+      this.setState({ avatarLocation: uploadPath });
+      let user = firebase.auth().currentUser;
+
+      let storageRef = firebase.storage().ref(uploadPath);
+      storageRef
+        .put(file)
+        .then(snapshot => {
+          return snapshot.ref.getDownloadURL();
+        })
+        .then(url => {
+          return user.updateProfile({ photoURL: url });
+        })
+        .then(() => {
+          message.success('here is the location: ' + uploadPath + ', ' + user.photoURL);
+          this.setState({ avatarEdit: false, avatarLocation: null });
+        })
+        .catch(error => {
+          // Handle Errors here.
+          message.error(error.message);
+        });
+    } else {
+      alert('Image is required!');
+    }
+  };
+
   render() {
     const { userStore } = this.context;
-    const username = userStore.currentUser.email;
-
-    const handChange = () => {
-      const file = this.state.avatarLocation;
-      if (file) {
-        let uploadPath;
-        if (file['name']) {
-          uploadPath = userStore.currentUser.uid + '/' + file['name'];
-        } else {
-          uploadPath =
-            userStore.currentUser.uid + '/' + file.substring(12, file.size).replace('/', 'A');
-        }
-        this.setState({ avatarLocation: uploadPath });
-
-        let storageRef = firebase.storage().ref(uploadPath);
-        storageRef.put(file);
-
-        let user = firebase.auth().currentUser;
-        user
-          // .updateProfile({
-          //   //test image
-          //   photoURL:
-          //     'https://cdn3.f-cdn.com/contestentries/1376995/30494909/5b566bc71d308_thumb900.jpg',
-          // })
-          .updateProfile({ photoURL: uploadPath })
-          .then(() => {
-            message.success('here is the location: ' + uploadPath + ', ' + user.photoURL);
-          })
-          .catch(error => {
-            // Handle Errors here.
-            message.error(error.message);
-          });
-        this.setState({ avatarEdit: false });
-        // this.setState({ avatarLocation: null });
-      } else {
-        alert('Image is required!');
-      }
-    };
+    const { username, photoURL } = userStore.currentUser;
 
     return (
       <Wrapper>
@@ -306,6 +305,7 @@ export default class Setting extends React.Component {
               size="large"
               icon={<UserOutlined />}
               onClick={this.editAvatar}
+              src={photoURL}
             ></StyledAvatar>
             <form
               className="editAvatarForm"
@@ -323,18 +323,8 @@ export default class Setting extends React.Component {
               ></input>
               <label htmlFor="file"></label>
             </form>
-            <Button
-              onClick={handChange}
-              style={{ display: this.state.avatarEdit ? 'block' : 'none' }}
-            >
-              SAVE
-            </Button>
-            <Button
-              onClick={this.cancelEditAvatar}
-              style={{ display: this.state.avatarEdit ? 'block' : 'none' }}
-            >
-              CANCEL
-            </Button>
+            {this.state.avatarEdit && <Button onClick={this.handChange}>SAVE</Button>}
+            {this.state.avatarEdit && <Button onClick={this.cancelEditAvatar}>CANCEL</Button>}
             <hr></hr>
             <form className="emailForm">
               <label>Change Email</label>

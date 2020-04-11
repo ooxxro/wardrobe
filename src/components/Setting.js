@@ -1,31 +1,56 @@
 import React from 'react';
 import { StoreContext } from '../stores';
 import styled from 'styled-components';
-import { Button } from '@material-ui/core';
+import { observer } from 'mobx-react';
 import { UserOutlined } from '@ant-design/icons'; //Should be User's current avatar
-import { Avatar } from 'antd';
-import { message } from 'antd';
-// import Popup from 'reactjs-popup';
+import { TextField } from '@material-ui/core';
+import { Avatar, message } from 'antd';
 import firebase from '../firebase';
+import ButtonWithLoading from './ButtonWithLoading';
 
 const Wrapper = styled.div`
-  width: 50%;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 800px;
+  margin: 50px auto 100px;
+  border-radius: 4px;
+  opacity: 1;
+  overflow: hidden;
+  h3 {
+    text-align: center;
+    font-size: 24px;
+    margin: 0 auto 50px;
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    font-weight: bold;
+  }
+  h4 {
+    margin-top: 40px;
+    padding-top: 20px;
+    font-size: 16px;
+    border-top: 1px solid #ddd;
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+  }
 `;
 
 const Card1 = styled.div`
   background-color: #ffffff;
-  box-shadow: 3px 3px 8px 0.5px #444444;
-  margin: 30px auto;
-  width: 90%;
-  h2 {
-    text-align: center;
-    font-weight: bold;
-    padding: 2rem 2rem;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
+  padding: 60px 50px 86px;
+  .avatar {
+    margin-top: 10px;
   }
-  hr {
-    color: #e2e1e1;
+  .MuiFormControl-root {
+    flex: 1;
+    margin-right: 20px;
+    .MuiOutlinedInput-root {
+      overflow: hidden;
+      &:hover {
+        .MuiOutlinedInput-notchedOutline {
+          border-color: #7d64e1;
+        }
+      }
+    }
+    .MuiOutlinedInput-input {
+      background: #ecf0f7;
+    }
   }
 `;
 
@@ -54,44 +79,67 @@ const Card1Content = styled.div`
     background: #6247ce;
     &:hover {
       color: #fff;
-      background-color: #6247ce;
+      background-color: #775ce3;
     }
   }
 `;
 
+const User = styled.div`
+  display: flex;
+  align-items: center;
+  .displayName {
+    margin-left: 20px;
+  }
+  .MuiFormControl-root {
+    flex: auto;
+  }
+`;
+
+const ChangeEmail = styled.div`
+  display: flex;
+  align-items: flex-end;
+  margin-top: 30px;
+`;
+
+const ChangePW = styled.div`
+  display: flex;
+  align-items: flex-end;
+  margin-top: 30px;
+`;
+
 const Card2 = styled.div`
-  background-color: #d1c7ff;
-  box-shadow: 3px 3px 8px 0.5px #444444;
-  margin: 30px auto;
-  width: 90%;
-  hr {
-    width: 90%;
-    color: #948eab;
+  background: #d1c7ff;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
+  padding: 60px 50px 80px;
+  margin-top: 50px;
+  h4 {
+    border-top: 1px solid #eee;
   }
-  h2 {
-    text-align: center;
-    font-weight: bold;
-    padding: 2rem 2rem;
-  }
-  .card2Content {
-    margin-left: auto;
-    margin-right: auto;
-    padding-bottom: 2rem;
-    width: 90%;
+`;
 
-    input {
-      border-radius: 4px;
-      background-color: #ecf0f7;
-      border: 1px solid #c3c4c8;
-      margin-bottom: 20px;
-      margin-right: 3%;
+const DeleteAccount = styled.div`
+  display: flex;
+  align-items: flex-end;
+  .MuiFormControl-root {
+    margin: 20px 30px 0 0;
+    .MuiInput-underline {
+      &:hover {
+        &::before {
+          border-color: #7d64e1;
+        }
+      }
     }
-
+    .MuiOutlinedInput-input {
+      background: #ecf0f7;
+    }
     .deleteAccountButton {
-      background: #6247ce;
+      border-radius: 3px;
+      padding: 7px 20px;
+      background: #7d64e1;
+      margin-bottom: 25px;
       &:hover {
         color: #fff;
-        background-color: #6247ce;
+        background-color: #775ce3;
       }
     }
   }
@@ -99,9 +147,9 @@ const Card2 = styled.div`
 
 const StyledAvatar = styled(Avatar)`
   cursor: pointer;
-  margin-bottom: 20px;
 `;
 
+@observer
 export default class Setting extends React.Component {
   static contextType = StoreContext;
 
@@ -138,102 +186,161 @@ export default class Setting extends React.Component {
     this.setState({ avatarEdit: false });
   };
 
+  onChangeDisplayName = () => {
+    const {
+      userStore,
+      userStore: { currentUser },
+    } = this.context;
+    const { displayName, displayNameLoading } = this.state;
+
+    if (!displayName.trim() || displayNameLoading || displayName.trim() === currentUser.displayName)
+      return;
+
+    this.setState({ displayNameLoading: true });
+
+    const user = firebase.auth().currentUser;
+    user
+      .updateProfile({
+        displayName: this.state.displayName.trim(),
+      })
+      .then(() => {
+        // Update successful.
+        return user.reload();
+      })
+      .then(() => {
+        userStore.setUser(firebase.auth().currentUser);
+
+        this.setState({ displayNameLoading: false });
+        message.success('Display Name updated successfully!');
+      })
+      .catch(error => {
+        // An error happened.
+        this.setState({ displayNameLoading: false });
+        message.error(error.message);
+      });
+  };
+
   onChangeEmail = () => {
+    const {
+      userStore: { currentUser },
+    } = this.context;
+    const { email, emailPassword, emailLoading } = this.state;
+
+    if (!email.trim() || !emailPassword || emailLoading || email.trim() === currentUser.email)
+      return;
+
+    this.setState({ emailLoading: true });
+
     let user = firebase.auth().currentUser;
     const credential = firebase.auth.EmailAuthProvider.credential(
       user.email,
-      this.state.currentpassword1
+      this.state.emailPassword
     );
     user
       .reauthenticateWithCredential(credential)
       .then(() => {
-        user.updateEmail(this.state.newemail);
+        return user.updateEmail(email);
+      })
+      .then(() => {
+        this.setState({ emailLoading: false, emailPassword: '' });
         message.success('Email updated successfully!');
       })
       .catch(error => {
         // Handle Errors here.
+        this.setState({ emailLoading: false });
         message.error(error.message);
       });
   };
 
   onChangePassword = () => {
-    if (this.state.newpassword !== this.state.verifynewpassword) {
+    const { changeCurrentPW, newPassword, verifyNewPassword, passwordLoading } = this.state;
+
+    if (!changeCurrentPW || !newPassword || !verifyNewPassword || passwordLoading) return;
+
+    this.setState({ passwordLoading: true });
+
+    if (newPassword !== verifyNewPassword) {
       message.error('Your new password and new password verification do not match.');
     } else {
       let user = firebase.auth().currentUser;
       const credential = firebase.auth.EmailAuthProvider.credential(
         user.email,
-        this.state.currentpassword2
+        this.state.changeCurrentPW
       );
       user
         .reauthenticateWithCredential(credential)
         .then(() => {
-          user.updatePassword(this.state.newpassword);
+          return user.updatePassword(newPassword);
+        })
+        .then(() => {
+          this.setState({ passwordLoading: false });
           message.success('Password updated successfully!');
         })
         .catch(error => {
           // Handle Errors here.
+          this.setState({ passwordLoading: false });
           message.error(error.message);
         });
     }
   };
 
+  // TODO
   onDeleteAccount = () => {
+    const { deleteAccountPW, deleteAccountLoading } = this.state;
+    if (!deleteAccountPW || deleteAccountLoading) return;
+
+    this.setState({ deleteAccountLoading: true });
+
     const { history } = this.props;
 
     let user = firebase.auth().currentUser;
     const credential = firebase.auth.EmailAuthProvider.credential(
       user.email,
-      this.state.currentpassword3
+      this.state.deleteAccountPW
     );
-    user
-      .reauthenticateWithCredential(credential)
+    const reauthPromise = user.reauthenticateWithCredential(credential);
+
+    // Remove user doc from Firestore
+    let db = firebase.firestore();
+    const dbPromise = db
+      .collection('users')
+      .doc(user.uid)
+      .delete();
+    Promise.all([reauthPromise, dbPromise])
       .then(() => {
-        //Remove user doc from Firestore
-        let db = firebase.firestore();
-        db.collection('users')
-          .doc(user.uid)
-          .delete();
-        //Remove folder for user in storage - impossible?
-        //Finally delete user from Auth
-        user.delete();
+        // TODO: Remove folder for user in storage - impossible?
+        // Finally delete user from Auth
+        return user.delete();
+      })
+      .then(() => {
         message.success('Account deleted successfully.');
+        this.setState({ deleteAccountLoading: false });
         history.push('/');
       })
       .catch(error => {
         // Handle Errors here.
+        this.setState({ deleteAccountLoading: false });
         message.error(error.message);
       });
   };
 
-  onSubmit = e => {
-    e.preventDefault();
-    this.setState({
-      avatarLocation: e.target.value,
-    });
-  };
-
-  handleNewEmailChange = event => {
-    this.setState({ newemail: event.target.value });
-  };
-  handleNewPasswordChange = event => {
-    this.setState({ newpassword: event.target.value });
-  };
-  handleVerifyNewPasswordChange = event => {
-    this.setState({ verifynewpassword: event.target.value });
-  };
-  handleCurrentPassword1Change = event => {
-    this.setState({ currentpassword1: event.target.value });
-  };
-  handleCurrentPassword2Change = event => {
-    this.setState({ currentpassword2: event.target.value });
-  };
-  handleCurrentPassword3Change = event => {
-    this.setState({ currentpassword3: event.target.value });
-  };
-  onImgChange = event => {
-    this.setState({ avatarLocation: event.target.files[0] });
-  };
+  render() {
+    const {
+      userStore: { currentUser },
+    } = this.context;
+    const {
+      displayName,
+      displayNameLoading,
+      email,
+      emailPassword,
+      emailLoading,
+      changeCurrentPW,
+      newPassword,
+      verifyNewPassword,
+      passwordLoading,
+      deleteAccountPW,
+      deleteAccountLoading,
+    } = this.state;
 
   handChange = () => {
     const { userStore } = this.context;
@@ -271,18 +378,18 @@ export default class Setting extends React.Component {
     }
   };
 
-  render() {
-    const { userStore } = this.context;
-    const { username, photoURL } = userStore.currentUser;
-
     return (
       <Wrapper>
         <Card1>
-          <h2>Account Settings</h2>
+          <h3>Account Settings</h3>
           <Card1Content>
-            <hr></hr>
-            <label> {username} </label>
-            <br></br>
+            <h4 />
+            <User>
+              <StyledAvatar className="avatar" size={120} icon={<UserOutlined />} />
+              <TextField
+                className="displayName"
+                id="diaplay-name"
+                label="Display Name"
             <StyledAvatar
               size="large"
               icon={<UserOutlined />}
@@ -307,93 +414,158 @@ export default class Setting extends React.Component {
             </form>
             {this.state.avatarEdit && <Button onClick={this.handChange}>SAVE</Button>}
             {this.state.avatarEdit && <Button onClick={this.cancelEditAvatar}>CANCEL</Button>}
-            <hr></hr>
-            <form className="emailForm">
-              <label>Change Email</label>
-              <br />
-              <input
                 type="text"
+                autoComplete="name"
+                variant="outlined"
+                size="small"
+                value={displayName}
+                onChange={e => this.setState({ displayName: e.target.value })}
+                onKeyPress={e => {
+                  if (e.key === 'Enter') this.onChangeDisplayName();
+                }}
+              />
+              <ButtonWithLoading
+                className="card1Btn"
+                variant="contained"
+                color="primary"
+                loading={displayNameLoading}
+                disabled={
+                  !displayName.trim() ||
+                  displayNameLoading ||
+                  displayName.trim() === currentUser.displayName
+                }
+                onClick={this.onChangeDisplayName}
+              >
+                SAVE
+              </ButtonWithLoading>
+            </User>
+
+            <h4>Change Email</h4>
+            <ChangeEmail>
+              <TextField
                 id="email"
-                name="email"
-                placeholder="New Email"
-                onChange={this.handleNewEmailChange}
+                label="Email"
+                type="email"
+                autoComplete="email"
+                variant="outlined"
+                size="small"
+                value={email}
+                onChange={e => this.setState({ email: e.target.value })}
               />
-              <input
+              <TextField
+                id="email-password"
+                label="Password"
                 type="password"
-                id="currentpassword1"
-                name="currentpassword1"
-                placeholder="Current Password"
-                onChange={this.handleCurrentPassword1Change}
+                autoComplete="current-password"
+                variant="outlined"
+                size="small"
+                value={emailPassword}
+                onChange={e => this.setState({ emailPassword: e.target.value })}
+                onKeyPress={e => {
+                  if (e.key === 'Enter') this.onChangeEmail();
+                }}
               />
-              <Button
-                className="saveEmailButton"
+              <ButtonWithLoading
+                className="card1Btn"
                 variant="contained"
                 color="primary"
                 onClick={this.onChangeEmail}
+                loading={emailLoading}
+                disabled={
+                  !email.trim() ||
+                  emailLoading ||
+                  email.trim() === currentUser.email ||
+                  !emailPassword
+                }
               >
                 SAVE
-              </Button>
-            </form>
-            <hr></hr>
-            <form className="passwordForm">
-              <label>Change Password</label>
-              <br />
-              <input
+              </ButtonWithLoading>
+            </ChangeEmail>
+
+            <h4>Change Password</h4>
+            <ChangePW>
+              <TextField
+                id="current-password"
+                label="Password"
                 type="password"
-                id="newpassword"
-                name="newpassword"
-                placeholder="New Password"
-                onChange={this.handleNewPasswordChange}
+                autoComplete="current-password"
+                variant="outlined"
+                size="small"
+                value={changeCurrentPW}
+                onChange={e => this.setState({ changeCurrentPW: e.target.value })}
               />
-              <input
+              <TextField
+                id="new-password"
+                label="New Password"
                 type="password"
-                id="confirmpassword"
-                name="confirmpassword"
-                placeholder="Confirm New Password"
-                onChange={this.handleVerifyNewPasswordChange}
+                autoComplete="new-password"
+                variant="outlined"
+                size="small"
+                value={newPassword}
+                onChange={e => this.setState({ newPassword: e.target.value })}
               />
-              <input
+              <TextField
+                error={!!verifyNewPassword && newPassword !== verifyNewPassword}
+                id="password-verified"
+                label="Verify Password"
                 type="password"
-                id="currentpassword2"
-                name="currentpassword2"
-                placeholder="Current Password"
-                onChange={this.handleCurrentPassword2Change}
+                autoComplete="new-password"
+                variant="outlined"
+                size="small"
+                value={verifyNewPassword}
+                onChange={e => this.setState({ verifyNewPassword: e.target.value })}
+                onKeyPress={e => {
+                  if (e.key === 'Enter') this.onChangePassword();
+                }}
               />
-              <Button
-                className="savePasswordButton"
+              <ButtonWithLoading
+                className="card1Btn"
                 variant="contained"
                 color="primary"
                 onClick={this.onChangePassword}
+                loading={passwordLoading}
+                disabled={
+                  !changeCurrentPW || !newPassword || !verifyNewPassword || !passwordLoading
+                }
               >
                 SAVE
-              </Button>
-            </form>
+              </ButtonWithLoading>
+            </ChangePW>
           </Card1Content>
         </Card1>
+
         <Card2>
-          <h2>Delete Account</h2>
-          <hr></hr>
-          <div className="card2Content">
-            <p>Once you delete, it will clear all of your data.</p>
-            <p>Are you sure you want to delete your account?</p>
-            <form id="deleteAccountForm">
-              <input
-                type="password"
-                id="currentpassword3"
-                name="currentpassword3"
-                placeholder="Current Password"
-                onChange={this.handleCurrentPassword3Change}
-              />
-              <Button
-                className="deleteAccountButton"
-                variant="contained"
-                color="primary"
-                onClick={this.onDeleteAccount}
-              >
-                DELETE MY ACCOUNT
-              </Button>
-            </form>
-          </div>
+          <h3>Delete Account</h3>
+          <h4>
+            Once you delete, it will clear all of your data.
+            <br />
+            Are you sure you want to delete your account?
+          </h4>
+          <DeleteAccount>
+            <TextField
+              id="delete-account-password"
+              label="Password"
+              type="password"
+              autoComplete="current-password"
+              color="primary"
+              size="small"
+              value={deleteAccountPW}
+              onChange={e => this.setState({ deleteAccountPW: e.target.value })}
+              onKeyPress={e => {
+                if (e.key === 'Enter') this.onDeleteAccount();
+              }}
+            />
+            <ButtonWithLoading
+              className="deleteAccountButton"
+              variant="contained"
+              color="primary"
+              onClick={this.onDeleteAccount}
+              loading={deleteAccountLoading}
+              disabled={!deleteAccountPW || !deleteAccountLoading}
+            >
+              DELETE MY ACCOUNT
+            </ButtonWithLoading>
+          </DeleteAccount>
         </Card2>
       </Wrapper>
     );

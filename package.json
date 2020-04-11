@@ -36,8 +36,10 @@
     "react-dom": "^16.13.0",
     "react-router-dom": "^5.1.2",
     "react-scripts": "3.4.0",
+    "react-spinners": "^0.8.1",
     "react-webcam": "^5.0.1",
     "reactjs-popup": "^1.5.0",
+    "sass": "^1.26.3",
     "styled-components": "^5.0.1",
     "stylelint": "^13.2.0",
     "stylelint-config-prettier": "^8.0.1",
@@ -51,7 +53,7 @@
     "test": "react-app-rewired test",
     "format": "prettier --write '**/*.{js,ts,css,scss,html}'",
     "lint": "eslint '**/*.{js,ts}'",
-    "firebase": "cd functions && npm i && cd .. && firebase deploy --token \"$FIREBASE_TOKEN\""
+    "firebase": "cd functions && npm i && cd .. && firebase deploy --token \"$FIREBASE_TOKEN\" -f"
   },
   "browserslist": {
     "production": [

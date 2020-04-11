@@ -4,4 +4,8 @@ body {
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  .ant-message {
+    z-index: 1302; // greater than material-ui modal dialogs
+  }
 }

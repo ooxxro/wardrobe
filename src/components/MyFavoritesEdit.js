@@ -6,10 +6,11 @@ import DesignComponent from './DesignComponent';
 
 @withRouter
 @observer
-export default class Design extends React.Component {
+export default class MyFavoritesEdit extends React.Component {
   static contextType = StoreContext;
 
   render() {
-    return <DesignComponent from="design" />;
+    // console.log(this.props.match.params.outfitId);
+    return <DesignComponent from="edit" />;
   }
 }

@@ -34,10 +34,34 @@ const Right = styled.div`
       margin-right: 1rem;
     }
   }
+
+  .user {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 5px 8px;
+    transition: background 0.3s ease;
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .display-name {
+      font-size: 16px;
+      color: #fff;
+      margin-right: 10px;
+    }
+  }
 `;
 
-const StyledAvatar = styled(Avatar)`
-  cursor: pointer;
+const StyledMenu = styled(Menu)`
+  .ant-dropdown-menu-item {
+    padding: 8px 20px;
+    &:hover {
+      a {
+        color: #66b1ff;
+      }
+      color: #66b1ff;
+      background-color: #ecf5ff;
+    }
+  }
 `;
 
 const LoginBtn = styled(Button)`
@@ -81,13 +105,13 @@ export default class Header extends React.Component {
     const { userStore } = this.context;
 
     const menu = (
-      <Menu>
+      <StyledMenu>
         <Menu.Item>
           <Link to="/setting">Setting</Link>
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item onClick={this.onLogout}>Logout</Menu.Item>
-      </Menu>
+      </StyledMenu>
     );
 
     return (

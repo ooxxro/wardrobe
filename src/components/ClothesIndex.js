@@ -3,14 +3,13 @@ import styled from 'styled-components';
 import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { Link, withRouter } from 'react-router-dom';
-import { Menu, Dropdown, /*Card*/ } from 'antd';
+import { Menu, Dropdown, message, /*Card*/ } from 'antd';
 import {LoadingOutlined} from '@ant-design/icons';
-import firebase from 'firebase';
+import firebase from '../firebase';
 
 // Data objects
 const db = firebase.firestore(); // database object
 const userCollection = db.collection('users'); // users collection
-const auth = firebase.auth();
 
 // DOM Elements
 const Wrapper = styled.div`
@@ -131,20 +130,13 @@ export default class ClothesIndex extends React.Component {
     this.setState({fetched: false});
     // this.getData(event.key);
   }
-  async getCategoryData(location) {
-    return await userCollection.doc(`${auth.currentUser.uid}`)
-    .collection(`categories`).doc(location).get()
-    .then(function(doc) {
-      if (doc.exists) {
-        return doc.data();
-      }
-      else {
-        alert("No data exists");
-      }
-    })
-    .catch(function(error) {
-        alert("error occured: ", error);
-      });
+  getCategoryData = location => {
+    const {userStore} = this.context;
+    return userCollection
+      .doc(userStore.currentUser.uid)
+      .collection(`categories`)
+      .doc(location)
+      .get();
   }
   /**
    * This function handles the data returned from getCategoryData
@@ -153,87 +145,42 @@ export default class ClothesIndex extends React.Component {
    */
   getData = (location) => {
     if (this.state.fetched) return;
-    let vm = this;
+    const {userStore} = this.context;
     let imagePaths = [];
     let imageURLs = [];
     this.getCategoryData(location)
-    .then(function(data) {
-      // data.clothes.forEach(imgID => {
-        vm.setState({items: data.clothes[0]});
-        let imgID = data.clothes[0];
-        userCollection
-        .doc(`${auth.currentUser.uid}`)
-        .collection('clothes')
-        .doc(imgID)
-        .get()
-        .then(async function(res) {
-          imagePaths.push(res.data().imagePath);
-          
-          let storageRef = firebase.storage().ref();
-          storageRef
-          .child(res.data().imagePath)
-          .getDownloadURL()
-          .then(function() {
-            imageURLs.push("https://firebasestorage.googleapis.com/v0/b/wardrobe-rocks.appspot.com/o/IAdwv0alIPbx049CsmrO2RPoluY2%2FCapture3.PNG?alt=media&token=ef345ac6-f596-4197-b990-323821eaeb8c");
+    .then((doc) => {
+      if (!doc.exists)
+        return;
+      let data = doc.data();
+      this.setState({items: data.clothes});
+      let storageRef = firebase.storage().ref();
+      const promises = data.clothes.map((imgID) => {
+        return userCollection
+          .doc(`${userStore.currentUser.uid}`)
+          .collection('clothes')
+          .doc(imgID)
+          .get()
+          .then((res) => {
+            imagePaths.push(res.data().imagePath);
+            return storageRef
+            .child(res.data().imagePath)
+            .getDownloadURL()
+            .then((url) => {
+              return imageURLs.push(url);
+            });
           });
-          console.log(imagePaths[0]); // Correctly printing the image path.
-        console.log(imageURLs[0]); // Not correctly printing the url that was pushed.
         });
-        
-        vm.setState({itemPaths: imagePaths, itemUrls: imageURLs, fetched: true});
-      });
-      // vm.setState({items: data.clothes});
-      // // data.clothes.forEach(async (imgID) => {
-      //   vm.getItemImage(data.clothes[0])
-      //   .then(function(res) {
-      //     imageURLs.push(res);
-      //   })
-
-        // .then(function(res) {
-        //   console.log(res);
-        //   // imageURLs.push(res);
-        // })
-      // });
       
-    // });
-    
-      
-    // });
-    // this.setState({fetched: true});
-  }
-
-  // getListData = () => {
-  //   if (this.state.fetched) return;
-  //   // let vm = this;
-  //   // let imagePaths = [];
-  //   let imageURLs = Array();
-  //   let storageRef = firebase.storage().ref();
-  //   let listRef = storageRef.child(`${auth.currentUser.uid}`);
-  //   listRef.listAll().then(function(res) {
-  //     res.items.forEach(function(folderRef) {
-  //       imageURLs.push(folderRef);
-  //     });
-  //   });
-  //   // console.log();
-  //     // vm.setState({itemPaths: imagePaths, itemUrls: imageURLs, fetched: true});
-  // }
-
-  async getItemImage(imgID) {
-    let storageRef = firebase.storage().ref();
-    return await userCollection
-    .doc(`${auth.currentUser.uid}`)
-    .collection('clothes')
-    .doc(imgID)
-    .get()
-    .then(function(res) {
-      storageRef
-      .child(res.data().imagePath)
-      .getDownloadURL()
-      .then(function(url) {
-        return url;
-      });
+      Promise.all(promises).then(() => {
+        this.setState({itemPaths: imagePaths, itemUrls: imageURLs, fetched: true});
+      })
+    })
+    .catch(error => {
+      message.error(error.message);
     });
   }
+
   /**
    * Function defines how clothing is displayed
    */
@@ -275,8 +222,8 @@ export default class ClothesIndex extends React.Component {
     }
   }
   componentDidMount() {
-    this.setState({ location: this.props.location.pathname.split('/')[2] }); // set current location
-    this.getData(this.state.location);
+    this.setState({ location: this.props.match.params.type }); // set current location
+    this.getData(this.props.match.params.type);
   }
   render() {
     const links = [
@@ -298,8 +245,6 @@ export default class ClothesIndex extends React.Component {
     /**
      * Here I am checking if itemUrls is being set. 
      */
-    // 
-    this.getData(this.state.location);
     const imageURLs = this.state.itemUrls;
     // console.log("Images count: ", imageURLs.length);
     // console.log(imageURLs); // Shows an array that is empty but when you expand it, it shows all the items

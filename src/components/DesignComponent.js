@@ -266,7 +266,10 @@ export default class DesignComponent extends React.Component {
       .then(function(querySnapshot) {
         querySnapshot.forEach(function(doc) {
           categories.push(doc.data().categories);
+
           images.push(doc.data().imagePath);
+
+          //Doesn't put in the URls in the same order as the paths.
           storageRef
             .child(doc.data().imagePath)
             .getDownloadURL()
@@ -331,10 +334,13 @@ export default class DesignComponent extends React.Component {
           return (item = false);
         }
       });
+
       return {
         tagtoggled,
       };
     });
+
+    return <p>Test</p>;
   }
 
   onSave = () => {
@@ -519,7 +525,7 @@ export default class DesignComponent extends React.Component {
           <ClothesMenu>
             <Tabs defaultActiveKey="0" type="card" onChange={this.onSelectTab.bind(this)}>
               <TabPane tab="All" key="0">
-                {(this.state.storageUrls || []).map((url, index) => {
+                {(this.state.clothesimages || []).map((path, index) => {
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -536,12 +542,28 @@ export default class DesignComponent extends React.Component {
                   }
 
                   if (includesAllFilters) {
-                    return <img className="clothingItem" src={url} key={index} />;
+                    //Get path from storageUrls and put it in src
+                    for (let j = 0; j < this.state.storageUrls.length; j++) {
+                      //console.log(path.split('/')[1]);
+                      //console.log(this.state.storageUrls[j]);
+                      //console.log(this.state.storageUrls[j].includes(path.split('/')[1]));
+                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
+                        return (
+                          <img
+                            className="clothingItem"
+                            src={this.state.storageUrls[j]}
+                            key={index}
+                          />
+                        );
+                      }
+                    }
+
+                    return 'Should never see this message.';
                   }
                 })}
               </TabPane>
               <TabPane tab="Hats" key="1">
-                {(this.state.storageUrls || []).map((url, index) => {
+                {(this.state.clothesimages || []).map((path, index) => {
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -558,12 +580,25 @@ export default class DesignComponent extends React.Component {
                   }
 
                   if (includesAllFilters) {
-                    return <img className="clothingItem" src={url} key={index} />;
+                    //Get path from storageUrls and put it in src
+                    for (let j = 0; j < this.state.storageUrls.length; j++) {
+                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
+                        return (
+                          <img
+                            className="clothingItem"
+                            src={this.state.storageUrls[j]}
+                            key={index}
+                          />
+                        );
+                      }
+                    }
+
+                    return 'Should never see this message.';
                   }
                 })}
               </TabPane>
               <TabPane tab="Pants" key="2">
-                {(this.state.storageUrls || []).map((url, index) => {
+                {(this.state.clothesimages || []).map((path, index) => {
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -580,12 +615,25 @@ export default class DesignComponent extends React.Component {
                   }
 
                   if (includesAllFilters) {
-                    return <img className="clothingItem" src={url} key={index} />;
+                    //Get path from storageUrls and put it in src
+                    for (let j = 0; j < this.state.storageUrls.length; j++) {
+                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
+                        return (
+                          <img
+                            className="clothingItem"
+                            src={this.state.storageUrls[j]}
+                            key={index}
+                          />
+                        );
+                      }
+                    }
+
+                    return 'Should never see this message.';
                   }
                 })}
               </TabPane>
               <TabPane tab="Shirts" key="3">
-                {(this.state.storageUrls || []).map((url, index) => {
+                {(this.state.clothesimages || []).map((path, index) => {
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -602,12 +650,25 @@ export default class DesignComponent extends React.Component {
                   }
 
                   if (includesAllFilters) {
-                    return <img className="clothingItem" src={url} key={index} />;
+                    //Get path from storageUrls and put it in src
+                    for (let j = 0; j < this.state.storageUrls.length; j++) {
+                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
+                        return (
+                          <img
+                            className="clothingItem"
+                            src={this.state.storageUrls[j]}
+                            key={index}
+                          />
+                        );
+                      }
+                    }
+
+                    return 'Should never see this message.';
                   }
                 })}
               </TabPane>
               <TabPane tab="Shoes" key="4">
-                {(this.state.storageUrls || []).map((url, index) => {
+                {(this.state.clothesimages || []).map((path, index) => {
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -624,7 +685,20 @@ export default class DesignComponent extends React.Component {
                   }
 
                   if (includesAllFilters) {
-                    return <img className="clothingItem" src={url} key={index} />;
+                    //Get path from storageUrls and put it in src
+                    for (let j = 0; j < this.state.storageUrls.length; j++) {
+                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
+                        return (
+                          <img
+                            className="clothingItem"
+                            src={this.state.storageUrls[j]}
+                            key={index}
+                          />
+                        );
+                      }
+                    }
+
+                    return 'Should never see this message.';
                   }
                 })}
               </TabPane>

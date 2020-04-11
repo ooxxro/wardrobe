@@ -30,26 +30,14 @@ const Card1 = styled.div`
 `;
 
 const Card1Content = styled.div`
-  width: 90%;
-  margin-left: auto;
-  margin-right: auto;
-  padding-bottom: 2rem;
-  .emailForm input {
-    border-radius: 4px;
-    background-color: #ecf0f7;
-    border: 1px solid #c3c4c8;
-    width: 34.5%;
-    margin-bottom: 20px;
-    margin-right: 3%;
-  }
-
-  .passwordForm input {
-    border-radius: 4px;
-    background-color: #ecf0f7;
-    border: 1px solid #c3c4c8;
-    width: 22%;
-    margin-bottom: 20px;
-    margin-right: 3%;
+  .card1Btn {
+    border-radius: 3px;
+    padding: 8px 20px;
+    background: #7d64e1;
+    &:hover {
+      color: #fff;
+      background-color: #775ce3;
+    }
   }
 
   .editAvatarForm input {
@@ -59,24 +47,6 @@ const Card1Content = styled.div`
     width: 42.5%;
     margin-bottom: 20px;
     margin-right: 3%;
-  }
-
-  .saveEmailButton {
-    width: 10%;
-    background: #6247ce;
-    &:hover {
-      color: #fff;
-      background-color: #6247ce;
-    }
-  }
-
-  .savePasswordButton {
-    width: 10%;
-    background: #6247ce;
-    &:hover {
-      color: #fff;
-      background-color: #6247ce;
-    }
   }
 
   .editAvatarButton {
@@ -134,18 +104,30 @@ const StyledAvatar = styled(Avatar)`
 
 export default class Setting extends React.Component {
   static contextType = StoreContext;
-  constructor(props) {
-    super(props);
-    this.state = {
-      newemail: '',
-      newpassword: '',
-      verifynewpassword: '',
-      currentpassword1: '',
-      currentpassword2: '',
-      currentpassword3: '',
-      avatarEdit: false,
-      avatarLocation: null,
-    };
+
+  state = {
+    // displayName: '',
+    // displayNameLoading: false,
+    email: '',
+    emailPassword: '',
+    emailLoading: false,
+    newPassword: '',
+    verifyNewPassword: '',
+    changeCurrentPW: '',
+    deleteAccountPW: '',
+    avatarEdit: false,
+    avatarLocation: null,
+  };
+
+  componentDidMount() {
+    const {
+      userStore: { currentUser },
+    } = this.context;
+
+    this.setState({
+      displayName: currentUser.displayName || '',
+      email: currentUser.email || '',
+    });
   }
 
   editAvatar = () => {

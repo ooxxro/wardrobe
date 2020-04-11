@@ -10,8 +10,9 @@ class UserStore {
 
   @action
   setUser(user) {
-    this.currentUser = user;
+    this.currentUser = { ...user };
   }
 }
 
-export default new UserStore();
+const userStore = new UserStore();
+export default userStore;

@@ -245,7 +245,7 @@ export default class SignUp extends React.Component {
   };
 
   render() {
-    const { loading, password, verifyPassword } = this.state;
+    const { loading, email, displayName, password, verifyPassword } = this.state;
     return (
       <Wrapper>
         <Loading loading={loading} />
@@ -265,7 +265,7 @@ export default class SignUp extends React.Component {
                 autoComplete="email"
                 variant="outlined"
                 size="small"
-                value={this.state.email}
+                value={email}
                 onChange={e => this.setState({ email: e.target.value })}
               />
               <TextField
@@ -276,7 +276,7 @@ export default class SignUp extends React.Component {
                 autoComplete="name"
                 variant="outlined"
                 size="small"
-                value={this.state.displayName}
+                value={displayName}
                 onChange={e => this.setState({ displayName: e.target.value })}
               />
 

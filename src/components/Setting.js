@@ -160,6 +160,7 @@ export default class Setting extends React.Component {
 
   onChangeDisplayName = () => {
     const {
+      userStore,
       userStore: { currentUser },
     } = this.context;
     const { displayName, displayNameLoading } = this.state;
@@ -169,13 +170,18 @@ export default class Setting extends React.Component {
 
     this.setState({ displayNameLoading: true });
 
-    firebase
-      .auth()
-      .currentUser.updateProfile({
+    const user = firebase.auth().currentUser;
+    user
+      .updateProfile({
         displayName: this.state.displayName.trim(),
       })
       .then(() => {
         // Update successful.
+        return user.reload();
+      })
+      .then(() => {
+        userStore.setUser(firebase.auth().currentUser);
+
         this.setState({ displayNameLoading: false });
         message.success('Display Name updated successfully!');
       })

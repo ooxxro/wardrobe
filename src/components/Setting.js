@@ -277,7 +277,7 @@ export default class Setting extends React.Component {
           return user.updateProfile({ photoURL: url });
         })
         .then(() => {
-          message.success('here is the location: ' + uploadPath + ', ' + user.photoURL);
+          message.success('Avatar updated successfully!');
           this.setState({ avatarEdit: false, avatarLocation: null });
         })
         .catch(error => {

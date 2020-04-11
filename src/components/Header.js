@@ -97,7 +97,11 @@ export default class Header extends React.Component {
         {userStore.isLoggedIn ? (
           <Right>
             <Dropdown overlay={menu} placement="bottomRight">
-              <StyledAvatar size="large" icon={<UserOutlined />} />
+              <StyledAvatar
+                size="large"
+                icon={<UserOutlined />}
+                src={firebase.auth().currentUser.photoURL}
+              />
             </Dropdown>
           </Right>
         ) : (

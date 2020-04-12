@@ -103,13 +103,51 @@ const EditPic = styled.div`
 const ImgWrapper = styled.div`
   width: 300px;
   height: 400px;
-  img {
+  .bgImg {
+    position: absolute;
     object-fit: cover;
     width: 100%;
     height: 100%;
     border-radius: 40px;
   }
 `;
+
+const HatImageArea = styled.div`
+  img {
+    margin-left: 100px;
+    position: absolute;
+    width: 100px;
+    height: 100px;
+  }
+`;
+const ShirtImageArea = styled.div`
+  img {
+    margin-left: 100px;
+    margin-top: 100px;
+    position: absolute;
+    width: 100px;
+    height: 100px;
+  }
+`;
+const PantsImageArea = styled.div`
+  img {
+    margin-left: 100px;
+    margin-top: 200px;
+    position: absolute;
+    width: 100px;
+    height: 100px;
+  }
+`;
+const ShoesImageArea = styled.div`
+  img {
+    margin-left: 100px;
+    margin-top: 300px;
+    position: absolute;
+    width: 100px;
+    height: 100px;
+  }
+`;
+
 const IconCol = styled.div`
   display: flex;
   justify-content: space-between;
@@ -238,6 +276,7 @@ export default class DesignComponent extends React.Component {
     // filter
     turnon: false,
     tagdata: [],
+    customtagdata: [],
     tagtoggled: [],
     // dialogs
     dialogOpen: false,
@@ -246,6 +285,11 @@ export default class DesignComponent extends React.Component {
     clothesimages: [],
     clothescategories: [], //2D array of categories
     storageUrls: [], //URLs for the images from storage
+    //Storage URls for selected clothing items, initially transparent images
+    selectedHat: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
+    selectedShirt: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
+    selectedPants: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
+    selectedShoes: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
   };
 
   //Execute upon rendering the page
@@ -287,6 +331,7 @@ export default class DesignComponent extends React.Component {
   getTagData = () => {
     let db = firebase.firestore();
     let tags = [];
+    let customTags = [];
     let toggled = [];
 
     db.collection('users/' + firebase.auth().currentUser.uid + '/categories')
@@ -295,10 +340,12 @@ export default class DesignComponent extends React.Component {
         querySnapshot.forEach(function(doc) {
           let tag = doc.data().name;
 
-          //When it's possible to add new categories,
-          //we'll also suppress Hats, Pants, Shirts, Shoes
           if (tag != 'All') {
-            tags.push(tag);
+            if (tag == 'Hats' || tag == 'Pants' || tag == 'Shirts' || tag == 'Shoes') {
+              tags.push(tag);
+            } else {
+              customTags.push(tag);
+            }
 
             //Corresponding array that keeps track of
             //whether or not each tag is checked (toggled)
@@ -307,7 +354,10 @@ export default class DesignComponent extends React.Component {
         });
       });
 
-    this.setState({ tagdata: tags, tagtoggled: toggled });
+    //Make sure order goes Hats Pants Shirts Shoes then custom tags
+    //Firestore automatically puts tags in alphabetical order
+
+    this.setState({ tagdata: tags, customtagdata: customTags, tagtoggled: toggled });
   };
 
   onSelectTag = i => {
@@ -398,7 +448,19 @@ export default class DesignComponent extends React.Component {
         </Random>
         <Picture>
           <ImgWrapper>
-            <img src={userBgImg} />
+            <img className="bgImg" src={userBgImg} />
+            <HatImageArea>
+              <img src={this.state.selectedHat} />
+            </HatImageArea>
+            <ShirtImageArea>
+              <img src={this.state.selectedShirt} />
+            </ShirtImageArea>
+            <PantsImageArea>
+              <img src={this.state.selectedPants} />
+            </PantsImageArea>
+            <ShoesImageArea>
+              <img src={this.state.selectedShoes} />
+            </ShoesImageArea>
           </ImgWrapper>
           <EditPic>
             <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
@@ -505,63 +567,30 @@ export default class DesignComponent extends React.Component {
           >
             {/* show all user defined tags */}
             <CheckboxoxList>
-              {(this.state.tagdata || []).map((tag, index) => (
-                <div className="filterItem" key={tag}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name={tag}
-                        color="primary"
-                        onChange={() => this.onSelectTag(index)}
+              {(this.state.tagdata.concat(this.state.customtagdata) || []).map((tag, index) => {
+                if (index > 3) {
+                  return (
+                    <div className="filterItem" key={tag}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            name={tag}
+                            color="primary"
+                            checked={this.state.tagtoggled[index]}
+                            onChange={() => this.onSelectTag(index)}
+                          />
+                        }
+                        label={tag}
                       />
-                    }
-                    label={tag}
-                  />
-                </div>
-              ))}
+                    </div>
+                  );
+                }
+              })}
             </CheckboxoxList>
           </Popover>
 
           <ClothesMenu>
-            <Tabs defaultActiveKey="0" type="card" onChange={this.onSelectTab.bind(this)}>
-              <TabPane tab="All" key="0">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      //console.log(path.split('/')[1]);
-                      //console.log(this.state.storageUrls[j]);
-                      //console.log(this.state.storageUrls[j].includes(path.split('/')[1]));
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
+            <Tabs defaultActiveKey="1" type="card" onChange={this.onSelectTab.bind(this)}>
               <TabPane tab="Hats" key="1">
                 {(this.state.clothesimages || []).map((path, index) => {
                   let includesAllFilters = true;
@@ -570,7 +599,7 @@ export default class DesignComponent extends React.Component {
                     if (this.state.tagtoggled[i]) {
                       if (
                         !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
+                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
                         )
                       ) {
                         includesAllFilters = false;
@@ -588,6 +617,9 @@ export default class DesignComponent extends React.Component {
                             className="clothingItem"
                             src={this.state.storageUrls[j]}
                             key={index}
+                            onClick={() =>
+                              this.setState({ selectedHat: this.state.storageUrls[j] })
+                            }
                           />
                         );
                       }
@@ -605,7 +637,7 @@ export default class DesignComponent extends React.Component {
                     if (this.state.tagtoggled[i]) {
                       if (
                         !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
+                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
                         )
                       ) {
                         includesAllFilters = false;
@@ -623,6 +655,9 @@ export default class DesignComponent extends React.Component {
                             className="clothingItem"
                             src={this.state.storageUrls[j]}
                             key={index}
+                            onClick={() =>
+                              this.setState({ selectedPants: this.state.storageUrls[j] })
+                            }
                           />
                         );
                       }
@@ -640,7 +675,7 @@ export default class DesignComponent extends React.Component {
                     if (this.state.tagtoggled[i]) {
                       if (
                         !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
+                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
                         )
                       ) {
                         includesAllFilters = false;
@@ -658,6 +693,9 @@ export default class DesignComponent extends React.Component {
                             className="clothingItem"
                             src={this.state.storageUrls[j]}
                             key={index}
+                            onClick={() =>
+                              this.setState({ selectedShirt: this.state.storageUrls[j] })
+                            }
                           />
                         );
                       }
@@ -675,7 +713,7 @@ export default class DesignComponent extends React.Component {
                     if (this.state.tagtoggled[i]) {
                       if (
                         !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
+                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
                         )
                       ) {
                         includesAllFilters = false;
@@ -693,6 +731,9 @@ export default class DesignComponent extends React.Component {
                             className="clothingItem"
                             src={this.state.storageUrls[j]}
                             key={index}
+                            onClick={() =>
+                              this.setState({ selectedShoes: this.state.storageUrls[j] })
+                            }
                           />
                         );
                       }

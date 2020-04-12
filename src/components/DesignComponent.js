@@ -238,6 +238,7 @@ export default class DesignComponent extends React.Component {
     // filter
     turnon: false,
     tagdata: [],
+    customtagdata: [],
     tagtoggled: [],
     // dialogs
     dialogOpen: false,
@@ -287,6 +288,7 @@ export default class DesignComponent extends React.Component {
   getTagData = () => {
     let db = firebase.firestore();
     let tags = [];
+    let customTags = [];
     let toggled = [];
 
     db.collection('users/' + firebase.auth().currentUser.uid + '/categories')
@@ -295,10 +297,12 @@ export default class DesignComponent extends React.Component {
         querySnapshot.forEach(function(doc) {
           let tag = doc.data().name;
 
-          //When it's possible to add new categories,
-          //we'll also suppress Hats, Pants, Shirts, Shoes
           if (tag != 'All') {
-            tags.push(tag);
+            if (tag == 'Hats' || tag == 'Pants' || tag == 'Shirts' || tag == 'Shoes') {
+              tags.push(tag);
+            } else {
+              customTags.push(tag);
+            }
 
             //Corresponding array that keeps track of
             //whether or not each tag is checked (toggled)
@@ -307,7 +311,10 @@ export default class DesignComponent extends React.Component {
         });
       });
 
-    this.setState({ tagdata: tags, tagtoggled: toggled });
+    //Make sure order goes Hats Pants Shirts Shoes then custom tags
+    //Firestore automatically puts tags in alphabetical order
+
+    this.setState({ tagdata: tags, customtagdata: customTags, tagtoggled: toggled });
   };
 
   onSelectTag = i => {
@@ -505,20 +512,25 @@ export default class DesignComponent extends React.Component {
           >
             {/* show all user defined tags */}
             <CheckboxoxList>
-              {(this.state.tagdata || []).map((tag, index) => (
-                <div className="filterItem" key={tag}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name={tag}
-                        color="primary"
-                        onChange={() => this.onSelectTag(index)}
+              {(this.state.tagdata.concat(this.state.customtagdata) || []).map((tag, index) => {
+                if (index > 3) {
+                  return (
+                    <div className="filterItem" key={tag}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            name={tag}
+                            color="primary"
+                            checked={this.state.tagtoggled[index]}
+                            onChange={() => this.onSelectTag(index)}
+                          />
+                        }
+                        label={tag}
                       />
-                    }
-                    label={tag}
-                  />
-                </div>
-              ))}
+                    </div>
+                  );
+                }
+              })}
             </CheckboxoxList>
           </Popover>
 
@@ -532,7 +544,7 @@ export default class DesignComponent extends React.Component {
                     if (this.state.tagtoggled[i]) {
                       if (
                         !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
+                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
                         )
                       ) {
                         includesAllFilters = false;
@@ -570,7 +582,7 @@ export default class DesignComponent extends React.Component {
                     if (this.state.tagtoggled[i]) {
                       if (
                         !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
+                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
                         )
                       ) {
                         includesAllFilters = false;
@@ -605,7 +617,7 @@ export default class DesignComponent extends React.Component {
                     if (this.state.tagtoggled[i]) {
                       if (
                         !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
+                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
                         )
                       ) {
                         includesAllFilters = false;
@@ -640,7 +652,7 @@ export default class DesignComponent extends React.Component {
                     if (this.state.tagtoggled[i]) {
                       if (
                         !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
+                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
                         )
                       ) {
                         includesAllFilters = false;
@@ -675,7 +687,7 @@ export default class DesignComponent extends React.Component {
                     if (this.state.tagtoggled[i]) {
                       if (
                         !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
+                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
                         )
                       ) {
                         includesAllFilters = false;

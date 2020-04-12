@@ -150,7 +150,7 @@ export default class AddClothes extends React.Component {
     });
   setHat = () => {
     this.setState({
-      defaultCate: 'hat',
+      defaultCate: 'hats',
       isHat: true,
       isPants: false,
       isShirt: false,
@@ -169,7 +169,7 @@ export default class AddClothes extends React.Component {
   };
   setShirt = () => {
     this.setState({
-      defaultCate: 'shirt',
+      defaultCate: 'shirts',
       isHat: false,
       isPants: false,
       isShirt: true,
@@ -286,8 +286,19 @@ export default class AddClothes extends React.Component {
                             .firestore()
                             .collection('users/' + firebase.auth().currentUser.uid + '/categories')
                             .doc(newData.categories[i]);
-                          categoryRef.update({
-                            clothes: firebase.firestore.FieldValue.arrayUnion(docRef.id),
+
+                          //Check if category exists. If it does, update it, if it doesn't create it
+                          categoryRef.get().then(function(thisDoc) {
+                            if (thisDoc.exists) {
+                              categoryRef.update({
+                                clothes: firebase.firestore.FieldValue.arrayUnion(docRef.id),
+                              });
+                            } else {
+                              categoryRef.set({
+                                clothes: firebase.firestore.FieldValue.arrayUnion(docRef.id),
+                                name: newData.categories[i],
+                              });
+                            }
                           });
                         }
                       }

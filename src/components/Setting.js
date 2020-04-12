@@ -58,6 +58,7 @@ const Card1Content = styled.div`
   .card1Btn {
     border-radius: 3px;
     padding: 8px 20px;
+    margin-left: 5px;
     background: #7d64e1;
     &:hover {
       color: #fff;
@@ -86,9 +87,11 @@ const Card1Content = styled.div`
 
 const User = styled.div`
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: left;
   .displayName {
     margin-left: 20px;
+    width: 50%;
   }
   .MuiFormControl-root {
     flex: auto;
@@ -154,8 +157,8 @@ export default class Setting extends React.Component {
   static contextType = StoreContext;
 
   state = {
-    // displayName: '',
-    // displayNameLoading: false,
+    displayName: '',
+    displayNameLoading: false,
     email: '',
     emailPassword: '',
     emailLoading: false,
@@ -324,24 +327,6 @@ export default class Setting extends React.Component {
       });
   };
 
-  render() {
-    const {
-      userStore: { currentUser },
-    } = this.context;
-    const {
-      displayName,
-      displayNameLoading,
-      email,
-      emailPassword,
-      emailLoading,
-      changeCurrentPW,
-      newPassword,
-      verifyNewPassword,
-      passwordLoading,
-      deleteAccountPW,
-      deleteAccountLoading,
-    } = this.state;
-
   handChange = () => {
     const { userStore } = this.context;
     const file = this.state.avatarLocation;
@@ -366,7 +351,9 @@ export default class Setting extends React.Component {
           return user.updateProfile({ photoURL: url });
         })
         .then(() => {
-          message.success('Avatar updated successfully!');
+          message.success(
+            'Avatar updated successfully! You may need to refresh to see this change.'
+          );
           this.setState({ avatarEdit: false, avatarLocation: null });
         })
         .catch(error => {
@@ -378,66 +365,106 @@ export default class Setting extends React.Component {
     }
   };
 
+  render() {
+    const {
+      userStore: { currentUser },
+    } = this.context;
+    const {
+      displayName,
+      displayNameLoading,
+      email,
+      emailPassword,
+      emailLoading,
+      changeCurrentPW,
+      newPassword,
+      verifyNewPassword,
+      passwordLoading,
+      deleteAccountPW,
+      deleteAccountLoading,
+    } = this.state;
+
     return (
       <Wrapper>
         <Card1>
           <h3>Account Settings</h3>
           <Card1Content>
-            <h4 />
+            <h4> {currentUser.displayName} </h4>
             <User>
-              <StyledAvatar className="avatar" size={120} icon={<UserOutlined />} />
-              <TextField
-                className="displayName"
-                id="diaplay-name"
-                label="Display Name"
-            <StyledAvatar
-              size="large"
-              icon={<UserOutlined />}
-              onClick={this.editAvatar}
-              src={photoURL}
-            ></StyledAvatar>
-            <form
-              className="editAvatarForm"
-              style={{ display: this.state.avatarEdit ? 'block' : 'none' }}
-              onSubmit={this.onSubmit}
-            >
-              <label>Upload New Avatar</label> <br></br>
-              <input
-                type="file"
-                id="avatarLocation"
-                name="avatarLocation"
-                placeholder="New Avi"
-                onChange={this.onImgChange}
-                value={this.state.image}
-              ></input>
-              <label htmlFor="file"></label>
-            </form>
-            {this.state.avatarEdit && <Button onClick={this.handChange}>SAVE</Button>}
-            {this.state.avatarEdit && <Button onClick={this.cancelEditAvatar}>CANCEL</Button>}
-                type="text"
-                autoComplete="name"
-                variant="outlined"
-                size="small"
-                value={displayName}
-                onChange={e => this.setState({ displayName: e.target.value })}
-                onKeyPress={e => {
-                  if (e.key === 'Enter') this.onChangeDisplayName();
-                }}
-              />
-              <ButtonWithLoading
-                className="card1Btn"
-                variant="contained"
-                color="primary"
-                loading={displayNameLoading}
-                disabled={
-                  !displayName.trim() ||
-                  displayNameLoading ||
-                  displayName.trim() === currentUser.displayName
-                }
-                onClick={this.onChangeDisplayName}
-              >
-                SAVE
-              </ButtonWithLoading>
+              <div>
+                <StyledAvatar
+                  size="large"
+                  icon={<UserOutlined />}
+                  onClick={this.editAvatar}
+                  src={currentUser.photoURL}
+                ></StyledAvatar>
+                <TextField
+                  className="displayName"
+                  id="diaplay-name"
+                  label="Display Name"
+                  type="text"
+                  autoComplete="name"
+                  variant="outlined"
+                  size="small"
+                  value={displayName}
+                  onChange={e => this.setState({ displayName: e.target.value })}
+                  onKeyPress={e => {
+                    if (e.key === 'Enter') this.onChangeDisplayName();
+                  }}
+                />
+                <ButtonWithLoading
+                  className="card1Btn"
+                  variant="contained"
+                  color="primary"
+                  loading={displayNameLoading}
+                  disabled={
+                    !displayName.trim() ||
+                    displayNameLoading ||
+                    displayName.trim() === currentUser.displayName
+                  }
+                  onClick={this.onChangeDisplayName}
+                >
+                  SAVE
+                </ButtonWithLoading>
+              </div>
+              <div>
+                <form
+                  className="editAvatarForm"
+                  style={{ display: this.state.avatarEdit ? 'block' : 'none' }}
+                >
+                  <br />
+                  <label>Upload New Avatar</label> <br></br>
+                  <input
+                    type="file"
+                    id="avatarLocation"
+                    name="avatarLocation"
+                    placeholder="New Avi"
+                    onChange={event => this.setState({ avatarLocation: event.target.files[0] })}
+                    value={this.state.image}
+                  ></input>
+                  <label htmlFor="file"></label>
+                </form>
+                {this.state.avatarEdit && (
+                  <ButtonWithLoading
+                    onClick={this.handChange}
+                    className="card1Btn"
+                    variant="contained"
+                    color="primary"
+                  >
+                    SAVE
+                  </ButtonWithLoading>
+                )}
+
+                {this.state.avatarEdit && (
+                  <ButtonWithLoading
+                    onClick={this.cancelEditAvatar}
+                    className="card1Btn"
+                    variant="contained"
+                    color="primary"
+                  >
+                    CANCEL
+                  </ButtonWithLoading>
+                )}
+              </div>
             </User>
 
             <h4>Change Email</h4>

@@ -123,11 +123,7 @@ export default class Header extends React.Component {
             <Dropdown overlay={menu} placement="bottomRight">
               <div className="user">
                 <span className="display-name">{userStore.currentUser.displayName}</span>
-                <StyledAvatar
-                  size="large"
-                  icon={<UserOutlined />}
-                  src={userStore.currentUser.photoURL}
-                />
+                <Avatar size="large" icon={<UserOutlined />} src={userStore.currentUser.photoURL} />
               </div>
             </Dropdown>
           </Right>

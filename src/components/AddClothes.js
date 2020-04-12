@@ -9,6 +9,9 @@ import StepConnector from '@material-ui/core/StepConnector';
 import plusImg from '../images/plus.svg';
 import uploadImg from '../images/upload-cloud.png';
 import cameraImg from '../images/camera.png';
+import { message } from 'antd';
+import Loading from './Loading';
+import ClothesFitter from './ClothesFitter';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -54,7 +57,7 @@ const Down = styled.div`
 const Content = styled.div`
   margin: 60px;
 `;
-const ContentImgWrapper = styled.div`
+const StepOne = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,11 +73,17 @@ const ContentImgWrapper = styled.div`
       background: rgba(255, 209, 134, 0.7);
     }
   }
+  input {
+    display: none;
+  }
   img {
     width: 100px;
     height: 100px;
   }
 `;
+const StepTwo = styled.div``;
+const StepThree = styled.div``;
+
 const Buttons = styled.div`
   display: flex;
   justify-content: space-between;
@@ -134,26 +143,96 @@ export default class AddClothes extends React.Component {
     title: 'Add clothes',
     categoryArr: '',
     file: '',
-    imagePreviewUrl: '',
+    previewURL: '',
     snapshotString: '',
     activeStep: 0,
+    loading: false,
   };
 
   getSteps = () => {
-    return ['Upload clothes image', 'Modify image', 'Select category & add tags'];
+    return [
+      'Upload clothes image',
+      'Remove background',
+      'Modify image',
+      'Select category & add tags',
+    ];
   };
 
   getStepContent = stepIndex => {
     switch (stepIndex) {
       case 0:
-        return 'Select campaign settings...';
+        return 'Upload clothes image';
       case 1:
-        return 'What is an ad group anyways?';
+        return 'Remove background';
       case 2:
-        return 'This is the bit I really care about!';
+        return 'Modify image';
+      case 3:
+        return 'Select category & add tags';
       default:
         return 'Unknown stepIndex';
     }
+  };
+
+  onSelectImg = e => {
+    // const { loading } = this.state;
+    this.setState({ loading: true });
+    this.resizeImg(e.target.files[0], 'abcd', 150, 150)
+      .then(file => {
+        console.log(file);
+        this.setState({ loading: false, activeStep: 1, previewURL: URL.createObjectURL(file) });
+      })
+      .catch(error => {
+        message.error(error.message);
+        this.setState({ loading: false });
+      });
+  };
+
+  resizeImg = (file, filename, resizeWidth, resizeHeight) => {
+    return new Promise((resolve, reject) => {
+      //load original image
+      let original = new Image();
+      original.onload = () => {
+        // put image to canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = resizeWidth;
+        canvas.height = resizeHeight;
+        // resize image using canvas
+        const ctx = canvas.getContext('2d');
+        const wCount = original.width / resizeWidth;
+        const hCount = original.height / resizeHeight;
+        let sx, sy, sw, sh;
+        if (wCount > hCount) {
+          // crop "vertically"
+          sh = original.height;
+          sw = (original.height * resizeWidth) / resizeHeight;
+          sy = 0;
+          sx = (original.width - sw) / 2;
+        } else {
+          // crop horizontally
+          sw = original.width;
+          sh = (original.width * resizeHeight) / resizeWidth;
+          sx = 0;
+          sy = (original.height - sh) / 2;
+        }
+        ctx.drawImage(original, sx, sy, sw, sh, 0, 0, resizeWidth, resizeHeight);
+        // read from canvas to png image file
+        let dataURL = canvas.toDataURL('image/png');
+        // https://stackoverflow.com/a/43358515/12017013
+        let arr = dataURL.split(','),
+          mime = arr[0].match(/:(.*?);/)[1],
+          bstr = atob(arr[1]),
+          n = bstr.length,
+          u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        resolve(new File([u8arr], filename, { type: mime }));
+      };
+      original.onerror = error => {
+        reject(error);
+      };
+      original.src = URL.createObjectURL(file);
+    });
   };
 
   handleNext = () => {
@@ -166,9 +245,10 @@ export default class AddClothes extends React.Component {
 
   render() {
     const steps = this.getSteps();
-    const { activeStep } = this.state;
+    const { activeStep, loading, previewURL } = this.state;
     return (
       <Wrapper>
+        <Loading loading={loading} />
         <Up>
           <Title>
             <UpImgWrapper>
@@ -193,44 +273,74 @@ export default class AddClothes extends React.Component {
           </Stepper>
 
           <Content>
-            <ContentImgWrapper>
-              <Tooltip
-                arrow
-                title="Click to upload image"
-                TransitionComponent={Zoom}
-                placement="top"
-              >
-                <Button className="iconButton">
-                  <img src={uploadImg} />
-                </Button>
-              </Tooltip>
-              <Tooltip arrow title="Take a photo" TransitionComponent={Zoom} placement="top">
-                <Button className="iconButton">
-                  <img src={cameraImg} />
-                </Button>
-              </Tooltip>
-            </ContentImgWrapper>
+            {activeStep === 0 && (
+              <StepOne>
+                <Tooltip
+                  arrow
+                  title="Click to upload image"
+                  TransitionComponent={Zoom}
+                  placement="top"
+                >
+                  <label htmlFor="uploadImg">
+                    <input
+                      accept="image/*"
+                      id="uploadImg"
+                      type="file"
+                      onChange={this.onSelectImg}
+                    />
+                    <Button className="iconButton" component="span">
+                      <img src={uploadImg} />
+                    </Button>
+                  </label>
+                </Tooltip>
+                <Tooltip arrow title="Take a photo" TransitionComponent={Zoom} placement="top">
+                  <Button className="iconButton">
+                    <img src={cameraImg} />
+                  </Button>
+                </Tooltip>
+              </StepOne>
+            )}
+
+            {/* ************************************** */}
+            {/* Step2 */}
+            {activeStep === 1 && (
+              <StepTwo>
+                <img src={previewURL} />
+              </StepTwo>
+            )}
+
+            {/* ************************************** */}
+            {/* Step3 */}
+            {activeStep === 2 && (
+              <StepThree>
+                <ClothesFitter clothesSrc={previewURL} />
+              </StepThree>
+            )}
           </Content>
 
           <Buttons>
-            <Button
-              className="backBtn"
-              variant="contained"
-              color="primary"
-              disabled={activeStep === 0}
-              onClick={this.handleBack}
-            >
-              Back
-            </Button>
-            <Button
-              className="nextBtn"
-              variant="contained"
-              color="primary"
-              // disabled={activeStep === 2}
-              onClick={this.handleNext}
-            >
-              {activeStep >= steps.length - 1 ? 'Finish' : 'Next'}
-            </Button>
+            {activeStep !== 0 && (
+              <Button
+                className="backBtn"
+                variant="contained"
+                color="primary"
+                disabled={activeStep === 0}
+                onClick={this.handleBack}
+              >
+                Back
+              </Button>
+            )}
+            {activeStep !== 0 && (
+              <Button
+                className="nextBtn"
+                variant="contained"
+                color="primary"
+                // disabled={activeStep === 2}
+                onClick={this.handleNext}
+              >
+                {activeStep >= steps.length - 1 ? 'Finish' : 'Next'}
+              </Button>
+            )}
           </Buttons>
         </Down>
       </Wrapper>

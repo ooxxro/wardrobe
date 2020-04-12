@@ -12,6 +12,7 @@ import cameraImg from '../images/camera.png';
 import { message } from 'antd';
 import Loading from './Loading';
 import ClothesFitter from './ClothesFitter';
+import firebase from '../firebase';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -81,7 +82,24 @@ const StepOne = styled.div`
     height: 100px;
   }
 `;
-const StepTwo = styled.div``;
+const StepTwo = styled.div`
+  text-align: center;
+  .imgs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img,
+    .img-placeholder {
+      display: block;
+      width: 350px;
+      height: 350px;
+      object-fit: contain;
+      margin: 1rem;
+      border: 1px solid #000;
+    }
+  }
+`;
 const StepThree = styled.div``;
 
 const Buttons = styled.div`
@@ -144,6 +162,8 @@ export default class AddClothes extends React.Component {
     categoryArr: '',
     file: '',
     previewURL: '',
+    previewImg: null,
+    afterRemoveBackgroundURL: '',
     snapshotString: '',
     activeStep: 0,
     loading: false,
@@ -176,10 +196,14 @@ export default class AddClothes extends React.Component {
   onSelectImg = e => {
     // const { loading } = this.state;
     this.setState({ loading: true });
-    this.resizeImg(e.target.files[0], 'abcd', 150, 150)
+    this.resizeImg(e.target.files[0], 'abcd', 800, 800)
       .then(file => {
-        console.log(file);
-        this.setState({ loading: false, activeStep: 1, previewURL: URL.createObjectURL(file) });
+        this.setState({
+          loading: false,
+          activeStep: 1,
+          previewURL: URL.createObjectURL(file),
+          previewImg: file,
+        });
       })
       .catch(error => {
         message.error(error.message);
@@ -235,6 +259,32 @@ export default class AddClothes extends React.Component {
     });
   };
 
+  removeBackground = () => {
+    if (this.state.loading) return;
+
+    this.setState({ loading: true });
+
+    // first convert file to base64 so we can send to httpsCallable
+    const reader = new FileReader();
+    reader.onload = () => {
+      // can call cloud function
+      const removeBackground = firebase.functions().httpsCallable('removeBackground');
+      removeBackground({ base64: reader.result })
+        .then(result => {
+          this.setState({
+            afterRemoveBackgroundURL: result.data,
+            loading: false,
+          });
+        })
+        .catch(error => {
+          this.setState({ loading: false });
+          console.error(error);
+          message.error(error.message);
+        });
+    };
+    reader.readAsDataURL(this.state.previewImg);
+  };
+
   handleNext = () => {
     this.setState(state => ({ activeStep: state.activeStep + 1 }));
   };
@@ -245,7 +295,7 @@ export default class AddClothes extends React.Component {
 
   render() {
     const steps = this.getSteps();
-    const { activeStep, loading, previewURL } = this.state;
+    const { activeStep, loading, previewURL, afterRemoveBackgroundURL } = this.state;
     return (
       <Wrapper>
         <Loading loading={loading} />
@@ -305,7 +355,19 @@ export default class AddClothes extends React.Component {
             {/* Step2 */}
             {activeStep === 1 && (
               <StepTwo>
-                <img src={previewURL} />
+                <div>
+                  <Button variant="contained" color="primary" onClick={this.removeBackground}>
+                    Remove Background
+                  </Button>
+                </div>
+                <div className="imgs">
+                  <img src={previewURL} />
+                  {afterRemoveBackgroundURL ? (
+                    <img src={afterRemoveBackgroundURL} />
+                  ) : (
+                    <div className="img-placeholder" />
+                  )}
+                </div>
               </StepTwo>
             )}
 

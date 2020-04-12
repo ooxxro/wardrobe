@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { Link, withRouter } from 'react-router-dom';
-import { Menu, Dropdown, message, /*Card*/ } from 'antd';
+import { Menu, Dropdown, message, Card } from 'antd';
 import {LoadingOutlined} from '@ant-design/icons';
 import firebase from '../firebase';
 
@@ -105,12 +105,13 @@ const ClothingRow = styled.div`
   height: 200px;
   border-bottom: 1px solid currentColor;
 `;
-// const ClothingItem = styled(Card)`
-//   display: flex;
-//   flex: 0.3;
-//   max-width: 250px;
-//   height: 200px;
-// `;
+const ClothingItem = styled(Card)`
+  display: flex;
+  flex: 1;
+  width: 220px;
+  height: 220px;
+  margin: 10px;
+`;
 @withRouter
 @observer
 export default class ClothesIndex extends React.Component {
@@ -128,7 +129,6 @@ export default class ClothesIndex extends React.Component {
   handleClick = (event) =>  {
     this.setState({location: event.key});
     this.setState({fetched: false});
-    // this.getData(event.key);
   }
   getCategoryData = location => {
     const {userStore} = this.context;
@@ -141,7 +141,6 @@ export default class ClothesIndex extends React.Component {
   /**
    * This function handles the data returned from getCategoryData
    * such that the Promise returned resolves the data.
-   * Currently is not working because the itemUrls ends up with no data in the array.
    */
   getData = (location) => {
     if (this.state.fetched) return;
@@ -173,7 +172,7 @@ export default class ClothesIndex extends React.Component {
         });
       
       Promise.all(promises).then(() => {
-        this.setState({itemPaths: imagePaths, itemUrls: imageURLs, fetched: true});
+        this.setState({itemPaths: imagePaths, itemUrls: imageURLs.sort(), fetched: true}); // sort imageURLs so content always appears in the same order by link
       })
     })
     .catch(error => {
@@ -192,8 +191,7 @@ export default class ClothesIndex extends React.Component {
         return (
           <>
         {this.state.itemUrls.map((url, i) => (
-          // <ClothingItem title={i} cover={<img src={url} />} hoverable={true} key={i}/>
-          <img style={{width: 200, height: 200}} src={url} key={i} />
+          <ClothingItem cover={<img src={url} style={{width: 220, height: 220}}/>} hoverable={true} key={i}/>
         ))}
         </>
         );
@@ -212,8 +210,7 @@ export default class ClothesIndex extends React.Component {
           {content.map((item, i) => (
             <ClothingRow key={i}>
               {item.map((url, j) => (
-                // <ClothingItem title={j} cover={<img src={url} />} hoverable={true} key={j} />
-                <img style={{width: 200, height: 200}} src={url} key={j} />
+                <ClothingItem cover={<img src={url} style={{width: 220, height: 220}}/>} hoverable={true} key={j} />
               ))}
             </ClothingRow>
           ))}
@@ -223,7 +220,6 @@ export default class ClothesIndex extends React.Component {
   }
   componentDidMount() {
     this.setState({ location: this.props.match.params.type }); // set current location
-    this.getData(this.props.match.params.type);
   }
   render() {
     const links = [
@@ -242,14 +238,7 @@ export default class ClothesIndex extends React.Component {
         <Menu.Item>Color</Menu.Item>
       </Menu>
     );
-    /**
-     * Here I am checking if itemUrls is being set. 
-     */
-    const imageURLs = this.state.itemUrls;
-    // console.log("Images count: ", imageURLs.length);
-    // console.log(imageURLs); // Shows an array that is empty but when you expand it, it shows all the items
-    // console.log(this.state.items); // Shows the imgIDs
-    // console.log("Items count: ", this.state.items.length); 
+    this.getData(this.props.match.params.type);
     return (
       <Wrapper>
         <ContainerCard>
@@ -271,12 +260,10 @@ export default class ClothesIndex extends React.Component {
                 <SortButton>Sort By</SortButton>
               </Dropdown>
             </CardHeader>
-            <div style={{display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center", flex: 1}}>
+            <div style={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", flex: 1}}>
             {
-              this.state.fetched /*(imageURLs.length === this.state.items.length)*/ ? // Only load if all the images have been set in itemUrls
-              imageURLs.map((url, i) => (
-                <img style={{width: 200, height: 250}} src={url} key={i} />
-              ))
+              this.state.fetched ? // Only load if all the images have been set in itemUrls
+              this.displayData()
                : <LoadingOutlined style={{fontSize:100}} />
             }
             </div>

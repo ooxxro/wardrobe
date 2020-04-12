@@ -72,10 +72,7 @@ export default class ClothesFitter extends React.Component {
       dY = 100 - top - height;
     }
 
-    this.setState({
-      dX,
-      dY,
-    });
+    this.setState({ dX, dY });
   };
   onMouseUp = e => {
     e.preventDefault();
@@ -109,17 +106,28 @@ export default class ClothesFitter extends React.Component {
     return (
       <Wrapper ref={el => (this.parentRef = el)}>
         <img className="mannequin" src={mannequinImg} />
-        <img
-          className="clothes"
-          src={this.props.clothesSrc}
-          style={{
-            top: `${top + dY}%`,
-            left: `${left + dX}%`,
-            width: `${width}%`,
-            height: `${height}%`,
-          }}
-          onMouseDown={this.onMouseDown}
-        />
+
+        <div className="clothes-wrapper">
+          <img
+            className="clothes"
+            src={this.props.clothesSrc}
+            style={{
+              top: `${top + dY}%`,
+              left: `${left + dX}%`,
+              width: `${width}%`,
+              height: `${height}%`,
+            }}
+            onMouseDown={this.onMouseDown}
+          />
+          {/* <span className="resize-top-left" /> */}
+          {/* <span className="resize-top-right" /> */}
+          <span className="resize-bottom-right" />
+          {/* <span className="resize-bottom-left" /> */}
+          {/* <span className="resize-top" /> */}
+          {/* <span className="resize-right" /> */}
+          {/* <span className="resize-bottom" /> */}
+          {/* <span className="resize-left" /> */}
+        </div>
       </Wrapper>
     );
   }

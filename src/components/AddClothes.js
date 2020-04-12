@@ -6,10 +6,12 @@ import styled from 'styled-components';
 import { Stepper, Step, StepLabel, Button, Tooltip, Zoom } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
 import StepConnector from '@material-ui/core/StepConnector';
+import { PlusOutlined } from '@ant-design/icons';
+import { message, Tag, Input } from 'antd';
+import { TweenOneGroup } from 'rc-tween-one';
 import plusImg from '../images/plus.svg';
 import uploadImg from '../images/upload-cloud.png';
 import cameraImg from '../images/camera.png';
-import { message } from 'antd';
 import Loading from './Loading';
 import ClothesFitter from './ClothesFitter';
 
@@ -83,6 +85,24 @@ const StepOne = styled.div`
 `;
 const StepTwo = styled.div``;
 const StepThree = styled.div``;
+const StepFour = styled.div`
+  display: flex;
+  .left {
+    margin-right: 20px;
+    img {
+      width: 300px;
+      height: auto;
+    }
+  }
+  .right {
+    flex: 1;
+    .tags {
+      .ant-tag {
+        display: inline-block;
+      }
+    }
+  }
+`;
 
 const Buttons = styled.div`
   display: flex;
@@ -140,13 +160,16 @@ export default class AddClothes extends React.Component {
   static contextType = StoreContext;
 
   state = {
-    title: 'Add clothes',
-    categoryArr: '',
-    file: '',
-    previewURL: '',
-    snapshotString: '',
-    activeStep: 0,
     loading: false,
+    activeStep: 0,
+
+    // step1: upload img
+    previewURL: '',
+
+    // step 4: category & tags
+    tags: [],
+    tagsInputVisible: false,
+    newTagValue: '',
   };
 
   getSteps = () => {
@@ -178,7 +201,6 @@ export default class AddClothes extends React.Component {
     this.setState({ loading: true });
     this.resizeImg(e.target.files[0], 'abcd', 150, 150)
       .then(file => {
-        console.log(file);
         this.setState({ loading: false, activeStep: 1, previewURL: URL.createObjectURL(file) });
       })
       .catch(error => {
@@ -243,9 +265,40 @@ export default class AddClothes extends React.Component {
     this.setState(state => ({ activeStep: state.activeStep - 1 }));
   };
 
+  onRemoveTag = tag => {
+    const tags = this.state.tags.filter(t => t !== tag);
+    this.setState({ tags });
+  };
+
+  showInput = () => {
+    this.setState(
+      { tagsInputVisible: true },
+      () => this.newTagInputRef && this.newTagInputRef.focus()
+    );
+  };
+
+  addTag = () => {
+    const { newTagValue, tags } = this.state;
+
+    if (!newTagValue.trim()) return;
+
+    if (tags.includes(newTagValue)) {
+      message.warn('Tag already exists!');
+    } else {
+      this.setState({
+        tags: [...tags, newTagValue],
+      });
+    }
+    // clear input
+    this.setState({ newTagValue: '' }, () => this.newTagInputRef && this.newTagInputRef.focus());
+  };
+
   render() {
     const steps = this.getSteps();
     const { activeStep, loading, previewURL } = this.state;
+
+    const { tags, tagsInputVisible, newTagValue } = this.state;
+
     return (
       <Wrapper>
         <Loading loading={loading} />
@@ -315,6 +368,63 @@ export default class AddClothes extends React.Component {
               <StepThree>
                 <ClothesFitter clothesSrc={previewURL} />
               </StepThree>
+            )}
+
+            {/* ************************************** */}
+            {/* Step4 */}
+            {activeStep === 3 && (
+              <StepFour>
+                <div className="left">
+                  <img src={previewURL} />
+                </div>
+                <div className="right">
+                  <div>
+                    <TweenOneGroup
+                      className="tags"
+                      enter={{
+                        scale: 0.8,
+                        opacity: 0,
+                        type: 'from',
+                        duration: 100,
+                        onComplete: e => {
+                          e.target.style = '';
+                        },
+                      }}
+                      leave={{ opacity: 0, width: 0, scale: 0, duration: 200 }}
+                      appear={false}
+                    >
+                      {tags.map(tag => (
+                        <Tag
+                          key={tag}
+                          closable
+                          onClose={e => {
+                            e.preventDefault();
+                            this.onRemoveTag(tag);
+                          }}
+                        >
+                          {tag}
+                        </Tag>
+                      ))}
+                      {tagsInputVisible ? (
+                        <Input
+                          ref={el => (this.newTagInputRef = el)}
+                          type="text"
+                          size="small"
+                          style={{ width: 78 }}
+                          value={newTagValue}
+                          onChange={e => this.setState({ newTagValue: e.target.value })}
+                          onBlur={this.addTag}
+                          onPressEnter={this.addTag}
+                        />
+                      ) : (
+                        <Tag onClick={this.showInput} className="new-tag">
+                          <PlusOutlined /> New Tag
+                        </Tag>
+                      )}
+                    </TweenOneGroup>
+                  </div>
+                </div>
+              </StepFour>
             )}
           </Content>
 

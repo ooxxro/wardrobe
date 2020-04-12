@@ -30,6 +30,7 @@
     "mobx": "^5.15.4",
     "mobx-react": "^6.1.8",
     "prettier": "^1.19.1",
+    "rc-tween-one": "^2.6.8",
     "react": "^16.13.0",
     "react-app-rewired": "^2.1.5",
     "react-bootstrap": "^1.0.0",

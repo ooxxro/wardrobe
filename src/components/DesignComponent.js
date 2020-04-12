@@ -281,7 +281,8 @@ export default class DesignComponent extends React.Component {
     // dialogs
     dialogOpen: false,
     goBackDialogOpen: false,
-    //clothing image paths + corresponding categories
+    //clothing ids + image paths + corresponding categories
+    clothesids: [],
     clothesimages: [],
     clothescategories: [], //2D array of categories
     storageUrls: [], //URLs for the images from storage
@@ -290,6 +291,11 @@ export default class DesignComponent extends React.Component {
     selectedShirt: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
     selectedPants: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
     selectedShoes: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
+    //Used for making outfit fields
+    selectedHatID: null,
+    selectedShirtID: null,
+    selectedPantsID: null,
+    selectedShoesID: null,
   };
 
   //Execute upon rendering the page
@@ -304,13 +310,14 @@ export default class DesignComponent extends React.Component {
     let images = [];
     let categories = [];
     let urls = [];
+    let ids = [];
 
     db.collection('users/' + firebase.auth().currentUser.uid + '/clothes')
       .get()
       .then(function(querySnapshot) {
         querySnapshot.forEach(function(doc) {
           categories.push(doc.data().categories);
-
+          ids.push(doc.id);
           images.push(doc.data().imagePath);
 
           //Doesn't put in the URls in the same order as the paths.
@@ -323,7 +330,12 @@ export default class DesignComponent extends React.Component {
         });
       });
 
-    this.setState({ clothesimages: images, clothescategories: categories, storageUrls: urls });
+    this.setState({
+      clothesids: ids,
+      clothesimages: images,
+      clothescategories: categories,
+      storageUrls: urls,
+    });
   };
 
   //creates a state array of tags using the docs specified
@@ -397,6 +409,13 @@ export default class DesignComponent extends React.Component {
     this.setState({ dialogOpen: true });
   };
 
+  onSaveNewOutfit = () => {
+    //let hat = this.state.selectedHatID;
+    //let shirt = this.state.selectedShirtID;
+    //let pants = this.state.selectedPantsID;
+    //let shoes = this.state.selectedShoesID;
+  };
+
   onEditDone = () => {
     this.setState({ dialogOpen: true });
   };
@@ -414,7 +433,12 @@ export default class DesignComponent extends React.Component {
     if (from === 'design') {
       buttonsZone = [
         { text: 'Download', onClick: () => {} },
-        { text: 'Save to My Favorites', onClick: () => {} },
+        {
+          text: 'Save to My Favorites',
+          onClick: () => {
+            this.onSaveNewOutfit();
+          },
+        },
         { text: 'Exit without Saving', exit: true, onClick: () => {} },
       ];
     } else {
@@ -618,7 +642,10 @@ export default class DesignComponent extends React.Component {
                             src={this.state.storageUrls[j]}
                             key={index}
                             onClick={() =>
-                              this.setState({ selectedHat: this.state.storageUrls[j] })
+                              this.setState({
+                                selectedHat: this.state.storageUrls[j],
+                                selectedHatID: this.state.clothesids[index],
+                              })
                             }
                           />
                         );
@@ -656,7 +683,10 @@ export default class DesignComponent extends React.Component {
                             src={this.state.storageUrls[j]}
                             key={index}
                             onClick={() =>
-                              this.setState({ selectedPants: this.state.storageUrls[j] })
+                              this.setState({
+                                selectedPants: this.state.storageUrls[j],
+                                selectedPantsID: this.state.clothesids[index],
+                              })
                             }
                           />
                         );
@@ -694,7 +724,10 @@ export default class DesignComponent extends React.Component {
                             src={this.state.storageUrls[j]}
                             key={index}
                             onClick={() =>
-                              this.setState({ selectedShirt: this.state.storageUrls[j] })
+                              this.setState({
+                                selectedShirt: this.state.storageUrls[j],
+                                selectedShirtID: this.state.clothesids[index],
+                              })
                             }
                           />
                         );
@@ -732,7 +765,10 @@ export default class DesignComponent extends React.Component {
                             src={this.state.storageUrls[j]}
                             key={index}
                             onClick={() =>
-                              this.setState({ selectedShoes: this.state.storageUrls[j] })
+                              this.setState({
+                                selectedShoes: this.state.storageUrls[j],
+                                selectedShoesID: this.state.clothesids[index],
+                              })
                             }
                           />
                         );

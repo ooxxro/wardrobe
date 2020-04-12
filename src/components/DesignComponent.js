@@ -103,13 +103,51 @@ const EditPic = styled.div`
 const ImgWrapper = styled.div`
   width: 300px;
   height: 400px;
-  img {
+  .bgImg {
+    position: absolute;
     object-fit: cover;
     width: 100%;
     height: 100%;
     border-radius: 40px;
   }
 `;
+
+const HatImageArea = styled.div`
+  img {
+    margin-left: 100px;
+    position: absolute;
+    width: 100px;
+    height: 100px;
+  }
+`;
+const ShirtImageArea = styled.div`
+  img {
+    margin-left: 100px;
+    margin-top: 100px;
+    position: absolute;
+    width: 100px;
+    height: 100px;
+  }
+`;
+const PantsImageArea = styled.div`
+  img {
+    margin-left: 100px;
+    margin-top: 200px;
+    position: absolute;
+    width: 100px;
+    height: 100px;
+  }
+`;
+const ShoesImageArea = styled.div`
+  img {
+    margin-left: 100px;
+    margin-top: 300px;
+    position: absolute;
+    width: 100px;
+    height: 100px;
+  }
+`;
+
 const IconCol = styled.div`
   display: flex;
   justify-content: space-between;
@@ -247,6 +285,11 @@ export default class DesignComponent extends React.Component {
     clothesimages: [],
     clothescategories: [], //2D array of categories
     storageUrls: [], //URLs for the images from storage
+    //Storage URls for selected clothing items, initially transparent images
+    selectedHat: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
+    selectedShirt: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
+    selectedPants: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
+    selectedShoes: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
   };
 
   //Execute upon rendering the page
@@ -405,7 +448,19 @@ export default class DesignComponent extends React.Component {
         </Random>
         <Picture>
           <ImgWrapper>
-            <img src={userBgImg} />
+            <img className="bgImg" src={userBgImg} />
+            <HatImageArea>
+              <img src={this.state.selectedHat} />
+            </HatImageArea>
+            <ShirtImageArea>
+              <img src={this.state.selectedShirt} />
+            </ShirtImageArea>
+            <PantsImageArea>
+              <img src={this.state.selectedPants} />
+            </PantsImageArea>
+            <ShoesImageArea>
+              <img src={this.state.selectedShoes} />
+            </ShoesImageArea>
           </ImgWrapper>
           <EditPic>
             <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
@@ -535,45 +590,7 @@ export default class DesignComponent extends React.Component {
           </Popover>
 
           <ClothesMenu>
-            <Tabs defaultActiveKey="0" type="card" onChange={this.onSelectTab.bind(this)}>
-              <TabPane tab="All" key="0">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      //console.log(path.split('/')[1]);
-                      //console.log(this.state.storageUrls[j]);
-                      //console.log(this.state.storageUrls[j].includes(path.split('/')[1]));
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
+            <Tabs defaultActiveKey="1" type="card" onChange={this.onSelectTab.bind(this)}>
               <TabPane tab="Hats" key="1">
                 {(this.state.clothesimages || []).map((path, index) => {
                   let includesAllFilters = true;
@@ -600,6 +617,9 @@ export default class DesignComponent extends React.Component {
                             className="clothingItem"
                             src={this.state.storageUrls[j]}
                             key={index}
+                            onClick={() =>
+                              this.setState({ selectedHat: this.state.storageUrls[j] })
+                            }
                           />
                         );
                       }
@@ -635,6 +655,9 @@ export default class DesignComponent extends React.Component {
                             className="clothingItem"
                             src={this.state.storageUrls[j]}
                             key={index}
+                            onClick={() =>
+                              this.setState({ selectedPants: this.state.storageUrls[j] })
+                            }
                           />
                         );
                       }
@@ -670,6 +693,9 @@ export default class DesignComponent extends React.Component {
                             className="clothingItem"
                             src={this.state.storageUrls[j]}
                             key={index}
+                            onClick={() =>
+                              this.setState({ selectedShirt: this.state.storageUrls[j] })
+                            }
                           />
                         );
                       }
@@ -705,6 +731,9 @@ export default class DesignComponent extends React.Component {
                             className="clothingItem"
                             src={this.state.storageUrls[j]}
                             key={index}
+                            onClick={() =>
+                              this.setState({ selectedShoes: this.state.storageUrls[j] })
+                            }
                           />
                         );
                       }

@@ -119,9 +119,9 @@ export default class ClothesIndex extends React.Component {
     super();
     this.state = {
       location: 'all',
-      items: [],    // Array of data objects for each item
-      itemUrls: [], // Urls of each item
-      itemPaths: [], // Storage image path for each item
+      itemsIDs: [],    // Array of data objects for each item
+      clothingURLs: [], // Urls of each item
+      clothingItems: [], // Store item objects that has image path, image url, createdTime, and lastModifiedTime.
       fetched: false
     };
   }
@@ -130,6 +130,18 @@ export default class ClothesIndex extends React.Component {
     this.setState({location: event.key});
     this.setState({fetched: false});
   }
+  /**
+   * Sorts images by time created or by last modified time
+   */
+  handleSort = (event) => {
+    // Make sure to sort itemsIDs by createdTime or lastModifiedTime
+    let unsortedItems = this.state.clothingItems
+    unsortedItems.sort((a, b) => a[event.key] - b[event.key])
+    this.setState({clothingURLs: unsortedItems.map((item) => item.imageURL)});
+  }
+  /**
+   * Retrieves clothing item IDs in the selected category
+   */
   getCategoryData = location => {
     const {userStore} = this.context;
     return userCollection
@@ -145,34 +157,39 @@ export default class ClothesIndex extends React.Component {
   getData = (location) => {
     if (this.state.fetched) return;
     const {userStore} = this.context;
-    let imagePaths = [];
-    let imageURLs = [];
+    let clothes = [];
     this.getCategoryData(location)
     .then((doc) => {
       if (!doc.exists)
         return;
       let data = doc.data();
-      this.setState({items: data.clothes});
+      this.setState({itemsIDs: data.clothes});
       let storageRef = firebase.storage().ref();
+
       const promises = data.clothes.map((imgID) => {
+        let clothingItem = {};
         return userCollection
           .doc(`${userStore.currentUser.uid}`)
           .collection('clothes')
           .doc(imgID)
           .get()
           .then((res) => {
-            imagePaths.push(res.data().imagePath);
+            clothingItem.imagePath = res.data().imagePath;
+            clothingItem.createdTime = res.data().createdTime;
+            clothingItem.lastEditedTime = res.data().lastEditedTime;
             return storageRef
             .child(res.data().imagePath)
             .getDownloadURL()
             .then((url) => {
-              return imageURLs.push(url);
+              clothingItem.imageURL = url;
+              return clothes.push(clothingItem);
             });
           });
         });
       
       Promise.all(promises).then(() => {
-        this.setState({itemPaths: imagePaths, itemUrls: imageURLs.sort(), fetched: true}); // sort imageURLs so content always appears in the same order by link
+        // sort imageURLs so content always appears in the same order by link
+        this.setState({clothingItems: clothes, clothingURLs: clothes.map((item) => item.imageURL).sort(), fetched: true});
       })
     })
     .catch(error => {
@@ -181,16 +198,16 @@ export default class ClothesIndex extends React.Component {
   }
 
   /**
-   * Function defines how clothing is displayed
+   * Function defines how clothing images ar displayed
    */
   displayData() {
-    let numItems = this.state.items.length;
-    let $items = this.state.itemUrls;
+    let numItems = this.state.itemsIDs.length;
+    let $items = this.state.clothingURLs;
     if (numItems / 3 === 0) {
       if ($items[0] != null) {
         return (
           <>
-        {this.state.itemUrls.map((url, i) => (
+        {this.state.clothingURLs.map((url, i) => (
           <ClothingItem cover={<img src={url} style={{width: 220, height: 220}}/>} hoverable={true} key={i}/>
         ))}
         </>
@@ -230,12 +247,10 @@ export default class ClothesIndex extends React.Component {
       { to: 'shoes', text: 'Shoes' },
     ];
     const sortMenu = (
-      <Menu>
-        <Menu.Item>Date Modified</Menu.Item>
+      <Menu onClick={(event) => this.handleSort(event)}>
+        <Menu.Item key="lastEditedTime">Date Modified</Menu.Item>
         <Menu.Divider/>
-        <Menu.Item>Date Added</Menu.Item>
-        <Menu.Divider/>
-        <Menu.Item>Color</Menu.Item>
+        <Menu.Item key="createdTime">Date Added</Menu.Item>
       </Menu>
     );
     this.getData(this.props.match.params.type);
@@ -255,14 +270,14 @@ export default class ClothesIndex extends React.Component {
           </LeftSidePanel>
           <RightSide>
             <CardHeader>
-              {this.state.items.length} {this.state.items.length === 1 ? `item` : `items`}
+              {this.state.itemsIDs.length} {this.state.itemsIDs.length === 1 ? `item` : `items`}
               <Dropdown overlay={sortMenu} placement="bottomCenter">
                 <SortButton>Sort By</SortButton>
               </Dropdown>
             </CardHeader>
             <div style={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", flex: 1}}>
             {
-              this.state.fetched ? // Only load if all the images have been set in itemUrls
+              this.state.fetched ? // Only load if all the images have been set in clothingURLs
               this.displayData()
                : <LoadingOutlined style={{fontSize:100}} />
             }

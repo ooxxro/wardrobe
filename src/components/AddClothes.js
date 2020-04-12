@@ -227,6 +227,7 @@ export default class AddClothes extends React.Component {
       if (file) {
         if (!this.state.defaultCate) {
           message.error('Need to select one default category');
+          return;
         }
         let temp = ['all'];
         temp.push(this.state.defaultCate);

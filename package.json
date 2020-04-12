@@ -35,6 +35,7 @@
     "react-app-rewired": "^2.1.5",
     "react-bootstrap": "^1.0.0",
     "react-dom": "^16.13.0",
+    "react-rnd": "^10.1.8",
     "react-router-dom": "^5.1.2",
     "react-scripts": "3.4.0",
     "react-spinners": "^0.8.1",

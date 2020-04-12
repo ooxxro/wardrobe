@@ -199,7 +199,7 @@ export default class AddClothes extends React.Component {
   onSelectImg = e => {
     // const { loading } = this.state;
     this.setState({ loading: true });
-    this.resizeImg(e.target.files[0], 'abcd', 150, 150)
+    this.resizeImg(e.target.files[0], 'abcd', 600, 600)
       .then(file => {
         this.setState({ loading: false, activeStep: 1, previewURL: URL.createObjectURL(file) });
       })
@@ -413,7 +413,10 @@ export default class AddClothes extends React.Component {
                           style={{ width: 78 }}
                           value={newTagValue}
                           onChange={e => this.setState({ newTagValue: e.target.value })}
-                          onBlur={this.addTag}
+                          onBlur={() => {
+                            this.addTag();
+                            this.setState({ tagsInputVisible: false });
+                          }}
                           onPressEnter={this.addTag}
                         />
                       ) : (

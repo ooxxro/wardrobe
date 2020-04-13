@@ -64,6 +64,24 @@ const Card1Content = styled.div`
       background-color: #775ce3;
     }
   }
+`;
+
+const User = styled.div`
+  .user {
+    display: flex;
+    align-items: center;
+    .ant-avatar {
+      width: 130px;
+      height: 130px;
+    }
+    .displayName {
+      margin-left: 22px;
+      width: 50%;
+    }
+    .MuiFormControl-root {
+      flex: auto;
+    }
+  }
 
   .editAvatarForm input {
     border-radius: 4px;
@@ -71,32 +89,16 @@ const Card1Content = styled.div`
     border: 1px solid #c3c4c8;
     width: 42.5%;
     margin-bottom: 20px;
-    margin-right: 3%;
   }
 
-  .editAvatarButton {
+  .card1Btn {
     width: 10%;
     background: #6247ce;
+    margin-right: 5px;
     &:hover {
       color: #fff;
       background-color: #775ce3;
     }
-  }
-`;
-
-const User = styled.div`
-  display: flex;
-  align-items: center;
-  .ant-avatar {
-    width: 130px;
-    height: 130px;
-  }
-  .displayName {
-    margin-left: 22px;
-    width: 50%;
-  }
-  .MuiFormControl-root {
-    flex: auto;
   }
 `;
 
@@ -440,47 +442,53 @@ export default class Setting extends React.Component {
           <Card1Content>
             <h4 />
             <User>
-              <StyledAvatar
-                size="large"
-                icon={<UserOutlined />}
-                onClick={this.editAvatar}
-                src={currentUser.photoURL}
-              ></StyledAvatar>
-              <TextField
-                className="displayName"
-                id="diaplay-name"
-                label="Display Name"
-                type="text"
-                autoComplete="name"
-                variant="outlined"
-                size="small"
-                value={displayName}
-                onChange={e => this.setState({ displayName: e.target.value })}
-                onKeyPress={e => {
-                  if (e.key === 'Enter') this.onChangeDisplayName();
-                }}
-              />
-              <ButtonWithLoading
-                className="card1Btn"
-                variant="contained"
-                color="primary"
-                loading={displayNameLoading}
-                disabled={
-                  !displayName.trim() ||
-                  displayNameLoading ||
-                  displayName.trim() === currentUser.displayName
-                }
-                onClick={this.onChangeDisplayName}
-              >
-                SAVE
-              </ButtonWithLoading>
+              <div className="user">
+                <StyledAvatar
+                  size="large"
+                  icon={<UserOutlined />}
+                  onClick={this.editAvatar}
+                  src={currentUser.photoURL}
+                ></StyledAvatar>
+                <TextField
+                  className="displayName"
+                  id="diaplay-name"
+                  label="Display Name"
+                  type="text"
+                  autoComplete="name"
+                  variant="outlined"
+                  size="small"
+                  value={displayName}
+                  onChange={e => this.setState({ displayName: e.target.value })}
+                  onKeyPress={e => {
+                    if (e.key === 'Enter') this.onChangeDisplayName();
+                  }}
+                />
+                <ButtonWithLoading
+                  className="card1Btn"
+                  variant="contained"
+                  color="primary"
+                  loading={displayNameLoading}
+                  disabled={
+                    !displayName.trim() ||
+                    displayNameLoading ||
+                    displayName.trim() === currentUser.displayName
+                  }
+                  onClick={this.onChangeDisplayName}
+                >
+                  SAVE
+                </ButtonWithLoading>
+              </div>
+
               <div>
                 <form
                   className="editAvatarForm"
                   style={{ display: this.state.avatarEdit ? 'block' : 'none' }}
                 >
                   <br />
-                  <label>Upload New Avatar</label> <br></br>
+                  <label>
+                    Upload new <a href=""></a>vatar
+                  </label>{' '}
+                  <br></br>
                   <input
                     type="file"
                     id="avatarLocation"

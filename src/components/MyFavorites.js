@@ -8,6 +8,12 @@ import heartImg from '../images/heart.svg';
 import filterImg from '../images/filter.svg';
 import placeHolderImg from '../images/userBgImg.jpg';
 import placeHolder1Img from '../images/userBgImg1.jpg';
+import placeHolder2Img from '../images/userBgImg2.jpg';
+import placeHolder3Img from '../images/userBgImg3.jpg';
+import placeHolder4Img from '../images/userBgImg4.jpg';
+
+import Lightbox from 'react-image-lightbox';
+import 'react-image-lightbox/style.css';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -67,6 +73,7 @@ const Content = styled.div`
     width: 150px;
     height: 200px;
     margin: 20px 10px;
+    cursor: pointer;
   }
 `;
 
@@ -91,6 +98,7 @@ const CheckboxoxList = styled.div`
   }
 `;
 
+const images = [placeHolderImg, placeHolder1Img, placeHolder2Img, placeHolder3Img, placeHolder4Img];
 @withRouter
 @observer
 export default class MyFavorites extends React.Component {
@@ -101,9 +109,14 @@ export default class MyFavorites extends React.Component {
     tagtoggled: [],
     summer: false,
     pink: false,
+
+    // lightbox
+    photoIndex: 0,
+    isOpen: false,
   };
 
   render() {
+    const { photoIndex, isOpen } = this.state;
     return (
       <Wrapper>
         <Up>
@@ -187,18 +200,34 @@ export default class MyFavorites extends React.Component {
             </CheckboxoxList>
           </Popover>
           <Content>
-            <img src={placeHolderImg} />
-            <img src={placeHolder1Img} />
-            <img src={placeHolderImg} />
-            <img src={placeHolder1Img} />
-            <img src={placeHolderImg} />
-            <img src={placeHolder1Img} />
-            <img src={placeHolderImg} />
-            <img src={placeHolder1Img} />
-            <img src={placeHolderImg} />
-            <img src={placeHolder1Img} />
+            {images.map((url, i) => (
+              <img
+                key={i}
+                src={url}
+                onClick={() => this.setState({ isOpen: true, photoIndex: i })}
+              />
+            ))}
           </Content>
         </Down>
+
+        {isOpen && (
+          <Lightbox
+            mainSrc={images[photoIndex]}
+            nextSrc={images[(photoIndex + 1) % images.length]}
+            prevSrc={images[(photoIndex + images.length - 1) % images.length]}
+            onCloseRequest={() => this.setState({ isOpen: false })}
+            onMovePrevRequest={() =>
+              this.setState({
+                photoIndex: (photoIndex + images.length - 1) % images.length,
+              })
+            }
+            onMoveNextRequest={() =>
+              this.setState({
+                photoIndex: (photoIndex + 1) % images.length,
+              })
+            }
+          />
+        )}
       </Wrapper>
     );
   }

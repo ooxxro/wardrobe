@@ -3,7 +3,6 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { /*Link,*/ withRouter } from 'react-router-dom';
 import styled from 'styled-components';
-import placeholderImg from '../images/mywardrobe-tshirt.png';
 import backImg from '../images/back.png';
 import deleteImg from '../images/delete.png';
 import closeImg from '../images/closeIcon.png';
@@ -11,6 +10,9 @@ import editImg from '../images/pen.png';
 import { Button, message } from 'antd';
 import firebase from '../firebase';
 import Popup from 'reactjs-popup';
+import Loading from './Loading';
+
+const db = firebase.firestore();
 
 const Wrapper = styled.div`
   width: 75%;
@@ -121,16 +123,10 @@ export default class ClothesDetail extends React.Component {
   static contextType = StoreContext;
 
   state = {
+    loading: false,
+    clothes: null,
     isEdit: false,
-    imgID: '',
-    imagePath: '',
-    imageURL: '',
-    upDateTime: '',
-    createTime: '',
-    cateArr: [],
-    compareArr: [],
-    fetched: false,
-    removalArr: [],
+    removedTags: [],
     newTagArr: [],
   };
 
@@ -145,7 +141,7 @@ export default class ClothesDetail extends React.Component {
   }
 
   clearSate() {
-    this.setState({ removalArr: [], newTagArr: [] });
+    this.setState({ removedTags: [], newTagArr: [] });
     this.getData();
   }
 
@@ -162,254 +158,222 @@ export default class ClothesDetail extends React.Component {
   };
 
   getData = () => {
-    if (this.state.fetched) return;
-    const { userStore } = this.context;
-    const vm = this;
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const {
+      match: {
+        params: { clothesId },
+      },
+    } = this.props;
+
+    this.setState({ loading: true });
+
     //fetch data from firebase
-    let userObj = firebase
-      .firestore()
-      .collection('users')
-      .doc(userStore.currentUser.uid);
-    let imgID = '';
-    userObj
+    db.collection('users')
+      .doc(uid)
       .collection('clothes')
+      .doc(clothesId)
       .get()
-      .then(function(res) {
-        //TODO: Temporary using fixed data
-        imgID = res.docs[0].id;
-        userObj
-          .collection('clothes')
-          .doc(imgID)
-          .get()
-          .then(function(res) {
-            let storageRef = firebase.storage().ref();
-            vm.setState({
-              imagePath: res.data().imagePath,
-              upDateTime: res.data().lastEditedTime,
-              createTime: res.data().createdTime,
-              cateArr: res.data().categories,
-              compareArr: res.data().categories,
-              imgID: imgID,
-            });
-            storageRef
-              .child(res.data().imagePath)
-              .getDownloadURL()
-              .then(function(url) {
-                vm.setState({
-                  imageURL: url,
-                  fetched: true,
-                });
-              });
-          });
+      .then(doc => {
+        if (!doc.exists) throw new Error('Oops! clothes does not exist!');
+        const data = doc.data();
+        const clothes = {
+          ...data,
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate(),
+        };
+
+        this.setState({ clothes, loading: false });
+      })
+      .catch(error => {
+        this.setState({ loading: false });
+        message.error(error.message);
       });
   };
 
-  updateCates = () => {
-    //console.log('Compare Data');
-    let vm = this;
-    const { userStore } = this.context;
+  updateTags = () => {
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const {
+      match: {
+        params: { clothesId },
+      },
+    } = this.props;
+    const { clothes, newTagArr, removedTags } = this.state;
+
+    if (newTagArr.length === 0 && removedTags.length === 0) return;
+
+    this.setState({ loading: true });
+
+    const userRef = db.collection('users').doc(uid);
+    const clothesRef = userRef.collection('clothes').doc(clothesId);
 
     //Add new tag to firebase
-    this.state.newTagArr.map(tag => {
-      if (tag.length > 0) {
-        console.log('in newTagArr map');
-        let categoryRef = firebase
-          .firestore()
-          .collection('users/' + firebase.auth().currentUser.uid + '/categories')
-          .doc(tag);
+    const batch = db.batch();
 
-        //Check if category exists. If it does, update it, if it doesn't create it
-        categoryRef.get().then(function(thisDoc) {
-          console.log(thisDoc);
-          if (thisDoc.exists) {
-            categoryRef.update({
-              clothes: firebase.firestore.FieldValue.arrayUnion(vm.state.imgID),
-            });
-          } else {
-            categoryRef.set({
-              clothes: firebase.firestore.FieldValue.arrayUnion(vm.state.imgID),
-              name: tag,
-            });
-          }
-        });
+    batch.update(clothesRef, { updatedAt: new Date(), tags: clothes.tags });
+
+    newTagArr.forEach(tag => {
+      if (tag.length > 0) {
+        const tagsRef = userRef.collection('tags').doc(tag);
+        batch.set(
+          tagsRef,
+          {
+            clothes: firebase.firestore.FieldValue.arrayUnion({ id: clothesId, url: clothes.url }),
+          },
+          { merge: true }
+        );
       }
     });
 
     //Remove deleted tag from firebase
-    this.state.removalArr.map(tag => {
-      let categoryRef = firebase
-        .firestore()
-        .collection('users/' + firebase.auth().currentUser.uid + '/categories')
-        .doc(tag);
-      categoryRef.delete().then(function(thisDoc) {
-        console.log(thisDoc);
-      });
+    removedTags.forEach(tag => {
+      const tagsRef = userRef.collection('tags').doc(tag);
+      batch.set(
+        tagsRef,
+        { clothes: firebase.firestore.FieldValue.arrayRemove({ id: clothesId, url: clothes.url }) },
+        { merge: true }
+      );
     });
 
-    //Overwrite cateArr
-    let clothRef = firebase
-      .firestore()
-      .collection('users')
-      .doc(userStore.currentUser.uid)
-      .collection('clothes')
-      .doc(this.state.imgID);
-
-    let clothesObject = null;
-    firebase
-      .firestore()
-      .collection('users')
-      .doc(userStore.currentUser.uid)
-      .collection('clothes')
-      .doc(vm.state.imgID)
-      .get()
-      .then(function(res) {
-        clothesObject = res.data();
-        if (clothesObject) {
-          clothesObject.categories = vm.state.cateArr;
-          clothesObject.lastEditedTime = new Date().toLocaleDateString('en-GB', {
-            minute: 'numeric',
-            hour: 'numeric',
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          });
-          clothRef.set(clothesObject);
-          vm.setState({ fetched: false });
-        }
+    batch
+      .commit()
+      .then(() => {
+        this.setState({ loading: false });
+        this.getData();
+      })
+      .catch(err => {
+        this.setState({ loading: false });
+        message.error(`Error while saving: ${err.message}`);
       });
   };
 
   deleteClothes = () => {
-    let vm = this;
-    const { userStore } = this.context;
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const {
+      match: {
+        params: { clothesId },
+      },
+    } = this.props;
+    const { clothes } = this.state;
 
-    this.state.cateArr.map(tag => {
-      let categoryRef = firebase
-        .firestore()
-        .collection('users/' + firebase.auth().currentUser.uid + '/categories')
-        .doc(tag);
-      categoryRef.delete().then(function(thisDoc) {
-        console.log(thisDoc);
-      });
+    this.setState({ loading: true });
+
+    const userRef = db.collection('users').doc(uid);
+    const batch = db.batch();
+    // delete clothes document
+    const clothesRef = userRef.collection('clothes').doc(clothesId);
+    batch.delete(clothesRef);
+
+    clothes.tags.forEach(tag => {
+      const tagsRef = userRef.collection('tags').doc(tag);
+      batch.set(
+        tagsRef,
+        { clothes: firebase.firestore.FieldValue.arrayRemove({ id: clothesId, url: clothes.url }) },
+        { merge: true }
+      );
     });
-    let userObj = firebase
-      .firestore()
-      .collection('users')
-      .doc(userStore.currentUser.uid);
-    userObj
-      .collection('clothes')
-      .doc(this.state.imgID)
-      .delete()
-      .then(function(res) {
-        console.log(res);
-        message.success('clothes deleted!');
-        vm.goBack();
+    const firestorePromise = batch.commit();
+
+    // firestore
+    const storagePromise = firebase
+      .storage()
+      .ref(clothes.storagePath)
+      .delete();
+
+    Promise.all([firestorePromise, storagePromise])
+      .then(() => {
+        this.setState({ loading: false });
+        this.props.history.goBack();
+      })
+      .catch(err => {
+        this.setState({ loading: false });
+        message.error(`Error while saving: ${err.message}`);
       });
   };
 
   onCatChange = e => {
     let arr = [];
-    arr = e.target.value.toLowerCase().split(',');
-    for (let i = 0; i < arr.length; i++) {
-      arr[i] = arr[i].trim();
-    }
+    arr = e.target.value
+      .toLowerCase()
+      .split(',')
+      .map(t => t.trim());
 
     this.setState({ newTagArr: arr });
   };
 
-  combineNew() {
-    let newArr = this.state.newTagArr;
-    let cates = this.state.cateArr;
+  combineNew = () => {
+    let newArr = [...this.state.newTagArr];
+    let tags = [...this.state.clothes.tags];
 
     //remove duplicated tag
-    newArr.map(function(newTag) {
-      if (cates.includes(newTag)) {
+    newArr.map(newTag => {
+      if (tags.includes(newTag)) {
         newArr.splice(newArr.indexOf(newTag), 1);
       }
     });
 
     // console.log(newArr);
-    newArr.map(function(newTag) {
-      cates.push(newTag);
+    newArr.map(newTag => {
+      tags.push(newTag);
     });
-    this.setState({ newTagArr: newArr, cateArr: cates });
-  }
+    this.setState({
+      newTagArr: newArr,
+      clothes: {
+        ...this.state.clothes,
+        tags,
+      },
+    });
+  };
+
+  removeTag = index => {
+    const { removedTags, clothes } = this.state;
+    const tags = [...clothes.tags];
+
+    const [tag] = tags.splice(index, 1);
+
+    if (!removedTags.includes(tag)) {
+      removedTags.push(tag);
+    }
+    this.setState({
+      clothes: {
+        ...this.state.clothes,
+        tags,
+      },
+      removedTags,
+    });
+  };
 
   render() {
     let vm = this;
-    let { imageURL, createTime, upDateTime, cateArr } = this.state;
-    let $imageDisplay = <img src={placeholderImg} />;
-    let $createdTime = <span>{createTime}</span>;
-    let $upDateTime = <span>{upDateTime}</span>;
-    if (imageURL) {
-      $imageDisplay = <img src={imageURL} />;
-    }
-    const removeTag = tag => {
-      let tempArr = this.state.cateArr;
-      let removeArr = this.state.removalArr;
-      if (tempArr.includes(tag)) {
-        tempArr.splice(tempArr.indexOf(tag), 1);
-        if (!removeArr.includes(tag)) {
-          removeArr.push(tag);
-        }
-      }
-      this.setState({ cateArr: tempArr, removalArr: removeArr });
-    };
-    const tags = cateArr.map(function(tag) {
-      if (tag == 'all') {
-        return;
-      } else if (!vm.state.isEdit) {
-        return (
-          <TagButton key={tag.toString()} className="editButton" shape="rectangle" size="large">
-            {tag}
-          </TagButton>
-        );
-      } else {
-        return (
-          <TagButton key={tag.toString()} className="editButton" shape="rectangle" size="large">
-            {tag}
-            <Button
-              shape="circle"
-              size="small"
-              style={{
-                backgroundColor: '#8162EA',
-                margin: '0',
-                padding: '0',
-                marginLeft: '20%',
-                top: '-3px',
-                height: '100%',
-                width: '10%',
-                display: 'inline-block',
-              }}
-              onClick={() => removeTag(tag)}
-            >
-              <img
-                src={closeImg}
-                style={{
-                  height: '100%',
-                  width: '100%',
-                  textAlign: 'center',
-                  display: 'inline-block',
-                }}
-              />
-            </Button>
-          </TagButton>
-        );
-      }
-    });
+    let { loading, clothes, isEdit } = this.state;
 
     return (
       <Wrapper>
+        <Loading loading={loading} />
+
         <Card>
           <Top>
             <div className="topButtons">
               <Button className="backButton" shape="circle" size="large" onClick={this.goBack} />
-              <Button
-                className="deleteButton"
-                shape="circle"
-                size="large"
-                onClick={this.deleteClothes}
-              />
+              {!isEdit && (
+                <Button
+                  className="deleteButton"
+                  shape="circle"
+                  size="large"
+                  onClick={this.deleteClothes}
+                />
+              )}
               <Button
                 className="editButton"
                 shape="circle"
@@ -420,84 +384,141 @@ export default class ClothesDetail extends React.Component {
             </div>
           </Top>
 
-          <ClothingContent>
-            <Left>
-              <div className="clothingImage">{$imageDisplay}</div>
-            </Left>
+          {!loading && !clothes && <div>Clothes Not Found</div>}
 
-            <Right>
-              <div className="dateAdded">
-                <div className="label">Date added:</div>
-                <div>{$createdTime}</div>
-              </div>
-              <br />
-              <div className="dateModified">
-                <div className="label">Date modified:</div>
-                <div>{$upDateTime}</div>
-              </div>
-              <br />
-              <div className="categories">
-                <div className="label">Categories:</div>
-                <div>
-                  {tags}
-                  <Popup
-                    trigger={
-                      <Button
-                        className="addTagButton"
-                        style={{ display: this.state.isEdit ? 'block' : 'none' }}
-                      >
-                        + Add New Tags
-                      </Button>
-                    }
-                    modal
-                  >
-                    {close => (
-                      <div style={modal}>
-                        <form style={modalContent} onSubmit={this.onSubmit}>
-                          <span>Custom Categories:&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                          <input
-                            type="text"
-                            name="cat"
-                            placeholder="Seperate tags by comma"
-                            value={this.state.newTagArr}
-                            onChange={this.onCatChange}
-                            style={{ width: '30%' }}
-                          />
-                          <div></div>
-                          <input
-                            type="submit"
-                            value="submit"
-                            className="btn"
-                            style={btnStyle}
-                            onChange={this.onChange}
-                            onClick={() => {
-                              this.combineNew();
-                              close();
-                            }}
-                          />
-                          <input
-                            className="btn"
-                            type="cancel"
-                            value="cancel"
-                            style={btnStyle}
-                            onChange={() => {
-                              this.clearSate();
-                              close();
-                            }}
-                            onClick={() => {
-                              this.clearSate();
-                              close();
-                            }}
-                          />
-                        </form>
-                      </div>
-                    )}
-                  </Popup>
+          {clothes && (
+            <ClothingContent>
+              <Left>
+                <div className="clothingImage">
+                  <img src={clothes.url} />
                 </div>
-              </div>
-              <br />
-            </Right>
-          </ClothingContent>
+              </Left>
+
+              <Right>
+                <div className="dateAdded">
+                  <div className="label">Date added:</div>
+                  <div>{clothes.createdAt && clothes.createdAt.toLocaleString()}</div>
+                </div>
+                <br />
+                <div className="dateModified">
+                  <div className="label">Date modified:</div>
+                  <div>{clothes.updatedAt && clothes.updatedAt.toLocaleString()}</div>
+                </div>
+                <br />
+                <div className="categories">
+                  <div className="label">Category:</div>
+                  <div>{clothes.category}</div>
+                </div>
+                <br />
+                <div className="tags">
+                  <div className="label">Tags:</div>
+                  <div>
+                    {clothes.tags &&
+                      clothes.tags.map((tag, i) =>
+                        !vm.state.isEdit ? (
+                          <TagButton
+                            key={tag}
+                            className="editButton"
+                            shape="rectangle"
+                            size="large"
+                          >
+                            {tag}
+                          </TagButton>
+                        ) : (
+                          <TagButton
+                            key={tag}
+                            className="editButton"
+                            shape="rectangle"
+                            size="large"
+                          >
+                            {tag}
+                            <Button
+                              shape="circle"
+                              size="small"
+                              style={{
+                                backgroundColor: '#8162EA',
+                                margin: '0',
+                                padding: '0',
+                                marginLeft: '20%',
+                                top: '-3px',
+                                height: '100%',
+                                width: '10%',
+                                display: 'inline-block',
+                              }}
+                              onClick={() => this.removeTag(i)}
+                            >
+                              <img
+                                src={closeImg}
+                                style={{
+                                  height: '100%',
+                                  width: '100%',
+                                  textAlign: 'center',
+                                  display: 'inline-block',
+                                }}
+                              />
+                            </Button>
+                          </TagButton>
+                        )
+                      )}
+                    <Popup
+                      trigger={
+                        <Button
+                          className="addTagButton"
+                          style={{ display: this.state.isEdit ? 'block' : 'none' }}
+                        >
+                          + Add New Tags
+                        </Button>
+                      }
+                      modal
+                    >
+                      {close => (
+                        <div style={modal}>
+                          <form style={modalContent}>
+                            <span>Custom Categories:&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                            <input
+                              type="text"
+                              name="cat"
+                              placeholder="Seperate tags by comma"
+                              value={this.state.newTagArr}
+                              onChange={this.onCatChange}
+                              style={{ width: '30%' }}
+                            />
+                            <div></div>
+                            <input
+                              type="submit"
+                              value="submit"
+                              className="btn"
+                              style={btnStyle}
+                              onChange={this.onChange}
+                              onClick={() => {
+                                this.combineNew();
+                                close();
+                              }}
+                            />
+                            <input
+                              className="btn"
+                              type="cancel"
+                              value="cancel"
+                              style={btnStyle}
+                              onChange={() => {
+                                this.clearSate();
+                                close();
+                              }}
+                              onClick={() => {
+                                this.clearSate();
+                                close();
+                              }}
+                            />
+                          </form>
+                        </div>
+                      )}
+                    </Popup>
+                  </div>
+                </div>
+                <br />
+              </Right>
+            </ClothingContent>
+          )}
 
           <Bottom>
             <Button
@@ -505,7 +526,7 @@ export default class ClothesDetail extends React.Component {
               className="saveButton"
               onClick={() => {
                 this.save();
-                this.updateCates();
+                this.updateTags();
               }}
               style={{ display: this.state.isEdit ? 'block' : 'none' }}
             >

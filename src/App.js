@@ -31,7 +31,7 @@ function App() {
           <Route path="/my-wardrobe/:type" component={ClothesIndex} />
 
           <Route path="/add-clothes" exact component={AddClothes} />
-          <Route path="/clothes-detail" exact component={ClothesDetail} />
+          <Route path="/clothes-detail/:clothesId" exact component={ClothesDetail} />
 
           <Route path="/design" exact component={Design} />
 

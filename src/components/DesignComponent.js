@@ -1,9 +1,8 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
-import SimpleDialog from './SimpleDialog';
+import intersection from 'lodash/intersection';
 import {
   Button,
   SvgIcon,
@@ -14,25 +13,32 @@ import {
   Tooltip,
   Popover,
 } from '@material-ui/core';
-import userBgImg from '../images/userBgImg.jpg';
+import { Tabs } from 'antd';
+
+import { StoreContext } from '../stores';
+import firebase from '../firebase';
 import IOSSwitch from './IOSSwitch';
+import SimpleDialog from './SimpleDialog';
+
 import { ReactComponent as UndoIcon } from '../images/undo.svg';
 import { ReactComponent as LockIcon } from '../images/lock.svg';
 import { ReactComponent as FilterIcon } from '../images/filter.svg';
 import { ReactComponent as GoBackIcon } from '../images/goback.svg';
 import { ReactComponent as EditPicIcon } from '../images/editpic.svg';
-import firebase from '../firebase';
-import { Tabs } from 'antd';
+import designImg from '../images/design.svg';
+import mannequinImg from '../images/mannequin.svg';
 
 const Wrapper = styled.div`
   max-width: 1000px;
   margin: 50px auto 100px;
   border-radius: 30px;
   background: rgba(185, 185, 185, 0.2);
-  display: flex;
-  justify-content: center;
-  padding: 50px 40px 55px;
   position: relative;
+  .content {
+    display: flex;
+    justify-content: center;
+    padding: 50px 40px 55px;
+  }
 `;
 
 const GoBack = styled.div`
@@ -47,6 +53,30 @@ const GoBack = styled.div`
   }
 `;
 
+const Up = styled.div`
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 0 40px;
+  margin-bottom: -30px;
+  img {
+    width: 44px;
+    height: 44px;
+  }
+`;
+const UpImgWrapper = styled.div``;
+const Title = styled.div`
+  display: flex;
+  align-items: center;
+  span {
+    font-size: 24px;
+    font-weight: bold;
+    color: #efefef;
+    margin-left: 14px;
+  }
+`;
+
 const Random = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -55,7 +85,7 @@ const Random = styled.div`
   margin-right: 25px;
   .random {
     padding: 0;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
     text-transform: capitalize;
     background: #8ff2b8;
     border-radius: 50%;
@@ -76,7 +106,7 @@ const Random = styled.div`
 const Picture = styled.div`
   display: flex;
   align-items: center;
-  position: relative;
+  margin-bottom: 10px;
   &:hover {
     .editPic {
       transition: 0.4s;
@@ -101,15 +131,21 @@ const EditPic = styled.div`
   }
 `;
 const ImgWrapper = styled.div`
+  position: relative;
   width: 300px;
   height: 400px;
-  img {
-    object-fit: cover;
+  background: #e8dcdc;
+  border-radius: 30px;
+  padding: 60px 50px;
+  .mannequin {
     width: 100%;
     height: 100%;
-    border-radius: 40px;
+  }
+  .selected-clothes {
+    position: absolute;
   }
 `;
+
 const IconCol = styled.div`
   display: flex;
   justify-content: space-between;
@@ -122,7 +158,7 @@ const Save = styled.div`
   .save {
     width: 60px;
     height: 60px;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
     text-transform: capitalize;
     background: #aef0f7;
     font-size: 16px;
@@ -140,14 +176,14 @@ const Save = styled.div`
   }
 `;
 const UpperIcon = styled.div`
-  margin-top: 30px;
+  margin-top: 66px;
   display: flex;
   justify-content: flex-end;
   flex-direction: column;
   align-items: flex-end;
   .undo {
     background: #f7d49e;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     &:hover {
       background: #fcce88;
     }
@@ -178,12 +214,18 @@ const Lock = styled.div`
 `;
 
 const ChooseClothes = styled.div`
-  margin-left: 25px;
-  width: 250px;
-  height: 400px;
+  margin: 0 0 30px 25px;
+  width: 380px;
+  height: 500px;
   background: #cde6fe;
   border-radius: 20px;
+  position: relative;
+  padding-top: 60px;
+  overflow: hidden;
   .filter {
+    position: absolute;
+    top: 10px;
+    right: 10px;
     background: #d8d0fc;
     border: 0.5px solid white;
     &:hover {
@@ -192,8 +234,10 @@ const ChooseClothes = styled.div`
   }
 `;
 const CheckboxoxList = styled.div`
-  padding: 0 6px;
+  padding: 6px;
   background: #d8d0fc;
+  max-height: 300px;
+  overflow: auto;
   .filterItem {
     padding-right: 11px;
     font-size: 14px;
@@ -205,6 +249,7 @@ const CheckboxoxList = styled.div`
     }
   }
   .MuiFormControlLabel-root {
+    display: flex;
     margin: 0;
   }
   .MuiSvgIcon-root {
@@ -218,149 +263,221 @@ const CheckboxoxList = styled.div`
 
 const { TabPane } = Tabs;
 const ClothesMenu = styled.div`
-  margin-left: 5%;
-  margin-right: 5%;
-  .clothingItem {
-    width: 48%;
-    margin: 1%;
-    border: 2px solid #fbe644;
-    height: 100px;
+  height: 100%;
+  .ant-tabs-bar {
+    padding-left: 14px;
+    border-color: #fff;
   }
+  .clothingItemWrapper {
+    cursor: pointer;
+    width: calc(50% - 20px);
+    position: relative;
+    margin: 10px;
+    border: 2px solid #46a0fc;
+    background: #fff;
+    transition: all 0.3s ease;
+    /* #fbe644; */
+    &.selected {
+      border: 2px solid #2962ff;
+      box-shadow: 3px 3px 8px 1px #aabed1;
+    }
+    .clothingItem {
+      padding-top: 100%;
+    }
+    img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: contain;
+    }
+  }
+  .sc-pANHa {
+    height: 100%;
+  }
+  .ant-tabs {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    .ant-tabs-tabpane {
+      overflow: auto;
+      display: flex;
+      flex-wrap: wrap;
+      /* padding: 0 8px 10px 10px; */
+      padding: 16px;
+      background: #fff;
+    }
+    .ant-tabs-content {
+      overflow: auto;
+      flex: 1;
+      margin-top: -16px;
+    }
+  }
+  .ant-tabs-tab {
+    border-color: transparent;
+    background: transparent;
+  }
+  /* .ant-tabs-tab-active {
+    border-color: #fff;
+    background: #fff;
+  } */
+  .ant-tabs-nav-container {
+    margin: 0;
+  }
+
+  /* .ant-tabs.ant-tabs-card .ant-tabs-card-bar .ant-tabs-tab {
+    border:2px solid #55a8fc;
+    &:hover { 
+    }
+  } */
 `;
 
+const categoryOrder = ['hats', 'shirts', 'pants', 'shoes'];
 @withRouter
 @observer
 export default class DesignComponent extends React.Component {
   static contextType = StoreContext;
 
   state = {
-    open: false,
-    // filter
-    turnon: false,
-    tagdata: [],
-    tagtoggled: [],
-    // dialogs
+    // UI state
+    lockPopoverOpen: false,
+    filterPopoverOpen: false,
     dialogOpen: false,
     goBackDialogOpen: false,
-    //clothing image paths + corresponding categories
-    clothesimages: [],
-    clothescategories: [], //2D array of categories
-    storageUrls: [], //URLs for the images from storage
+
+    // data
+    categories: {
+      hats: [],
+      shirts: [],
+      pants: [],
+      shoes: [],
+    },
+    filteredCategories: {
+      hats: [],
+      shirts: [],
+      pants: [],
+      shoes: [],
+    },
+    tags: [],
+    filteredTags: [],
+    selectedClothes: [],
   };
 
   //Execute upon rendering the page
   componentDidMount() {
-    this.getTagData();
     this.getClothesData();
   }
 
   getClothesData = () => {
-    let db = firebase.firestore();
-    let storageRef = firebase.storage().ref();
-    let images = [];
-    let categories = [];
-    let urls = [];
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const db = firebase.firestore();
 
-    db.collection('users/' + firebase.auth().currentUser.uid + '/clothes')
+    db.collection('users')
+      .doc(uid)
+      .collection('clothes')
       .get()
-      .then(function(querySnapshot) {
-        querySnapshot.forEach(function(doc) {
-          categories.push(doc.data().categories);
-
-          images.push(doc.data().imagePath);
-
-          //Doesn't put in the URls in the same order as the paths.
-          storageRef
-            .child(doc.data().imagePath)
-            .getDownloadURL()
-            .then(function(url) {
-              urls.push(url);
-            });
+      .then(querySnapshot => {
+        const categories = {
+          hats: [],
+          shirts: [],
+          pants: [],
+          shoes: [],
+        };
+        const tagSet = new Set();
+        querySnapshot.forEach(doc => {
+          const c = doc.data();
+          categories[c.category].push({
+            id: doc.id,
+            ...c,
+          });
+          // add tag to tags Set
+          c.tags.forEach(tag => tagSet.add(tag));
         });
-      });
 
-    this.setState({ clothesimages: images, clothescategories: categories, storageUrls: urls });
-  };
+        const tags = [...tagSet];
+        tags.sort();
 
-  //creates a state array of tags using the docs specified
-  //in the user's categories collection.
-  getTagData = () => {
-    let db = firebase.firestore();
-    let tags = [];
-    let toggled = [];
-
-    db.collection('users/' + firebase.auth().currentUser.uid + '/categories')
-      .get()
-      .then(function(querySnapshot) {
-        querySnapshot.forEach(function(doc) {
-          let tag = doc.data().name;
-
-          //When it's possible to add new categories,
-          //we'll also suppress Hats, Pants, Shirts, Shoes
-          if (tag != 'All') {
-            tags.push(tag);
-
-            //Corresponding array that keeps track of
-            //whether or not each tag is checked (toggled)
-            toggled.push(false);
+        this.setState(
+          {
+            categories,
+            tags,
+          },
+          () => {
+            // also need to update filtered result
+            this.updateFiltered();
           }
-        });
+        );
       });
-
-    this.setState({ tagdata: tags, tagtoggled: toggled });
   };
 
-  onSelectTag = i => {
-    this.setState(state => {
-      const tagtoggled = state.tagtoggled.map((item, j) => {
-        if (j === i) {
-          return !item;
-        } else {
-          return item;
-        }
+  // apply filter to all clothes in categories and save to filteredCategories
+  // call this method everytime filteredTags changes
+  updateFiltered = () => {
+    const { categories, filteredTags } = this.state;
+    if (filteredTags.length === 0) {
+      // no filters
+      this.setState({ filteredCategories: categories });
+    } else {
+      const filteredCategories = {};
+      Object.keys(categories).forEach(category => {
+        // filter by all tags in filteredTags:
+        // the intersection needs to be the same length
+        filteredCategories[category] = categories[category].filter(
+          c => intersection(c.tags, filteredTags).length === filteredTags.length
+        );
       });
-      return {
-        tagtoggled,
-      };
+
+      this.setState({ filteredCategories });
+    }
+  };
+
+  onSelectTag = (tag, checked) => {
+    // shallow clone filteredTags array
+    const filteredTags = [...this.state.filteredTags];
+    if (checked) {
+      filteredTags.push(tag);
+    } else {
+      const index = filteredTags.indexOf(tag);
+      if (index >= 0) filteredTags.splice(index, 1);
+    }
+
+    this.setState({ filteredTags }, () => {
+      this.updateFiltered();
     });
   };
 
-  onSelectTab(key) {
-    this.setState(state => {
-      const tagtoggled = state.tagtoggled.map((item, j) => {
-        if (j === key - 1) {
-          return (item = true);
-        } else {
-          return (item = false);
-        }
-      });
+  onSelectClothes = clothes => {
+    const selectedClothes = [...this.state.selectedClothes].filter(
+      c => c.category !== clothes.category
+    );
 
-      return {
-        tagtoggled,
-      };
-    });
+    if (!this.state.selectedClothes.some(c => c.id === clothes.id)) {
+      // was not selected
+      selectedClothes.push(clothes);
+    }
 
-    return <p>Test</p>;
-  }
-
-  onSave = () => {
-    this.setState({ dialogOpen: true });
-  };
-
-  onEditDone = () => {
-    this.setState({ dialogOpen: true });
+    this.setState({ selectedClothes });
   };
 
   render() {
     const { from } = this.props;
-    const { dialogOpen, goBackDialogOpen } = this.state;
-    let buttonsZone;
-    let goBackButtonsZone = [
-      { text: 'Cancel, Continue Editing', onClick: () => {} },
-      { text: 'Exit without Saving', exit: true, onClick: () => {} },
-    ];
-    // let description;
+    const {
+      lockPopoverOpen,
+      filterPopoverOpen,
+      dialogOpen,
+      goBackDialogOpen,
+      tags,
+      filteredTags,
+      filteredCategories,
+      selectedClothes,
+    } = this.state;
 
+    let buttonsZone;
     if (from === 'design') {
       buttonsZone = [
         { text: 'Download', onClick: () => {} },
@@ -375,6 +492,7 @@ export default class DesignComponent extends React.Component {
         { text: 'Exit without Saving', exit: true, onClick: () => {} },
       ];
     }
+
     return (
       <Wrapper>
         {from === 'edit' && (
@@ -391,49 +509,142 @@ export default class DesignComponent extends React.Component {
             </Tooltip>
           </GoBack>
         )}
-        <Random>
-          <Button className="random" variant="contained">
-            Random
-          </Button>
-        </Random>
-        <Picture>
-          <ImgWrapper>
-            <img src={userBgImg} />
-          </ImgWrapper>
-          <EditPic>
-            <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
-              <IconButton className="editPic" size="small">
-                <SvgIcon fontSize="inherit">
-                  <EditPicIcon />
-                </SvgIcon>
-              </IconButton>
-            </Tooltip>
-          </EditPic>
-        </Picture>
-        <IconCol>
-          <UpperIcon>
-            <Tooltip arrow title="Undo" TransitionComponent={Zoom} placement="top">
-              <IconButton className="undo">
-                <SvgIcon fontSize="small">
-                  <UndoIcon />
-                </SvgIcon>
-              </IconButton>
-            </Tooltip>
-            <Tooltip arrow title="Lock categories" TransitionComponent={Zoom} placement="top">
+
+        {from === 'design' && (
+          <Up>
+            <Title>
+              <UpImgWrapper>
+                <img src={designImg} />
+              </UpImgWrapper>
+              <span>Design</span>
+            </Title>
+          </Up>
+        )}
+        <div className="content">
+          <Random>
+            <Button className="random" variant="contained">
+              Random
+            </Button>
+          </Random>
+          <Picture>
+            <ImgWrapper>
+              <img className="mannequin" src={mannequinImg} draggable={false} />
+              {selectedClothes.map((clothes, i) => (
+                <img
+                  key={i}
+                  className="selected-clothes"
+                  src={clothes.url}
+                  style={{
+                    top: `${clothes.fit.y}%`,
+                    left: `${clothes.fit.x}%`,
+                    width: `${clothes.fit.width}%`,
+                    height: `${clothes.fit.height}%`,
+                  }}
+                />
+              ))}
+              <EditPic>
+                <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
+                  <IconButton className="editPic" size="small">
+                    <SvgIcon fontSize="inherit">
+                      <EditPicIcon />
+                    </SvgIcon>
+                  </IconButton>
+                </Tooltip>
+              </EditPic>
+            </ImgWrapper>
+          </Picture>
+          <IconCol>
+            <UpperIcon>
+              <Tooltip arrow title="Undo" TransitionComponent={Zoom} placement="top">
+                <IconButton className="undo">
+                  <SvgIcon fontSize="small">
+                    <UndoIcon />
+                  </SvgIcon>
+                </IconButton>
+              </Tooltip>
+              <Tooltip arrow title="Lock categories" TransitionComponent={Zoom} placement="top">
+                <IconButton
+                  ref={el => (this.lockBtnRef = el)}
+                  className="lock"
+                  onClick={() => this.setState({ lockPopoverOpen: true })}
+                >
+                  <SvgIcon fontSize="small">
+                    <LockIcon />
+                  </SvgIcon>
+                </IconButton>
+              </Tooltip>
+              <Popover
+                open={lockPopoverOpen}
+                anchorEl={this.lockBtnRef}
+                onClose={() => this.setState({ lockPopoverOpen: false })}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'center',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'center',
+                }}
+              >
+                <Lock>
+                  <div className="lockItem">
+                    <IOSSwitch name="checkedB" />
+                    Hat
+                  </div>
+                  <div className="lockItem">
+                    <IOSSwitch name="checkedB" />
+                    Shirt
+                  </div>
+                  <div className="lockItem">
+                    <IOSSwitch name="checkedB" />
+                    Pants
+                  </div>
+                  <div className="lockItem">
+                    <IOSSwitch name="checkedB" />
+                    Shoes
+                  </div>
+                </Lock>
+              </Popover>
+            </UpperIcon>
+
+            <Save>
+              {from === 'design' ? (
+                <Button
+                  className="save"
+                  variant="contained"
+                  onClick={() => this.setState({ dialogOpen: true })}
+                >
+                  Save
+                </Button>
+              ) : (
+                <Button
+                  className="save"
+                  variant="contained"
+                  onClick={() => this.setState({ dialogOpen: true })}
+                >
+                  Done
+                </Button>
+              )}
+            </Save>
+          </IconCol>
+          <ChooseClothes>
+            <Tooltip arrow title="Filter tags" TransitionComponent={Zoom} placement="top">
               <IconButton
-                ref={el => (this.lockBtnRef = el)}
-                className="lock"
-                onClick={() => this.setState({ open: true })}
+                className="filter"
+                ref={el => (this.filterBtnRef = el)}
+                onClick={() => {
+                  this.setState({ filterPopoverOpen: true });
+                }}
               >
                 <SvgIcon fontSize="small">
-                  <LockIcon />
+                  <FilterIcon />
                 </SvgIcon>
               </IconButton>
             </Tooltip>
             <Popover
-              open={this.state.open}
-              anchorEl={this.lockBtnRef}
-              onClose={() => this.setState({ open: false })}
+              open={filterPopoverOpen}
+              anchorEl={this.filterBtnRef}
+              onClose={() => this.setState({ filterPopoverOpen: false })}
               anchorOrigin={{
                 vertical: 'bottom',
                 horizontal: 'center',
@@ -443,288 +654,73 @@ export default class DesignComponent extends React.Component {
                 horizontal: 'center',
               }}
             >
-              <Lock>
-                <div className="lockItem">
-                  <IOSSwitch name="checkedB" />
-                  Hat
-                </div>
-                <div className="lockItem">
-                  <IOSSwitch name="checkedB" />
-                  Shirt
-                </div>
-                <div className="lockItem">
-                  <IOSSwitch name="checkedB" />
-                  Pants
-                </div>
-                <div className="lockItem">
-                  <IOSSwitch name="checkedB" />
-                  Shoes
-                </div>
-              </Lock>
+              {/* show all user defined tags */}
+              <CheckboxoxList>
+                {tags.map(tag => (
+                  <div className="filterItem" key={tag}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          name={tag}
+                          color="primary"
+                          checked={filteredTags.includes(tag)}
+                          onChange={e => this.onSelectTag(tag, e.target.checked)}
+                        />
+                      }
+                      label={tag}
+                    />
+                  </div>
+                ))}
+              </CheckboxoxList>
             </Popover>
-          </UpperIcon>
 
-          <Save>
-            {from === 'design' ? (
-              <Button className="save" variant="contained" onClick={this.onSave}>
-                Save
-              </Button>
-            ) : (
-              <Button className="save" variant="contained" onClick={this.onEditDone}>
-                Done
-              </Button>
-            )}
-          </Save>
-        </IconCol>
-        <ChooseClothes>
-          <Tooltip arrow title="Filter categories" TransitionComponent={Zoom} placement="top">
-            <IconButton
-              className="filter"
-              ref={el => (this.filterBtnRef = el)}
-              onClick={() => {
-                this.setState({ turnon: true });
-              }}
-            >
-              <SvgIcon fontSize="small">
-                <FilterIcon />
-              </SvgIcon>
-            </IconButton>
-          </Tooltip>
-          <Popover
-            open={this.state.turnon}
-            anchorEl={this.filterBtnRef}
-            onClose={() => this.setState({ turnon: false })}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'center',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'center',
-            }}
-          >
-            {/* show all user defined tags */}
-            <CheckboxoxList>
-              {(this.state.tagdata || []).map((tag, index) => (
-                <div className="filterItem" key={tag}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name={tag}
-                        color="primary"
-                        onChange={() => this.onSelectTag(index)}
-                      />
-                    }
-                    label={tag}
-                  />
-                </div>
-              ))}
-            </CheckboxoxList>
-          </Popover>
+            <ClothesMenu>
+              <Tabs defaultActiveKey="shirts" type="card">
+                {/* loop over all categories to display tab */}
+                {categoryOrder.map(category => (
+                  <TabPane className="tabTitle" tab={category} key={category}>
+                    {filteredCategories[category].map((clothes, i) => (
+                      <div
+                        className={`clothingItemWrapper ${
+                          selectedClothes.some(c => clothes.id === c.id) ? 'selected' : ''
+                        }`}
+                        key={i}
+                        onClick={() => this.onSelectClothes(clothes)}
+                      >
+                        <div className="clothingItem">
+                          <img src={clothes.url} />
+                        </div>
+                      </div>
+                    ))}
+                  </TabPane>
+                ))}
+              </Tabs>
+            </ClothesMenu>
+          </ChooseClothes>
 
-          <ClothesMenu>
-            <Tabs defaultActiveKey="0" type="card" onChange={this.onSelectTab.bind(this)}>
-              <TabPane tab="All" key="0">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      //console.log(path.split('/')[1]);
-                      //console.log(this.state.storageUrls[j]);
-                      //console.log(this.state.storageUrls[j].includes(path.split('/')[1]));
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
-              <TabPane tab="Hats" key="1">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
-              <TabPane tab="Pants" key="2">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
-              <TabPane tab="Shirts" key="3">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
-              <TabPane tab="Shoes" key="4">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
-            </Tabs>
-          </ClothesMenu>
-        </ChooseClothes>
-
-        <SimpleDialog
-          open={dialogOpen}
-          type="success"
-          buttons={buttonsZone}
-          onClose={() => this.setState({ dialogOpen: false })}
-        />
-        <SimpleDialog
-          open={goBackDialogOpen}
-          type="warning"
-          description={
-            <span>
-              Are you sure
-              <br />
-              you want to exit without saving?
-            </span>
-          }
-          buttons={goBackButtonsZone}
-          onClose={() => this.setState({ goBackDialogOpen: false })}
-        />
+          <SimpleDialog
+            open={dialogOpen}
+            type="success"
+            buttons={buttonsZone}
+            onClose={() => this.setState({ dialogOpen: false })}
+          />
+          <SimpleDialog
+            open={goBackDialogOpen}
+            type="warning"
+            description={
+              <span>
+                Are you sure
+                <br />
+                you want to exit without saving?
+              </span>
+            }
+            buttons={[
+              { text: 'Cancel, Continue Editing', onClick: () => {} },
+              { text: 'Exit without Saving', exit: true, onClick: () => {} },
+            ]}
+            onClose={() => this.setState({ goBackDialogOpen: false })}
+          />
+        </div>
       </Wrapper>
     );
   }

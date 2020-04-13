@@ -16,6 +16,7 @@ import Loading from './Loading';
 import ClothesFitter from './ClothesFitter';
 import IOSSwitch from './IOSSwitch';
 import SimpleDialog from './SimpleDialog';
+import firebase from '../firebase';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -269,16 +270,27 @@ export default class AddClothes extends React.Component {
     activeStep: 0,
 
     // step1: upload img
+    file: null,
     previewURL: '',
-    aspectRatio: 1,
+
+    // step3: fit clothes to mannequin
+    originalAspectRatio: 1,
     lockAspectRatio: true,
+    clothesFitterState: {
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+    },
 
     // step 4: category & tags\
     category: 'shirts',
     tags: [],
     tagsInputVisible: false,
     newTagValue: '',
-    finishDialogOpen: true,
+
+    // done
+    finishDialogOpen: false,
   };
 
   getStepContent = stepIndex => {
@@ -301,11 +313,19 @@ export default class AddClothes extends React.Component {
     this.setState({ loading: true });
     this.resizeImg(e.target.files[0], 'abcd', 600, 600)
       .then(({ file, aspectRatio }) => {
+        // calculate clothes fitter state
+        const width = aspectRatio > 1 ? 100 : 100 * aspectRatio;
+        const height = aspectRatio > 1 ? 100 / aspectRatio : 100;
+        const x = (ClothesFitter.WIDTH - width) / 2;
+        const y = (ClothesFitter.HEIGHT - height) / 2;
+
         this.setState({
           loading: false,
           activeStep: 1,
+          file,
           previewURL: URL.createObjectURL(file),
-          aspectRatio,
+          originalAspectRatio: aspectRatio,
+          clothesFitterState: { x, y, width, height },
         });
       })
       .catch(error => {
@@ -368,14 +388,6 @@ export default class AddClothes extends React.Component {
     });
   };
 
-  handleNext = () => {
-    this.setState(state => ({ activeStep: state.activeStep + 1 }));
-  };
-
-  handleBack = () => {
-    this.setState(state => ({ activeStep: state.activeStep - 1 }));
-  };
-
   onRemoveTag = tag => {
     const tags = this.state.tags.filter(t => t !== tag);
     this.setState({ tags });
@@ -393,6 +405,7 @@ export default class AddClothes extends React.Component {
 
     if (!newTagValue.trim()) return;
 
+    // TODO: limit tag to use as firebase document ID
     if (tags.includes(newTagValue.trim())) {
       message.warn('Tag already exists!');
     } else {
@@ -404,25 +417,111 @@ export default class AddClothes extends React.Component {
     this.setState({ newTagValue: '' }, () => this.newTagInputRef && this.newTagInputRef.focus());
   };
 
+  onFinish = () => {
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const { loading, file, category, tags, clothesFitterState } = this.state;
+
+    if (loading) return;
+
+    this.setState({ loading: true });
+
+    const db = firebase.firestore();
+    const timestamp = new Date();
+    const userRef = db.collection('users').doc(uid);
+
+    // we need to write clothes, categories, tags, etc. in "batch" atomically
+    const batch = db.batch();
+
+    // generate new ref id for clothes
+    const clothesRef = userRef.collection('clothes').doc();
+    const clothesId = clothesRef.id;
+
+    // upload image to storage at /<uid>/clothes/<clothesId>.png
+    const storagePath = `${uid}/clothes/${clothesId}.png`;
+    const task = firebase
+      .storage()
+      .ref(storagePath)
+      .put(file);
+    const uploadPromise = new Promise((resolve, reject) => {
+      task.on(
+        'state_changed',
+        snapshot => {
+          // progress
+          this.progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        },
+        err => {
+          // error
+          reject(err);
+        },
+        () => {
+          // success
+          task.snapshot.ref.getDownloadURL().then(url => {
+            resolve(url);
+          });
+        }
+      );
+    });
+
+    uploadPromise
+      .then(url => {
+        // firestore clothes data
+        const clothesData = {
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          category: category,
+          tags,
+          storagePath,
+          url,
+          fit: {
+            x: (clothesFitterState.x * 100) / ClothesFitter.WIDTH,
+            y: (clothesFitterState.y * 100) / ClothesFitter.HEIGHT,
+            width: (clothesFitterState.width * 100) / ClothesFitter.WIDTH,
+            height: (clothesFitterState.height * 100) / ClothesFitter.HEIGHT,
+            rotate: 0,
+          },
+        };
+
+        batch.set(clothesRef, clothesData);
+
+        // tags data
+        tags.forEach(tag => {
+          const tagsRef = userRef.collection('tags').doc(tag);
+          batch.set(
+            tagsRef,
+            { clothes: firebase.firestore.FieldValue.arrayUnion({ id: clothesId, url }) },
+            { merge: true }
+          );
+        });
+
+        return batch.commit();
+      })
+      .then(() => {
+        this.setState({ loading: false, finishDialogOpen: true });
+      })
+      .catch(err => {
+        this.setState({ loading: false });
+        message.error(`Error while saving clothes: ${err.message}`);
+      });
+  };
+
   render() {
+    const { history } = this.props;
     const {
       activeStep,
       loading,
       previewURL,
-      aspectRatio,
       lockAspectRatio,
+      clothesFitterState,
       category,
       tags,
       tagsInputVisible,
       newTagValue,
       finishDialogOpen,
     } = this.state;
-
-    let finishButtons = [
-      { text: 'Continue Adding Clothes', onClick: () => {} },
-      { text: 'Go to Design', onClick: () => {} },
-      { text: 'Go Back Home', onClick: () => {} },
-    ];
 
     return (
       <Wrapper>
@@ -493,8 +592,9 @@ export default class AddClothes extends React.Component {
               <StepThree>
                 <ClothesFitter
                   clothesSrc={previewURL}
-                  initialAspectRatio={aspectRatio}
                   lockAspectRatio={lockAspectRatio}
+                  state={clothesFitterState}
+                  onChange={e => this.setState({ clothesFitterState: e })}
                 />
 
                 <div className="stepThreeMsg">
@@ -601,7 +701,7 @@ export default class AddClothes extends React.Component {
                 variant="contained"
                 color="primary"
                 disabled={activeStep === 0}
-                onClick={this.handleBack}
+                onClick={() => this.setState(state => ({ activeStep: state.activeStep - 1 }))}
               >
                 Back
               </Button>
@@ -612,7 +712,10 @@ export default class AddClothes extends React.Component {
                 variant="contained"
                 color="primary"
                 // disabled={activeStep === 2}
-                onClick={this.handleNext}
+                onClick={() => {
+                  if (activeStep === steps.length - 1) this.onFinish();
+                  else this.setState(state => ({ activeStep: state.activeStep + 1 }));
+                }}
               >
                 {activeStep >= steps.length - 1 ? 'Finish' : 'Next'}
               </Button>
@@ -623,7 +726,27 @@ export default class AddClothes extends React.Component {
         <SimpleDialog
           open={finishDialogOpen}
           type="success"
-          buttons={finishButtons}
+          buttons={[
+            {
+              text: 'Continue Adding Clothes',
+              onClick: () => {
+                // TODO: reset state instead for better UX
+                location.reload();
+              },
+            },
+            {
+              text: 'Go to Design',
+              onClick: () => {
+                history.push('/design');
+              },
+            },
+            {
+              text: 'Go Back Home',
+              onClick: () => {
+                history.push('/');
+              },
+            },
+          ]}
           onClose={() => this.setState({ finishDialogOpen: false })}
         />
       </Wrapper>

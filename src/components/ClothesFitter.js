@@ -3,9 +3,12 @@ import styled from 'styled-components';
 import { Rnd } from 'react-rnd';
 import mannequinImg from '../images/mannequin.svg';
 
+const WIDTH = 300;
+const HEIGHT = 400;
+
 const Wrapper = styled.div`
-  width: 300px;
-  height: 400px;
+  width: ${WIDTH}px;
+  height: ${HEIGHT}px;
   padding: 60px 50px;
   background: #e8dcdc;
   position: relative;
@@ -49,16 +52,16 @@ const Wrapper = styled.div`
 `;
 
 export default class ClothesFitter extends React.Component {
-  state = {
-    x: 0,
-    y: 0,
-    width: this.props.initialAspectRatio > 1 ? 100 : 100 * this.props.initialAspectRatio,
-    height: this.props.initialAspectRatio > 1 ? 100 / this.props.initialAspectRatio : 100,
-  };
+  static WIDTH = WIDTH;
+  static HEIGHT = HEIGHT;
 
   render() {
-    const { x, y, width, height } = this.state;
-    const { lockAspectRatio } = this.props;
+    const {
+      lockAspectRatio,
+      state,
+      state: { x, y, width, height },
+      onChange,
+    } = this.props;
 
     return (
       <Wrapper ref={el => (this.parentRef = el)}>
@@ -79,11 +82,11 @@ export default class ClothesFitter extends React.Component {
           lockAspectRatio={lockAspectRatio}
           size={{ width, height }}
           position={{ x, y }}
-          onDragStop={(e, d) => this.setState({ x: d.x, y: d.y })}
+          onDragStop={(e, d) => onChange({ ...state, x: d.x, y: d.y })}
           onResizeStop={(e, direction, ref, delta, position) => {
-            this.setState({
-              width: ref.style.width,
-              height: ref.style.height,
+            onChange({
+              width: width + delta.width,
+              height: height + delta.height,
               ...position,
             });
           }}

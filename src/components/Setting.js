@@ -71,8 +71,7 @@ const User = styled.div`
     display: flex;
     align-items: center;
     .ant-avatar {
-      width: 130px;
-      height: 130px;
+      cursor: pointer;
     }
     .displayName {
       margin-left: 22px;
@@ -91,13 +90,9 @@ const User = styled.div`
     margin-bottom: 20px;
   }
 
-  .card1Btn {
-    width: 10%;
-    background: #6247ce;
-    margin-right: 5px;
-    &:hover {
-      color: #fff;
-      background-color: #775ce3;
+  .avatar-edit {
+    .card1Btn {
+      margin-right: 5px;
     }
   }
 `;
@@ -150,10 +145,6 @@ const DeleteAccount = styled.div`
       }
     }
   }
-`;
-
-const StyledAvatar = styled(Avatar)`
-  cursor: pointer;
 `;
 
 @observer
@@ -383,6 +374,7 @@ export default class Setting extends React.Component {
     const { userStore } = this.context;
     const file = this.state.avatarLocation;
     if (file) {
+      // TODO: resize, crop, and save to fixed place
       let uploadPath;
       if (file['name']) {
         uploadPath = userStore.currentUser.uid + '/' + file['name'];
@@ -403,9 +395,12 @@ export default class Setting extends React.Component {
           return user.updateProfile({ photoURL: url });
         })
         .then(() => {
-          message.success(
-            'Avatar updated successfully! You may need to refresh to see this change.'
-          );
+          // Update successful.
+          return user.reload();
+        })
+        .then(() => {
+          userStore.setUser(firebase.auth().currentUser);
+          message.success('Avatar updated successfully!');
           this.setState({ avatarEdit: false, avatarLocation: null });
         })
         .catch(error => {
@@ -443,12 +438,12 @@ export default class Setting extends React.Component {
             <h4 />
             <User>
               <div className="user">
-                <StyledAvatar
-                  size="large"
+                <Avatar
+                  size={130}
                   icon={<UserOutlined />}
                   onClick={this.editAvatar}
                   src={currentUser.photoURL}
-                ></StyledAvatar>
+                />
                 <TextField
                   className="displayName"
                   id="diaplay-name"
@@ -479,7 +474,7 @@ export default class Setting extends React.Component {
                 </ButtonWithLoading>
               </div>
 
-              <div>
+              <div className="avatar-edit">
                 <form
                   className="editAvatarForm"
                   style={{ display: this.state.avatarEdit ? 'block' : 'none' }}

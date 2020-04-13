@@ -6,9 +6,11 @@ import styled from 'styled-components';
 import placeholderImg from '../images/mywardrobe-tshirt.png';
 import backImg from '../images/back.png';
 import deleteImg from '../images/delete.png';
+import closeImg from '../images/closeIcon.png';
 import editImg from '../images/pen.png';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import firebase from '../firebase';
+import Popup from 'reactjs-popup';
 
 const Wrapper = styled.div`
   width: 75%;
@@ -77,15 +79,42 @@ const Right = styled.div`
     background-color: #e2dcfe;
   }
 `;
-const Tag = styled.div`
+const TagButton = styled.div`
   border-radius: 10px;
   background-color: #e2dcfe;
   display: block;
   border: 3px solid purple;
-  width: 25%;
+  width: 20%;
   text-align: center;
+  margin-top: 5px;
+  margin-right: 5px;
+  margin-bottom: 10px;
+  display: inline-block;
 `;
+const modal = {
+  fontSize: '12px',
+  borderRadius: '20px',
+  height: '30vh',
+  width: '100%',
+  margin: '0',
+  padding: '0',
+  background: 'linear-gradient(90deg, #6e8fe7 0%, #8261e6 100%)',
+};
 
+const modalContent = {
+  width: '100%',
+  padding: '10px 5px',
+  textAlign: 'center',
+  font: 'bold',
+};
+const btnStyle = {
+  backgroundColor: 'white',
+  borderRadius: '10px',
+  borderColor: '#888',
+  width: '200px',
+  textAlign: 'center',
+  margin: '10px',
+};
 @withRouter
 @observer
 export default class ClothesDetail extends React.Component {
@@ -102,16 +131,22 @@ export default class ClothesDetail extends React.Component {
       upDateTime: '',
       createTime: '',
       cateArr: [],
+      compareArr: [],
       fetched: false,
+      removalArr: [],
+      newTagArr: [],
     };
     this.goBack = this.goBack.bind(this);
+  }
+
+  clearSate() {
+    this.setState({ removalArr: [], newTagArr: [] });
+    this.getData();
   }
 
   goBack() {
     this.props.history.goBack();
   }
-
-  delete() {}
 
   edit = () => {
     this.setState({ isEdit: true });
@@ -148,6 +183,8 @@ export default class ClothesDetail extends React.Component {
               upDateTime: res.data().lastEditedTime,
               createTime: res.data().createdTime,
               cateArr: res.data().categories,
+              compareArr: res.data().categories,
+              imgID: imgID,
             });
             storageRef
               .child(res.data().imagePath)
@@ -162,8 +199,140 @@ export default class ClothesDetail extends React.Component {
       });
   };
 
+  updateCates = () => {
+    //console.log('Compare Data');
+    let vm = this;
+    const { userStore } = this.context;
+
+    //Add new tag to firebase
+    this.state.newTagArr.map(tag => {
+      if (tag.length > 0) {
+        console.log('in newTagArr map');
+        let categoryRef = firebase
+          .firestore()
+          .collection('users/' + firebase.auth().currentUser.uid + '/categories')
+          .doc(tag);
+
+        //Check if category exists. If it does, update it, if it doesn't create it
+        categoryRef.get().then(function(thisDoc) {
+          console.log(thisDoc);
+          if (thisDoc.exists) {
+            categoryRef.update({
+              clothes: firebase.firestore.FieldValue.arrayUnion(vm.state.imgID),
+            });
+          } else {
+            categoryRef.set({
+              clothes: firebase.firestore.FieldValue.arrayUnion(vm.state.imgID),
+              name: tag,
+            });
+          }
+        });
+      }
+    });
+
+    //Remove deleted tag from firebase
+    this.state.removalArr.map(tag => {
+      let categoryRef = firebase
+        .firestore()
+        .collection('users/' + firebase.auth().currentUser.uid + '/categories')
+        .doc(tag);
+      categoryRef.delete().then(function(thisDoc) {
+        console.log(thisDoc);
+      });
+    });
+
+    //Overwrite cateArr
+    let clothRef = firebase
+      .firestore()
+      .collection('users')
+      .doc(userStore.currentUser.uid)
+      .collection('clothes')
+      .doc(this.state.imgID);
+
+    let clothesObject = null;
+    firebase
+      .firestore()
+      .collection('users')
+      .doc(userStore.currentUser.uid)
+      .collection('clothes')
+      .doc(vm.state.imgID)
+      .get()
+      .then(function(res) {
+        clothesObject = res.data();
+        if (clothesObject) {
+          clothesObject.categories = vm.state.cateArr;
+          clothesObject.lastEditedTime = new Date().toLocaleDateString('en-GB', {
+            minute: 'numeric',
+            hour: 'numeric',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          });
+          clothRef.set(clothesObject);
+          vm.setState({ fetched: false });
+        }
+      });
+  };
+
+  deleteClothes = () => {
+    let vm = this;
+    const { userStore } = this.context;
+
+    this.state.cateArr.map(tag => {
+      let categoryRef = firebase
+        .firestore()
+        .collection('users/' + firebase.auth().currentUser.uid + '/categories')
+        .doc(tag);
+      categoryRef.delete().then(function(thisDoc) {
+        console.log(thisDoc);
+      });
+    });
+    let userObj = firebase
+      .firestore()
+      .collection('users')
+      .doc(userStore.currentUser.uid);
+    userObj
+      .collection('clothes')
+      .doc(this.state.imgID)
+      .delete()
+      .then(function(res) {
+        console.log(res);
+        message.success('clothes deleted!');
+        vm.goBack();
+      });
+  };
+
+  onCatChange = e => {
+    let arr = [];
+    arr = e.target.value.toLowerCase().split(',');
+    for (let i = 0; i < arr.length; i++) {
+      arr[i] = arr[i].trim();
+    }
+
+    this.setState({ newTagArr: arr });
+  };
+
+  combineNew() {
+    let newArr = this.state.newTagArr;
+    let cates = this.state.cateArr;
+
+    //remove duplicated tag
+    newArr.map(function(newTag) {
+      if (cates.includes(newTag)) {
+        newArr.splice(newArr.indexOf(newTag), 1);
+      }
+    });
+
+    // console.log(newArr);
+    newArr.map(function(newTag) {
+      cates.push(newTag);
+    });
+    this.setState({ newTagArr: newArr, cateArr: cates });
+  }
+
   render() {
     this.getData();
+    let vm = this;
     let { imageURL, createTime, upDateTime, cateArr } = this.state;
     let $imageDisplay = <img src={placeholderImg} />;
     let $createdTime = <span>{createTime}</span>;
@@ -171,7 +340,59 @@ export default class ClothesDetail extends React.Component {
     if (imageURL) {
       $imageDisplay = <img src={imageURL} />;
     }
-    const tags = cateArr.map(tag => <Tag key={tag.toString()}>{tag}</Tag>);
+    const removeTag = tag => {
+      let tempArr = this.state.cateArr;
+      let removeArr = this.state.removalArr;
+      if (tempArr.includes(tag)) {
+        tempArr.splice(tempArr.indexOf(tag), 1);
+        if (!removeArr.includes(tag)) {
+          removeArr.push(tag);
+        }
+      }
+      this.setState({ cateArr: tempArr, removalArr: removeArr });
+    };
+    const tags = cateArr.map(function(tag) {
+      if (tag == 'all') {
+        return;
+      } else if (!vm.state.isEdit) {
+        return (
+          <TagButton key={tag.toString()} className="editButton" shape="rectangle" size="large">
+            {tag}
+          </TagButton>
+        );
+      } else {
+        return (
+          <TagButton key={tag.toString()} className="editButton" shape="rectangle" size="large">
+            {tag}
+            <Button
+              shape="circle"
+              size="small"
+              style={{
+                backgroundColor: '#8162EA',
+                margin: '0',
+                padding: '0',
+                marginLeft: '20%',
+                top: '-3px',
+                height: '100%',
+                width: '10%',
+                display: 'inline-block',
+              }}
+              onClick={() => removeTag(tag)}
+            >
+              <img
+                src={closeImg}
+                style={{
+                  height: '100%',
+                  width: '100%',
+                  textAlign: 'center',
+                  display: 'inline-block',
+                }}
+              />
+            </Button>
+          </TagButton>
+        );
+      }
+    });
 
     return (
       <Wrapper>
@@ -179,7 +400,12 @@ export default class ClothesDetail extends React.Component {
           <Top>
             <div className="topButtons">
               <Button className="backButton" shape="circle" size="large" onClick={this.goBack} />
-              <Button className="deleteButton" shape="circle" size="large" />
+              <Button
+                className="deleteButton"
+                shape="circle"
+                size="large"
+                onClick={this.deleteClothes}
+              />
               <Button
                 className="editButton"
                 shape="circle"
@@ -198,24 +424,71 @@ export default class ClothesDetail extends React.Component {
             <Right>
               <div className="dateAdded">
                 <div className="label">Date added:</div>
-                <div>{$upDateTime}</div>
+                <div>{$createdTime}</div>
               </div>
               <br />
               <div className="dateModified">
                 <div className="label">Date modified:</div>
-                <div>{$createdTime}</div>
+                <div>{$upDateTime}</div>
               </div>
               <br />
               <div className="categories">
                 <div className="label">Categories:</div>
                 <div>
                   {tags}
-                  <Button
-                    className="addTagButton"
-                    style={{ display: this.state.isEdit ? 'block' : 'none' }}
+                  <Popup
+                    trigger={
+                      <Button
+                        className="addTagButton"
+                        style={{ display: this.state.isEdit ? 'block' : 'none' }}
+                      >
+                        + Add New Tags
+                      </Button>
+                    }
+                    modal
                   >
-                    + Add New Tags
-                  </Button>
+                    {close => (
+                      <div style={modal}>
+                        <form style={modalContent} onSubmit={this.onSubmit}>
+                          <span>Custom Categories:&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                          <input
+                            type="text"
+                            name="cat"
+                            placeholder="Seperate tags by comma"
+                            value={this.state.newTagArr}
+                            onChange={this.onCatChange}
+                            style={{ width: '30%' }}
+                          />
+                          <div></div>
+                          <input
+                            type="submit"
+                            value="submit"
+                            className="btn"
+                            style={btnStyle}
+                            onChange={this.onChange}
+                            onClick={() => {
+                              this.combineNew();
+                              close();
+                            }}
+                          />
+                          <input
+                            className="btn"
+                            type="cancel"
+                            value="cancel"
+                            style={btnStyle}
+                            onChange={() => {
+                              this.clearSate();
+                              close();
+                            }}
+                            onClick={() => {
+                              this.clearSate();
+                              close();
+                            }}
+                          />
+                        </form>
+                      </div>
+                    )}
+                  </Popup>
                 </div>
               </div>
               <br />
@@ -226,7 +499,10 @@ export default class ClothesDetail extends React.Component {
             <Button
               type="primary"
               className="saveButton"
-              onClick={this.save}
+              onClick={() => {
+                this.save();
+                this.updateCates();
+              }}
               style={{ display: this.state.isEdit ? 'block' : 'none' }}
             >
               Save

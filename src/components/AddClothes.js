@@ -15,6 +15,7 @@ import cameraImg from '../images/camera.png';
 import Loading from './Loading';
 import ClothesFitter from './ClothesFitter';
 import IOSSwitch from './IOSSwitch';
+import SimpleDialog from './SimpleDialog';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -277,6 +278,7 @@ export default class AddClothes extends React.Component {
     tags: [],
     tagsInputVisible: false,
     newTagValue: '',
+    finishDialogOpen: true,
   };
 
   getStepContent = stepIndex => {
@@ -413,7 +415,14 @@ export default class AddClothes extends React.Component {
       tags,
       tagsInputVisible,
       newTagValue,
+      finishDialogOpen,
     } = this.state;
+
+    let finishButtons = [
+      { text: 'Continue Adding Clothes', onClick: () => {} },
+      { text: 'Go to Design', onClick: () => {} },
+      { text: 'Go Back Home', onClick: () => {} },
+    ];
 
     return (
       <Wrapper>
@@ -610,6 +619,13 @@ export default class AddClothes extends React.Component {
             )}
           </Buttons>
         </Down>
+
+        <SimpleDialog
+          open={finishDialogOpen}
+          type="success"
+          buttons={finishButtons}
+          onClose={() => this.setState({ finishDialogOpen: false })}
+        />
       </Wrapper>
     );
   }

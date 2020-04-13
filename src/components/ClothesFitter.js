@@ -6,7 +6,7 @@ import mannequinImg from '../images/mannequin.svg';
 const Wrapper = styled.div`
   width: 300px;
   height: 400px;
-  padding: 50px;
+  padding: 60px 50px;
   background: #e8dcdc;
   position: relative;
   border-radius: 30px;

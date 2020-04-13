@@ -14,7 +14,6 @@ import {
   Tooltip,
   Popover,
 } from '@material-ui/core';
-// import userBgImg from '../images/userBgImg.jpg';
 import IOSSwitch from './IOSSwitch';
 import { ReactComponent as UndoIcon } from '../images/undo.svg';
 import { ReactComponent as LockIcon } from '../images/lock.svg';
@@ -83,7 +82,7 @@ const Random = styled.div`
   margin-right: 25px;
   .random {
     padding: 0;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
     text-transform: capitalize;
     background: #8ff2b8;
     border-radius: 50%;
@@ -104,7 +103,7 @@ const Random = styled.div`
 const Picture = styled.div`
   display: flex;
   align-items: center;
-  position: relative;
+  margin-bottom: 10px;
   &:hover {
     .editPic {
       transition: 0.4s;
@@ -129,26 +128,17 @@ const EditPic = styled.div`
   }
 `;
 const ImgWrapper = styled.div`
+  position: relative;
   width: 300px;
   height: 400px;
   background: #e8dcdc;
   border-radius: 30px;
-  padding: 50px;
-
+  padding: 60px 50px;
   .mannequin {
     width: 100%;
     height: 100%;
   }
-  /* width: 300px;
-  height: 400px;
-  img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    border-radius: 40px;
-  } */
 `;
-
 const IconCol = styled.div`
   display: flex;
   justify-content: space-between;
@@ -161,7 +151,7 @@ const Save = styled.div`
   .save {
     width: 60px;
     height: 60px;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
     text-transform: capitalize;
     background: #aef0f7;
     font-size: 16px;
@@ -179,14 +169,14 @@ const Save = styled.div`
   }
 `;
 const UpperIcon = styled.div`
-  margin-top: 30px;
+  margin-top: 66px;
   display: flex;
   justify-content: flex-end;
   flex-direction: column;
   align-items: flex-end;
   .undo {
     background: #f7d49e;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     &:hover {
       background: #fcce88;
     }
@@ -217,12 +207,18 @@ const Lock = styled.div`
 `;
 
 const ChooseClothes = styled.div`
-  margin-left: 25px;
-  width: 250px;
-  height: 400px;
+  margin: 0 0 30px 25px;
+  width: 380px;
+  height: 500px;
   background: #cde6fe;
   border-radius: 20px;
+  position: relative;
+  padding-top: 60px;
+  overflow: hidden;
   .filter {
+    position: absolute;
+    top: 10px;
+    right: 10px;
     background: #d8d0fc;
     border: 0.5px solid white;
     &:hover {
@@ -231,7 +227,7 @@ const ChooseClothes = styled.div`
   }
 `;
 const CheckboxoxList = styled.div`
-  padding: 0 6px;
+  padding: 6px;
   background: #d8d0fc;
   .filterItem {
     padding-right: 11px;
@@ -257,14 +253,68 @@ const CheckboxoxList = styled.div`
 
 const { TabPane } = Tabs;
 const ClothesMenu = styled.div`
-  margin-left: 5%;
-  margin-right: 5%;
-  .clothingItem {
-    width: 48%;
-    margin: 1%;
-    border: 2px solid #fbe644;
-    height: 100px;
+  height: 100%;
+  .ant-tabs-bar {
+    padding-left: 14px;
+    border-color: #fff;
   }
+  .clothingItemWrapper {
+    width: calc(50% - 20px);
+    position: relative;
+    margin: 10px;
+    border: 2px solid #46a0fc;
+    background: #fff;
+    /* #fbe644; */
+    .clothingItem {
+      padding-top: 100%;
+    }
+    img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: contain;
+    }
+  }
+  .sc-pANHa {
+    height: 100%;
+  }
+  .ant-tabs {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    .ant-tabs-tabpane {
+      overflow: auto;
+      display: flex;
+      flex-wrap: wrap;
+      /* padding: 0 8px 10px 10px; */
+      padding: 16px;
+      background: #fff;
+    }
+    .ant-tabs-content {
+      overflow: auto;
+      flex: 1;
+      /* margin-top: -16px; */
+    }
+  }
+  .ant-tabs-tab {
+    border-color: transparent;
+    background: transparent;
+  }
+  /* .ant-tabs-tab-active {
+    border-color: #fff;
+    background: #fff;
+  } */
+  .ant-tabs-nav-container {
+    margin: 0;
+  }
+
+  /* .ant-tabs.ant-tabs-card .ant-tabs-card-bar .ant-tabs-tab {
+    border:2px solid #55a8fc;
+    &:hover { 
+    }
+  } */
 `;
 
 @withRouter
@@ -450,17 +500,16 @@ export default class DesignComponent extends React.Component {
           <Picture>
             <ImgWrapper>
               <img className="mannequin" src={mannequinImg} draggable={false} />
-              {/* <img src={userBgImg} /> */}
+              <EditPic>
+                <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
+                  <IconButton className="editPic" size="small">
+                    <SvgIcon fontSize="inherit">
+                      <EditPicIcon />
+                    </SvgIcon>
+                  </IconButton>
+                </Tooltip>
+              </EditPic>
             </ImgWrapper>
-            <EditPic>
-              <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
-                <IconButton className="editPic" size="small">
-                  <SvgIcon fontSize="inherit">
-                    <EditPicIcon />
-                  </SvgIcon>
-                </IconButton>
-              </Tooltip>
-            </EditPic>
           </Picture>
           <IconCol>
             <UpperIcon>
@@ -576,7 +625,7 @@ export default class DesignComponent extends React.Component {
 
             <ClothesMenu>
               <Tabs defaultActiveKey="0" type="card" onChange={this.onSelectTab.bind(this)}>
-                <TabPane tab="All" key="0">
+                <TabPane className="tabTitle" tab="All" key="0">
                   {(this.state.clothesimages || []).map((path, index) => {
                     let includesAllFilters = true;
 
@@ -601,11 +650,11 @@ export default class DesignComponent extends React.Component {
                         //console.log(this.state.storageUrls[j].includes(path.split('/')[1]));
                         if (this.state.storageUrls[j].includes(path.split('/')[1])) {
                           return (
-                            <img
-                              className="clothingItem"
-                              src={this.state.storageUrls[j]}
-                              key={index}
-                            />
+                            <div className="clothingItemWrapper" key={index}>
+                              <div className="clothingItem">
+                                <img src={this.state.storageUrls[j]} />
+                              </div>
+                            </div>
                           );
                         }
                       }
@@ -614,7 +663,7 @@ export default class DesignComponent extends React.Component {
                     }
                   })}
                 </TabPane>
-                <TabPane tab="Hats" key="1">
+                <TabPane className="tabTitle" tab="Hats" key="1">
                   {(this.state.clothesimages || []).map((path, index) => {
                     let includesAllFilters = true;
 
@@ -636,11 +685,11 @@ export default class DesignComponent extends React.Component {
                       for (let j = 0; j < this.state.storageUrls.length; j++) {
                         if (this.state.storageUrls[j].includes(path.split('/')[1])) {
                           return (
-                            <img
-                              className="clothingItem"
-                              src={this.state.storageUrls[j]}
-                              key={index}
-                            />
+                            <div className="clothingItemWrapper" key={index}>
+                              <div className="clothingItem">
+                                <img src={this.state.storageUrls[j]} />
+                              </div>
+                            </div>
                           );
                         }
                       }
@@ -649,7 +698,8 @@ export default class DesignComponent extends React.Component {
                     }
                   })}
                 </TabPane>
-                <TabPane tab="Pants" key="2">
+
+                <TabPane className="tabTitle" tab="Shirts" key="3">
                   {(this.state.clothesimages || []).map((path, index) => {
                     let includesAllFilters = true;
 
@@ -671,11 +721,11 @@ export default class DesignComponent extends React.Component {
                       for (let j = 0; j < this.state.storageUrls.length; j++) {
                         if (this.state.storageUrls[j].includes(path.split('/')[1])) {
                           return (
-                            <img
-                              className="clothingItem"
-                              src={this.state.storageUrls[j]}
-                              key={index}
-                            />
+                            <div className="clothingItemWrapper" key={index}>
+                              <div className="clothingItem">
+                                <img src={this.state.storageUrls[j]} />
+                              </div>
+                            </div>
                           );
                         }
                       }
@@ -684,7 +734,8 @@ export default class DesignComponent extends React.Component {
                     }
                   })}
                 </TabPane>
-                <TabPane tab="Shirts" key="3">
+
+                <TabPane className="tabTitle" tab="Pants" key="2">
                   {(this.state.clothesimages || []).map((path, index) => {
                     let includesAllFilters = true;
 
@@ -706,11 +757,11 @@ export default class DesignComponent extends React.Component {
                       for (let j = 0; j < this.state.storageUrls.length; j++) {
                         if (this.state.storageUrls[j].includes(path.split('/')[1])) {
                           return (
-                            <img
-                              className="clothingItem"
-                              src={this.state.storageUrls[j]}
-                              key={index}
-                            />
+                            <div className="clothingItemWrapper" key={index}>
+                              <div className="clothingItem">
+                                <img src={this.state.storageUrls[j]} />
+                              </div>
+                            </div>
                           );
                         }
                       }
@@ -719,7 +770,8 @@ export default class DesignComponent extends React.Component {
                     }
                   })}
                 </TabPane>
-                <TabPane tab="Shoes" key="4">
+
+                <TabPane className="tabTitle" tab="Shoes" key="4">
                   {(this.state.clothesimages || []).map((path, index) => {
                     let includesAllFilters = true;
 
@@ -741,11 +793,11 @@ export default class DesignComponent extends React.Component {
                       for (let j = 0; j < this.state.storageUrls.length; j++) {
                         if (this.state.storageUrls[j].includes(path.split('/')[1])) {
                           return (
-                            <img
-                              className="clothingItem"
-                              src={this.state.storageUrls[j]}
-                              key={index}
-                            />
+                            <div className="clothingItemWrapper" key={index}>
+                              <div className="clothingItem">
+                                <img src={this.state.storageUrls[j]} />
+                              </div>
+                            </div>
                           );
                         }
                       }

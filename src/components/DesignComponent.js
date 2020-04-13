@@ -13,12 +13,13 @@ import {
   Tooltip,
   Popover,
 } from '@material-ui/core';
-import { Tabs } from 'antd';
+import { Tabs, message } from 'antd';
 
 import { StoreContext } from '../stores';
 import firebase from '../firebase';
 import IOSSwitch from './IOSSwitch';
 import SimpleDialog from './SimpleDialog';
+import ButtonWithLoading from './ButtonWithLoading';
 
 import { ReactComponent as UndoIcon } from '../images/undo.svg';
 import { ReactComponent as LockIcon } from '../images/lock.svg';
@@ -129,6 +130,9 @@ const EditPic = styled.div`
       background: #d7cffc;
     }
   }
+  .changeBackground {
+    background-color: #e3ddff;
+  }
 `;
 const ImgWrapper = styled.div`
   position: relative;
@@ -136,7 +140,13 @@ const ImgWrapper = styled.div`
   height: 400px;
   background: #e8dcdc;
   border-radius: 30px;
+  overflow: hidden;
   padding: 60px 50px;
+  .bgImg {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+  }
   .mannequin {
     width: 100%;
     height: 100%;
@@ -362,12 +372,34 @@ export default class DesignComponent extends React.Component {
     tags: [],
     filteredTags: [],
     selectedClothes: [],
+
+    //bg image
+    bgImgEdit: false,
+    bgImgLocation: null,
+    bgImgUrl: null,
   };
 
   //Execute upon rendering the page
   componentDidMount() {
+    this.getBg();
     this.getClothesData();
   }
+
+  getBg = () => {
+    //Get Bg from firestore if there is one otherwise set img url to default
+    let imageUrl = '';
+    let db = firebase.firestore();
+    let docRef = db
+      .collection('users/' + firebase.auth().currentUser.uid + '/background')
+      .doc('image');
+
+    docRef.get().then(doc => {
+      if (doc.exists) {
+        imageUrl = doc.data().url;
+        this.setState({ bgImgUrl: imageUrl });
+      }
+    });
+  };
 
   getClothesData = () => {
     const {
@@ -412,6 +444,69 @@ export default class DesignComponent extends React.Component {
             this.updateFiltered();
           }
         );
+      });
+  };
+
+  changeBackground = () => {
+    const { userStore } = this.context;
+    const file = this.state.bgImgLocation;
+    if (file) {
+      let uploadPath;
+      if (file['name']) {
+        uploadPath = userStore.currentUser.uid + '/' + file['name'];
+      } else {
+        uploadPath =
+          userStore.currentUser.uid + '/' + file.substring(12, file.size).replace('/', 'A');
+      }
+      this.setState({ bgImgLocation: uploadPath });
+
+      let storageRef = firebase.storage().ref(uploadPath);
+      storageRef
+        .put(file)
+        .then(snapshot => {
+          return snapshot.ref.getDownloadURL();
+        })
+        .then(url => {
+          firebase
+            .firestore()
+            .collection('users/' + firebase.auth().currentUser.uid + '/background')
+            .doc('image')
+            .set({
+              url: url,
+            });
+          this.setState({ bgImgUrl: url });
+        })
+        .then(() => {
+          message.success('Background updated successfully!');
+          this.setState({ bgImgEdit: false, bgImgLocation: null });
+        })
+        .catch(error => {
+          // Handle Errors here.
+          message.error(error.message);
+        });
+    } else {
+      alert('Image is required!');
+    }
+  };
+
+  deleteBackground = () => {
+    const { userStore } = this.context;
+
+    // TODO: delete old background file too
+    // let storageRef = firebase.storage().ref();
+
+    let db = firebase.firestore();
+    let docRef = db.collection('users/' + userStore.currentUser.uid + '/background').doc('image');
+
+    docRef
+      .delete()
+      .then(() => {
+        message.success('Background deleted successfully!');
+        this.setState({ bgImgEdit: false, bgImgLocation: null, bgImgUrl: null });
+      })
+      .catch(error => {
+        // Handle Errors here.
+        message.error(error.message);
       });
   };
 
@@ -475,6 +570,8 @@ export default class DesignComponent extends React.Component {
       filteredTags,
       filteredCategories,
       selectedClothes,
+      bgImgEdit,
+      bgImgUrl,
     } = this.state;
 
     let buttonsZone;
@@ -527,11 +624,15 @@ export default class DesignComponent extends React.Component {
             </Button>
           </Random>
           <Picture>
-            <ImgWrapper>
-              <img className="mannequin" src={mannequinImg} draggable={false} />
-              {selectedClothes.map((clothes, i) => (
+            <ImgWrapper style={bgImgUrl ? { padding: 0 } : null}>
+              {bgImgUrl ? (
+                <img key="bgImg" className="bgImg" src={bgImgUrl} draggable={false} />
+              ) : (
+                <img key="mannequin" className="mannequin" src={mannequinImg} draggable={false} />
+              )}
+              {selectedClothes.map(clothes => (
                 <img
-                  key={i}
+                  key={clothes.id}
                   className="selected-clothes"
                   src={clothes.url}
                   style={{
@@ -544,12 +645,61 @@ export default class DesignComponent extends React.Component {
               ))}
               <EditPic>
                 <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
-                  <IconButton className="editPic" size="small">
+                  <IconButton
+                    className="editPic"
+                    size="small"
+                    onClick={() => this.setState(state => ({ bgImgEdit: !state.bgImgEdit }))}
+                  >
                     <SvgIcon fontSize="inherit">
                       <EditPicIcon />
                     </SvgIcon>
                   </IconButton>
                 </Tooltip>
+                <div className="changeBackground">
+                  <form className="editBgImgForm" style={{ display: bgImgEdit ? 'block' : 'none' }}>
+                    <br />
+                    <label>Upload New Background Image</label> <br></br>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="bgImgLocation"
+                      name="bgImgLocation"
+                      placeholder="New Background"
+                      onChange={event => this.setState({ bgImgLocation: event.target.files[0] })}
+                      value={this.state.image}
+                    ></input>
+                    <label htmlFor="file"></label>
+                  </form>
+                  {bgImgEdit && (
+                    <>
+                      <ButtonWithLoading
+                        onClick={this.changeBackground}
+                        className="card1Btn"
+                        variant="contained"
+                        color="primary"
+                      >
+                        SAVE
+                      </ButtonWithLoading>
+                      <ButtonWithLoading
+                        onClick={this.deleteBackground}
+                        className="card1Btn"
+                        variant="contained"
+                        color="primary"
+                        disabled={!bgImgUrl}
+                      >
+                        Delete
+                      </ButtonWithLoading>
+                      <ButtonWithLoading
+                        onClick={() => this.setState({ bgImgEdit: false })}
+                        className="card1Btn"
+                        variant="contained"
+                        color="primary"
+                      >
+                        CANCEL
+                      </ButtonWithLoading>
+                    </>
+                  )}
+                </div>
               </EditPic>
             </ImgWrapper>
           </Picture>

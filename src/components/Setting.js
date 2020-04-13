@@ -223,6 +223,54 @@ export default class Setting extends React.Component {
       });
   };
 
+  // resizeCropImg = (file, filename, resizeWidth, resizeHeight) => {
+  //   return new Promise((resolve, reject) => {
+  //     //load original image
+  //     let original = new Image();
+  //     original.onload = () => {
+  //       // put image to canvas
+  //       const canvas = document.createElement('canvas');
+  //       canvas.width = resizeWidth;
+  //       canvas.height = resizeHeight;
+  //       // resize image using canvas
+  //       const ctx = canvas.getContext('2d');
+  //       const wCount = original.width / resizeWidth;
+  //       const hCount = original.height / resizeHeight;
+  //       let sx, sy, sw, sh;
+  //       if (wCount > hCount) {
+  //         // crop "vertically"
+  //         sh = original.height;
+  //         sw = (original.height * resizeWidth) / resizeHeight;
+  //         sy = 0;
+  //         sx = (original.width - sw) / 2;
+  //       } else {
+  //         // crop horizontally
+  //         sw = original.width;
+  //         sh = (original.width * resizeHeight) / resizeWidth;
+  //         sx = 0;
+  //         sy = (original.height - sh) / 2;
+  //       }
+  //       ctx.drawImage(original, sx, sy, sw, sh, 0, 0, resizeWidth, resizeHeight);
+  //       // read from canvas to png image file
+  //       let dataURL = canvas.toDataURL('image/png');
+  //       // https://stackoverflow.com/a/43358515/12017013
+  //       let arr = dataURL.split(','),
+  //         mime = arr[0].match(/:(.*?);/)[1],
+  //         bstr = atob(arr[1]),
+  //         n = bstr.length,
+  //         u8arr = new Uint8Array(n);
+  //       while (n--) {
+  //         u8arr[n] = bstr.charCodeAt(n);
+  //       }
+  //       resolve(new File([u8arr], filename, { type: mime }));
+  //     };
+  //     original.onerror = error => {
+  //       reject(error);
+  //     };
+  //     original.src = URL.createObjectURL(file);
+  //   });
+  // };
+
   onChangeEmail = () => {
     const {
       userStore: { currentUser },

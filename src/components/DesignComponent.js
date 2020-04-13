@@ -1,9 +1,8 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
-import SimpleDialog from './SimpleDialog';
+import intersection from 'lodash/intersection';
 import {
   Button,
   SvgIcon,
@@ -14,27 +13,32 @@ import {
   Tooltip,
   Popover,
 } from '@material-ui/core';
-import userBgImg from '../images/userBgImg.jpg'; //Should be user's current bg img
+import { Tabs } from 'antd';
+
+import { StoreContext } from '../stores';
+import firebase from '../firebase';
 import IOSSwitch from './IOSSwitch';
+import SimpleDialog from './SimpleDialog';
+
 import { ReactComponent as UndoIcon } from '../images/undo.svg';
 import { ReactComponent as LockIcon } from '../images/lock.svg';
 import { ReactComponent as FilterIcon } from '../images/filter.svg';
 import { ReactComponent as GoBackIcon } from '../images/goback.svg';
 import { ReactComponent as EditPicIcon } from '../images/editpic.svg';
-import firebase from '../firebase';
-import { Tabs } from 'antd';
-import { message } from 'antd';
-import ButtonWithLoading from './ButtonWithLoading';
+import designImg from '../images/design.svg';
+import mannequinImg from '../images/mannequin.svg';
 
 const Wrapper = styled.div`
   max-width: 1000px;
   margin: 50px auto 100px;
   border-radius: 30px;
   background: rgba(185, 185, 185, 0.2);
-  display: flex;
-  justify-content: center;
-  padding: 50px 40px 55px;
   position: relative;
+  .content {
+    display: flex;
+    justify-content: center;
+    padding: 50px 40px 55px;
+  }
 `;
 
 const GoBack = styled.div`
@@ -49,6 +53,30 @@ const GoBack = styled.div`
   }
 `;
 
+const Up = styled.div`
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 0 40px;
+  margin-bottom: -30px;
+  img {
+    width: 44px;
+    height: 44px;
+  }
+`;
+const UpImgWrapper = styled.div``;
+const Title = styled.div`
+  display: flex;
+  align-items: center;
+  span {
+    font-size: 24px;
+    font-weight: bold;
+    color: #efefef;
+    margin-left: 14px;
+  }
+`;
+
 const Random = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -57,7 +85,7 @@ const Random = styled.div`
   margin-right: 25px;
   .random {
     padding: 0;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
     text-transform: capitalize;
     background: #8ff2b8;
     border-radius: 50%;
@@ -78,7 +106,7 @@ const Random = styled.div`
 const Picture = styled.div`
   display: flex;
   align-items: center;
-  position: relative;
+  margin-bottom: 10px;
   &:hover {
     .editPic {
       transition: 0.4s;
@@ -101,55 +129,20 @@ const EditPic = styled.div`
       background: #d7cffc;
     }
   }
-  .changeBackground {
-    background-color: #e3ddff;
-  }
 `;
 const ImgWrapper = styled.div`
+  position: relative;
   width: 300px;
   height: 400px;
-  .bgImg {
-    position: absolute;
-    object-fit: cover;
+  background: #e8dcdc;
+  border-radius: 30px;
+  padding: 60px 50px;
+  .mannequin {
     width: 100%;
     height: 100%;
-    border-radius: 40px;
   }
-`;
-
-const HatImageArea = styled.div`
-  img {
-    margin-left: 100px;
+  .selected-clothes {
     position: absolute;
-    width: 100px;
-    height: 100px;
-  }
-`;
-const ShirtImageArea = styled.div`
-  img {
-    margin-left: 100px;
-    margin-top: 100px;
-    position: absolute;
-    width: 100px;
-    height: 100px;
-  }
-`;
-const PantsImageArea = styled.div`
-  img {
-    margin-left: 100px;
-    margin-top: 200px;
-    position: absolute;
-    width: 100px;
-    height: 100px;
-  }
-`;
-const ShoesImageArea = styled.div`
-  img {
-    margin-left: 100px;
-    margin-top: 300px;
-    position: absolute;
-    width: 100px;
-    height: 100px;
   }
 `;
 
@@ -165,7 +158,7 @@ const Save = styled.div`
   .save {
     width: 60px;
     height: 60px;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
     text-transform: capitalize;
     background: #aef0f7;
     font-size: 16px;
@@ -183,14 +176,14 @@ const Save = styled.div`
   }
 `;
 const UpperIcon = styled.div`
-  margin-top: 30px;
+  margin-top: 66px;
   display: flex;
   justify-content: flex-end;
   flex-direction: column;
   align-items: flex-end;
   .undo {
     background: #f7d49e;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     &:hover {
       background: #fcce88;
     }
@@ -221,12 +214,18 @@ const Lock = styled.div`
 `;
 
 const ChooseClothes = styled.div`
-  margin-left: 25px;
-  width: 250px;
-  height: 400px;
+  margin: 0 0 30px 25px;
+  width: 380px;
+  height: 500px;
   background: #cde6fe;
   border-radius: 20px;
+  position: relative;
+  padding-top: 60px;
+  overflow: hidden;
   .filter {
+    position: absolute;
+    top: 10px;
+    right: 10px;
     background: #d8d0fc;
     border: 0.5px solid white;
     &:hover {
@@ -235,8 +234,10 @@ const ChooseClothes = styled.div`
   }
 `;
 const CheckboxoxList = styled.div`
-  padding: 0 6px;
+  padding: 6px;
   background: #d8d0fc;
+  max-height: 300px;
+  overflow: auto;
   .filterItem {
     padding-right: 11px;
     font-size: 14px;
@@ -248,6 +249,7 @@ const CheckboxoxList = styled.div`
     }
   }
   .MuiFormControlLabel-root {
+    display: flex;
     margin: 0;
   }
   .MuiSvgIcon-root {
@@ -261,263 +263,222 @@ const CheckboxoxList = styled.div`
 
 const { TabPane } = Tabs;
 const ClothesMenu = styled.div`
-  margin-left: 5%;
-  margin-right: 5%;
-  .clothingItem {
-    width: 48%;
-    margin: 1%;
-    border: 2px solid #fbe644;
-    height: 100px;
+  height: 100%;
+  .ant-tabs-bar {
+    padding-left: 14px;
+    border-color: #fff;
   }
+  .clothingItemWrapper {
+    width: calc(50% - 20px);
+    position: relative;
+    margin: 10px;
+    border: 2px solid #46a0fc;
+    background: #fff;
+    /* #fbe644; */
+    &.selected {
+      border-color: red;
+    }
+    .clothingItem {
+      padding-top: 100%;
+    }
+    img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: contain;
+    }
+  }
+  .sc-pANHa {
+    height: 100%;
+  }
+  .ant-tabs {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    .ant-tabs-tabpane {
+      overflow: auto;
+      display: flex;
+      flex-wrap: wrap;
+      /* padding: 0 8px 10px 10px; */
+      padding: 16px;
+      background: #fff;
+    }
+    .ant-tabs-content {
+      overflow: auto;
+      flex: 1;
+      /* margin-top: -16px; */
+    }
+  }
+  .ant-tabs-tab {
+    border-color: transparent;
+    background: transparent;
+  }
+  /* .ant-tabs-tab-active {
+    border-color: #fff;
+    background: #fff;
+  } */
+  .ant-tabs-nav-container {
+    margin: 0;
+  }
+
+  /* .ant-tabs.ant-tabs-card .ant-tabs-card-bar .ant-tabs-tab {
+    border:2px solid #55a8fc;
+    &:hover { 
+    }
+  } */
 `;
 
+const categoryOrder = ['hats', 'shirts', 'pants', 'shoes'];
 @withRouter
 @observer
 export default class DesignComponent extends React.Component {
   static contextType = StoreContext;
 
   state = {
-    open: false,
-    // filter
-    turnon: false,
-    tagdata: [],
-    customtagdata: [],
-    tagtoggled: [],
-    // dialogs
+    // UI state
+    lockPopoverOpen: false,
+    filterPopoverOpen: false,
     dialogOpen: false,
     goBackDialogOpen: false,
-    //clothing ids + image paths + corresponding categories
-    clothesids: [],
-    clothesimages: [],
-    clothescategories: [], //2D array of categories
-    storageUrls: [], //URLs for the images from storage
-    //Storage URls for selected clothing items, initially transparent images
-    selectedHat: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
-    selectedShirt: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
-    selectedPants: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
-    selectedShoes: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',
-    //Used for making outfit fields
-    selectedHatID: null,
-    selectedShirtID: null,
-    selectedPantsID: null,
-    selectedShoesID: null,
-    //bg image
-    bgImgEdit: false,
-    bgImgLocation: null,
-    bgImgUrl: null,
+
+    // data
+    categories: {
+      hats: [],
+      shirts: [],
+      pants: [],
+      shoes: [],
+    },
+    filteredCategories: {
+      hats: [],
+      shirts: [],
+      pants: [],
+      shoes: [],
+    },
+    tags: [],
+    filteredTags: [],
+    selectedClothes: [],
   };
 
   //Execute upon rendering the page
   componentDidMount() {
-    this.getBg();
-    this.getTagData();
     this.getClothesData();
   }
 
-  getBg = () => {
-    //Get Bg from firestore if there is one otherwise set img url to default
-    let imageUrl = '';
-    let db = firebase.firestore();
-    let docRef = db
-      .collection('users/' + firebase.auth().currentUser.uid + '/background')
-      .doc('image');
+  getClothesData = () => {
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const db = firebase.firestore();
 
-    docRef.get().then(doc => {
-      if (doc.exists) {
-        imageUrl = doc.data().url;
-        this.setState({ bgImgUrl: imageUrl });
-      } else {
-        imageUrl = userBgImg;
-        this.setState({ bgImgUrl: imageUrl });
-      }
-    });
-  };
-
-  editBg = () => {
-    this.setState({ bgImgEdit: !this.state.bgImgEdit });
-  };
-
-  cancelEditBg = () => {
-    this.setState({ bgImgEdit: false });
-  };
-
-  changeBackground = () => {
-    const { userStore } = this.context;
-    const file = this.state.bgImgLocation;
-    if (file) {
-      let uploadPath;
-      if (file['name']) {
-        uploadPath = userStore.currentUser.uid + '/' + file['name'];
-      } else {
-        uploadPath =
-          userStore.currentUser.uid + '/' + file.substring(12, file.size).replace('/', 'A');
-      }
-      this.setState({ bgImgLocation: uploadPath });
-
-      let storageRef = firebase.storage().ref(uploadPath);
-      storageRef
-        .put(file)
-        .then(snapshot => {
-          return snapshot.ref.getDownloadURL();
-        })
-        .then(url => {
-          firebase
-            .firestore()
-            .collection('users/' + firebase.auth().currentUser.uid + '/background')
-            .doc('image')
-            .set({
-              url: url,
-            });
-          this.setState({ bgImgUrl: url });
-        })
-        .then(() => {
-          message.success('Background updated successfully!');
-          this.setState({ bgImgEdit: false, bgImgLocation: null });
-        })
-        .catch(error => {
-          // Handle Errors here.
-          message.error(error.message);
+    db.collection('users')
+      .doc(uid)
+      .collection('clothes')
+      .get()
+      .then(querySnapshot => {
+        const categories = {
+          hats: [],
+          shirts: [],
+          pants: [],
+          shoes: [],
+        };
+        const tagSet = new Set();
+        querySnapshot.forEach(doc => {
+          const c = doc.data();
+          categories[c.category].push({
+            id: doc.id,
+            ...c,
+          });
+          // add tag to tags Set
+          c.tags.forEach(tag => tagSet.add(tag));
         });
+
+        const tags = [...tagSet];
+        tags.sort();
+
+        this.setState(
+          {
+            categories,
+            tags,
+          },
+          () => {
+            // also need to update filtered result
+            this.updateFiltered();
+          }
+        );
+      });
+  };
+
+  // apply filter to all clothes in categories and save to filteredCategories
+  // call this method everytime filteredTags changes
+  updateFiltered = () => {
+    const { categories, filteredTags } = this.state;
+    if (filteredTags.length === 0) {
+      // no filters
+      this.setState({ filteredCategories: categories });
     } else {
-      alert('Image is required!');
+      const filteredCategories = {};
+      Object.keys(categories).forEach(category => {
+        // filter by all tags in filteredTags:
+        // the intersection needs to be the same length
+        filteredCategories[category] = categories[category].filter(
+          c => intersection(c.tags, filteredTags).length === filteredTags.length
+        );
+      });
+
+      this.setState({ filteredCategories });
     }
   };
 
-  getClothesData = () => {
-    let db = firebase.firestore();
-    let storageRef = firebase.storage().ref();
-    let images = [];
-    let categories = [];
-    let urls = [];
-    let ids = [];
+  onSelectTag = (tag, checked) => {
+    // shallow clone filteredTags array
+    const filteredTags = [...this.state.filteredTags];
+    if (checked) {
+      filteredTags.push(tag);
+    } else {
+      const index = filteredTags.indexOf(tag);
+      if (index >= 0) filteredTags.splice(index, 1);
+    }
 
-    db.collection('users/' + firebase.auth().currentUser.uid + '/clothes')
-      .get()
-      .then(function(querySnapshot) {
-        querySnapshot.forEach(function(doc) {
-          categories.push(doc.data().categories);
-          ids.push(doc.id);
-          images.push(doc.data().imagePath);
-
-          //Doesn't put in the URls in the same order as the paths.
-          storageRef
-            .child(doc.data().imagePath)
-            .getDownloadURL()
-            .then(function(url) {
-              urls.push(url);
-            });
-        });
-      });
-
-    this.setState({
-      clothesids: ids,
-      clothesimages: images,
-      clothescategories: categories,
-      storageUrls: urls,
+    this.setState({ filteredTags }, () => {
+      this.updateFiltered();
     });
   };
 
-  //creates a state array of tags using the docs specified
-  //in the user's categories collection.
-  getTagData = () => {
-    let db = firebase.firestore();
-    let tags = [];
-    let customTags = [];
-    let toggled = [];
+  onSelectClothes = clothes => {
+    const selectedClothes = [...this.state.selectedClothes].filter(
+      c => c.category !== clothes.category
+    );
 
-    db.collection('users/' + firebase.auth().currentUser.uid + '/categories')
-      .get()
-      .then(function(querySnapshot) {
-        querySnapshot.forEach(function(doc) {
-          let tag = doc.data().name;
+    if (!this.state.selectedClothes.some(c => c.id === clothes.id)) {
+      // was not selected
+      selectedClothes.push(clothes);
+    }
 
-          if (tag != 'All') {
-            if (tag == 'Hats' || tag == 'Pants' || tag == 'Shirts' || tag == 'Shoes') {
-              tags.push(tag);
-            } else {
-              customTags.push(tag);
-            }
-
-            //Corresponding array that keeps track of
-            //whether or not each tag is checked (toggled)
-            toggled.push(false);
-          }
-        });
-      });
-
-    //Make sure order goes Hats Pants Shirts Shoes then custom tags
-    //Firestore automatically puts tags in alphabetical order
-
-    this.setState({ tagdata: tags, customtagdata: customTags, tagtoggled: toggled });
-  };
-
-  onSelectTag = i => {
-    this.setState(state => {
-      const tagtoggled = state.tagtoggled.map((item, j) => {
-        if (j === i) {
-          return !item;
-        } else {
-          return item;
-        }
-      });
-      return {
-        tagtoggled,
-      };
-    });
-  };
-
-  onSelectTab(key) {
-    this.setState(state => {
-      const tagtoggled = state.tagtoggled.map((item, j) => {
-        if (j === key - 1) {
-          return (item = true);
-        } else {
-          return (item = false);
-        }
-      });
-
-      return {
-        tagtoggled,
-      };
-    });
-
-    return <p>Test</p>;
-  }
-
-  onSave = () => {
-    this.setState({ dialogOpen: true });
-  };
-
-  onSaveNewOutfit = () => {
-    //let hat = this.state.selectedHatID;
-    //let shirt = this.state.selectedShirtID;
-    //let pants = this.state.selectedPantsID;
-    //let shoes = this.state.selectedShoesID;
-  };
-
-  onEditDone = () => {
-    this.setState({ dialogOpen: true });
+    this.setState({ selectedClothes });
   };
 
   render() {
     const { from } = this.props;
-    const { dialogOpen, goBackDialogOpen } = this.state;
-    let buttonsZone;
-    let goBackButtonsZone = [
-      { text: 'Cancel, Continue Editing', onClick: () => {} },
-      { text: 'Exit without Saving', exit: true, onClick: () => {} },
-    ];
-    // let description;
+    const {
+      lockPopoverOpen,
+      filterPopoverOpen,
+      dialogOpen,
+      goBackDialogOpen,
+      tags,
+      filteredTags,
+      filteredCategories,
+      selectedClothes,
+    } = this.state;
 
+    let buttonsZone;
     if (from === 'design') {
       buttonsZone = [
         { text: 'Download', onClick: () => {} },
-        {
-          text: 'Save to My Favorites',
-          onClick: () => {
-            this.onSaveNewOutfit();
-          },
-        },
+        { text: 'Save to My Favorites', onClick: () => {} },
         { text: 'Exit without Saving', exit: true, onClick: () => {} },
       ];
     } else {
@@ -528,6 +489,7 @@ export default class DesignComponent extends React.Component {
         { text: 'Exit without Saving', exit: true, onClick: () => {} },
       ];
     }
+
     return (
       <Wrapper>
         {from === 'edit' && (
@@ -544,100 +506,142 @@ export default class DesignComponent extends React.Component {
             </Tooltip>
           </GoBack>
         )}
-        <Random>
-          <Button className="random" variant="contained">
-            Random
-          </Button>
-        </Random>
-        <Picture>
-          <ImgWrapper>
-            <img className="bgImg" src={this.state.bgImgUrl} />
-            <HatImageArea>
-              <img src={this.state.selectedHat} />
-            </HatImageArea>
-            <ShirtImageArea>
-              <img src={this.state.selectedShirt} />
-            </ShirtImageArea>
-            <PantsImageArea>
-              <img src={this.state.selectedPants} />
-            </PantsImageArea>
-            <ShoesImageArea>
-              <img src={this.state.selectedShoes} />
-            </ShoesImageArea>
-          </ImgWrapper>
-          <EditPic>
-            <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
-              <IconButton className="editPic" size="small" onClick={() => this.editBg()}>
-                <SvgIcon fontSize="inherit">
-                  <EditPicIcon />
-                </SvgIcon>
-              </IconButton>
-            </Tooltip>
-            <div className="changeBackground">
-              <form
-                className="editBgImgForm"
-                style={{ display: this.state.bgImgEdit ? 'block' : 'none' }}
-              >
-                <br />
-                <label>Upload New Background Image</label> <br></br>
-                <input
-                  type="file"
-                  id="bgImgLocation"
-                  name="bgImgLocation"
-                  placeholder="New Background"
-                  onChange={event => this.setState({ bgImgLocation: event.target.files[0] })}
-                  value={this.state.image}
-                ></input>
-                <label htmlFor="file"></label>
-              </form>
-              {this.state.bgImgEdit && (
-                <ButtonWithLoading
-                  onClick={this.changeBackground}
-                  className="card1Btn"
-                  variant="contained"
-                  color="primary"
-                >
-                  SAVE
-                </ButtonWithLoading>
-              )}
 
-              {this.state.bgImgEdit && (
-                <ButtonWithLoading
-                  onClick={this.cancelEditBg}
-                  className="card1Btn"
-                  variant="contained"
-                  color="primary"
+        {from === 'design' && (
+          <Up>
+            <Title>
+              <UpImgWrapper>
+                <img src={designImg} />
+              </UpImgWrapper>
+              <span>Design</span>
+            </Title>
+          </Up>
+        )}
+        <div className="content">
+          <Random>
+            <Button className="random" variant="contained">
+              Random
+            </Button>
+          </Random>
+          <Picture>
+            <ImgWrapper>
+              <img className="mannequin" src={mannequinImg} draggable={false} />
+              {selectedClothes.map((clothes, i) => (
+                <img
+                  key={i}
+                  className="selected-clothes"
+                  src={clothes.url}
+                  style={{
+                    top: `${clothes.fit.y}%`,
+                    left: `${clothes.fit.x}%`,
+                    width: `${clothes.fit.width}%`,
+                    height: `${clothes.fit.height}%`,
+                  }}
+                />
+              ))}
+              <EditPic>
+                <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
+                  <IconButton className="editPic" size="small">
+                    <SvgIcon fontSize="inherit">
+                      <EditPicIcon />
+                    </SvgIcon>
+                  </IconButton>
+                </Tooltip>
+              </EditPic>
+            </ImgWrapper>
+          </Picture>
+          <IconCol>
+            <UpperIcon>
+              <Tooltip arrow title="Undo" TransitionComponent={Zoom} placement="top">
+                <IconButton className="undo">
+                  <SvgIcon fontSize="small">
+                    <UndoIcon />
+                  </SvgIcon>
+                </IconButton>
+              </Tooltip>
+              <Tooltip arrow title="Lock categories" TransitionComponent={Zoom} placement="top">
+                <IconButton
+                  ref={el => (this.lockBtnRef = el)}
+                  className="lock"
+                  onClick={() => this.setState({ lockPopoverOpen: true })}
                 >
-                  CANCEL
-                </ButtonWithLoading>
+                  <SvgIcon fontSize="small">
+                    <LockIcon />
+                  </SvgIcon>
+                </IconButton>
+              </Tooltip>
+              <Popover
+                open={lockPopoverOpen}
+                anchorEl={this.lockBtnRef}
+                onClose={() => this.setState({ lockPopoverOpen: false })}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'center',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'center',
+                }}
+              >
+                <Lock>
+                  <div className="lockItem">
+                    <IOSSwitch name="checkedB" />
+                    Hat
+                  </div>
+                  <div className="lockItem">
+                    <IOSSwitch name="checkedB" />
+                    Shirt
+                  </div>
+                  <div className="lockItem">
+                    <IOSSwitch name="checkedB" />
+                    Pants
+                  </div>
+                  <div className="lockItem">
+                    <IOSSwitch name="checkedB" />
+                    Shoes
+                  </div>
+                </Lock>
+              </Popover>
+            </UpperIcon>
+
+            <Save>
+              {from === 'design' ? (
+                <Button
+                  className="save"
+                  variant="contained"
+                  onClick={() => this.setState({ dialogOpen: true })}
+                >
+                  Save
+                </Button>
+              ) : (
+                <Button
+                  className="save"
+                  variant="contained"
+                  onClick={() => this.setState({ dialogOpen: true })}
+                >
+                  Done
+                </Button>
               )}
-            </div>
-          </EditPic>
-        </Picture>
-        <IconCol>
-          <UpperIcon>
-            <Tooltip arrow title="Undo" TransitionComponent={Zoom} placement="top">
-              <IconButton className="undo">
-                <SvgIcon fontSize="small">
-                  <UndoIcon />
-                </SvgIcon>
-              </IconButton>
-            </Tooltip>
-            <Tooltip arrow title="Lock categories" TransitionComponent={Zoom} placement="top">
+            </Save>
+          </IconCol>
+          <ChooseClothes>
+            <Tooltip arrow title="Filter tags" TransitionComponent={Zoom} placement="top">
               <IconButton
-                ref={el => (this.lockBtnRef = el)}
-                className="lock"
-                onClick={() => this.setState({ open: true })}
+                className="filter"
+                ref={el => (this.filterBtnRef = el)}
+                onClick={() => {
+                  this.setState({ filterPopoverOpen: true });
+                }}
               >
                 <SvgIcon fontSize="small">
-                  <LockIcon />
+                  <FilterIcon />
                 </SvgIcon>
               </IconButton>
             </Tooltip>
             <Popover
-              open={this.state.open}
-              anchorEl={this.lockBtnRef}
-              onClose={() => this.setState({ open: false })}
+              open={filterPopoverOpen}
+              anchorEl={this.filterBtnRef}
+              onClose={() => this.setState({ filterPopoverOpen: false })}
               anchorOrigin={{
                 vertical: 'bottom',
                 horizontal: 'center',
@@ -647,291 +651,74 @@ export default class DesignComponent extends React.Component {
                 horizontal: 'center',
               }}
             >
-              <Lock>
-                <div className="lockItem">
-                  <IOSSwitch name="checkedB" />
-                  Hat
-                </div>
-                <div className="lockItem">
-                  <IOSSwitch name="checkedB" />
-                  Shirt
-                </div>
-                <div className="lockItem">
-                  <IOSSwitch name="checkedB" />
-                  Pants
-                </div>
-                <div className="lockItem">
-                  <IOSSwitch name="checkedB" />
-                  Shoes
-                </div>
-              </Lock>
+              {/* show all user defined tags */}
+              <CheckboxoxList>
+                {tags.map(tag => (
+                  <div className="filterItem" key={tag}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          name={tag}
+                          color="primary"
+                          checked={filteredTags.includes(tag)}
+                          onChange={e => this.onSelectTag(tag, e.target.checked)}
+                        />
+                      }
+                      label={tag}
+                    />
+                  </div>
+                ))}
+              </CheckboxoxList>
             </Popover>
-          </UpperIcon>
 
-          <Save>
-            {from === 'design' ? (
-              <Button className="save" variant="contained" onClick={this.onSave}>
-                Save
-              </Button>
-            ) : (
-              <Button className="save" variant="contained" onClick={this.onEditDone}>
-                Done
-              </Button>
-            )}
-          </Save>
-        </IconCol>
-        <ChooseClothes>
-          <Tooltip arrow title="Filter categories" TransitionComponent={Zoom} placement="top">
-            <IconButton
-              className="filter"
-              ref={el => (this.filterBtnRef = el)}
-              onClick={() => {
-                this.setState({ turnon: true });
-              }}
-            >
-              <SvgIcon fontSize="small">
-                <FilterIcon />
-              </SvgIcon>
-            </IconButton>
-          </Tooltip>
-          <Popover
-            open={this.state.turnon}
-            anchorEl={this.filterBtnRef}
-            onClose={() => this.setState({ turnon: false })}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'center',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'center',
-            }}
-          >
-            {/* show all user defined tags */}
-            <CheckboxoxList>
-              {(this.state.tagdata.concat(this.state.customtagdata) || []).map((tag, index) => {
-                if (index > 3) {
-                  return (
-                    <div className="filterItem" key={tag}>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            name={tag}
-                            color="primary"
-                            checked={this.state.tagtoggled[index]}
-                            onChange={() => this.onSelectTag(index)}
-                          />
-                        }
-                        label={tag}
-                      />
-                    </div>
-                  );
-                }
-              })}
-            </CheckboxoxList>
-          </Popover>
+            <ClothesMenu>
+              <Tabs defaultActiveKey="shirts" type="card">
+                {/* loop over all categories to display tab */}
+                {categoryOrder.map(category => (
+                  <TabPane className="tabTitle" tab={category} key={category}>
+                    {filteredCategories[category].map((clothes, i) => (
+                      <div
+                        className={`clothingItemWrapper ${
+                          selectedClothes.some(c => clothes.id === c.id) ? 'selected' : ''
+                        }`}
+                        key={i}
+                        tabIndex="0"
+                        onClick={() => this.onSelectClothes(clothes)}
+                      >
+                        <div className="clothingItem">
+                          <img src={clothes.url} />
+                        </div>
+                      </div>
+                    ))}
+                  </TabPane>
+                ))}
+              </Tabs>
+            </ClothesMenu>
+          </ChooseClothes>
 
-          <ClothesMenu>
-            <Tabs defaultActiveKey="1" type="card" onChange={this.onSelectTab.bind(this)}>
-              <TabPane tab="Hats" key="1">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  if (!this.state.tagtoggled.includes(true)) {
-                    return;
-                  }
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                            onClick={() =>
-                              this.setState({
-                                selectedHat: this.state.storageUrls[j],
-                                selectedHatID: this.state.clothesids[index],
-                              })
-                            }
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
-              <TabPane tab="Pants" key="2">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  if (!this.state.tagtoggled.includes(true)) {
-                    return;
-                  }
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                            onClick={() =>
-                              this.setState({
-                                selectedPants: this.state.storageUrls[j],
-                                selectedPantsID: this.state.clothesids[index],
-                              })
-                            }
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
-              <TabPane tab="Shirts" key="3">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  if (!this.state.tagtoggled.includes(true)) {
-                    return;
-                  }
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                            onClick={() =>
-                              this.setState({
-                                selectedShirt: this.state.storageUrls[j],
-                                selectedShirtID: this.state.clothesids[index],
-                              })
-                            }
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
-              <TabPane tab="Shoes" key="4">
-                {(this.state.clothesimages || []).map((path, index) => {
-                  if (!this.state.tagtoggled.includes(true)) {
-                    return;
-                  }
-                  let includesAllFilters = true;
-
-                  for (let i = 0; i < this.state.tagtoggled.length; i++) {
-                    if (this.state.tagtoggled[i]) {
-                      if (
-                        !this.state.clothescategories[index].includes(
-                          this.state.tagdata.concat(this.state.customtagdata)[i].toLowerCase()
-                        )
-                      ) {
-                        includesAllFilters = false;
-                        break;
-                      }
-                    }
-                  }
-
-                  if (includesAllFilters) {
-                    //Get path from storageUrls and put it in src
-                    for (let j = 0; j < this.state.storageUrls.length; j++) {
-                      if (this.state.storageUrls[j].includes(path.split('/')[1])) {
-                        return (
-                          <img
-                            className="clothingItem"
-                            src={this.state.storageUrls[j]}
-                            key={index}
-                            onClick={() =>
-                              this.setState({
-                                selectedShoes: this.state.storageUrls[j],
-                                selectedShoesID: this.state.clothesids[index],
-                              })
-                            }
-                          />
-                        );
-                      }
-                    }
-
-                    return 'Should never see this message.';
-                  }
-                })}
-              </TabPane>
-            </Tabs>
-          </ClothesMenu>
-        </ChooseClothes>
-
-        <SimpleDialog
-          open={dialogOpen}
-          type="success"
-          buttons={buttonsZone}
-          onClose={() => this.setState({ dialogOpen: false })}
-        />
-        <SimpleDialog
-          open={goBackDialogOpen}
-          type="warning"
-          description={
-            <span>
-              Are you sure
-              <br />
-              you want to exit without saving?
-            </span>
-          }
-          buttons={goBackButtonsZone}
-          onClose={() => this.setState({ goBackDialogOpen: false })}
-        />
+          <SimpleDialog
+            open={dialogOpen}
+            type="success"
+            buttons={buttonsZone}
+            onClose={() => this.setState({ dialogOpen: false })}
+          />
+          <SimpleDialog
+            open={goBackDialogOpen}
+            type="warning"
+            description={
+              <span>
+                Are you sure
+                <br />
+                you want to exit without saving?
+              </span>
+            }
+            buttons={[
+              { text: 'Cancel, Continue Editing', onClick: () => {} },
+              { text: 'Exit without Saving', exit: true, onClick: () => {} },
+            ]}
+            onClose={() => this.setState({ goBackDialogOpen: false })}
+          />
+        </div>
       </Wrapper>
     );
   }

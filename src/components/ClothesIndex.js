@@ -1,15 +1,15 @@
 import React from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react';
-import { StoreContext } from '../stores';
 import { Link, withRouter } from 'react-router-dom';
-import { Menu, Dropdown, message, Card } from 'antd';
-import {LoadingOutlined} from '@ant-design/icons';
+import intersection from 'lodash/intersection';
+import { Menu, Dropdown, message } from 'antd';
+import { StoreContext } from '../stores';
 import firebase from '../firebase';
+import Loading from './Loading';
 
 // Data objects
 const db = firebase.firestore(); // database object
-const userCollection = db.collection('users'); // users collection
 
 // DOM Elements
 const Wrapper = styled.div`
@@ -44,10 +44,44 @@ const LeftSidePanel = styled.div`
 const RightSide = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: center;
   width: 800px;
   height: ${ContainerCard.height};
-  padding-left: 20px;
+  padding: 0 20px;
+
+  .header {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    font-size: 20px;
+    font-weight: 600;
+    height: 100px;
+  }
+
+  .imgs-wrapper {
+    flex: 1;
+    overflow: auto;
+    a {
+      display: inline-block;
+      margin: 10px;
+      width: calc(${100 / 4}% - ${2 * 10}px);
+      position: relative;
+      border: 2px solid #46a0fc;
+      background: #fff;
+      .img-wrapper {
+        padding-top: 100%;
+
+        img {
+          position: absolute;
+          top: 0;
+          left: 0;
+          height: 100%;
+          width: 100%;
+          object-fit: contain;
+        }
+      }
+    }
+  }
 `;
 const TabContainer = styled.div`
   flex: 0.5;
@@ -67,17 +101,6 @@ const Tab = styled(Menu.Item)`
   max-width: ${TabContainer.maxWidth};
   border-bottom: 1px solid currentColor;
 `;
-const CardHeader = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  width: ${RightSide.width};
-  font-size: 20px;
-  font-weight: 600;
-  height: 150px;
-  flex: 0.3;
-`;
 const SortButton = styled.div`
   flex: 1;
   justify-content: center;
@@ -94,151 +117,137 @@ const SortButton = styled.div`
     color: white;
   }
 `;
-const ClothingRow = styled.div`
-  display: flex;
-  flex: 1;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  width: ${RightSide.width};
-  height: 200px;
-  border-bottom: 1px solid currentColor;
-`;
-const ClothingItem = styled(Card)`
-  display: flex;
-  flex: 1;
-  width: 220px;
-  height: 220px;
-  margin: 10px;
-`;
+
 @withRouter
 @observer
 export default class ClothesIndex extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      location: 'all',
-      itemsIDs: [],    // Array of data objects for each item
-      clothingURLs: [], // Urls of each item
-      clothingItems: [], // Store item objects that has image path, image url, createdTime, and lastModifiedTime.
-      fetched: false
-    };
-  }
   static contextType = StoreContext;
-  handleClick = (event) =>  {
-    this.setState({location: event.key});
-    this.setState({fetched: false});
+  state = {
+    loading: false,
+    categories: {
+      hats: [],
+      shirts: [],
+      pants: [],
+      shoes: [],
+    },
+    filteredCategories: {
+      all: [],
+      hats: [],
+      shirts: [],
+      pants: [],
+      shoes: [],
+    },
+    tags: [],
+    filteredTags: [],
+  };
+
+  componentDidMount() {
+    this.getData();
   }
+
+  handleClick = event => {
+    this.setState({ location: event.key });
+    this.setState({ fetched: false });
+  };
+
   /**
    * Sorts images by time created or by last modified time
    */
-  handleSort = (event) => {
-    // Make sure to sort itemsIDs by createdTime or lastModifiedTime
-    let unsortedItems = this.state.clothingItems
-    unsortedItems.sort((a, b) => a[event.key] - b[event.key])
-    this.setState({clothingURLs: unsortedItems.map((item) => item.imageURL)});
-  }
-  /**
-   * Retrieves clothing item IDs in the selected category
-   */
-  getCategoryData = location => {
-    const {userStore} = this.context;
-    return userCollection
-      .doc(userStore.currentUser.uid)
-      .collection(`categories`)
-      .doc(location)
-      .get();
-  }
-  /**
-   * This function handles the data returned from getCategoryData
-   * such that the Promise returned resolves the data.
-   */
-  getData = (location) => {
-    if (this.state.fetched) return;
-    const {userStore} = this.context;
-    let clothes = [];
-    this.getCategoryData(location)
-    .then((doc) => {
-      if (!doc.exists)
-        return;
-      let data = doc.data();
-      this.setState({itemsIDs: data.clothes});
-      let storageRef = firebase.storage().ref();
+  handleSort = event => {
+    // sort clothes by createdAt or updatedAt
+    // TODO: do this in updateFiltered together
+    const filteredCategories = {
+      ...this.state.filteredCategories,
+    };
 
-      const promises = data.clothes.map((imgID) => {
-        let clothingItem = {};
-        return userCollection
-          .doc(`${userStore.currentUser.uid}`)
-          .collection('clothes')
-          .doc(imgID)
-          .get()
-          .then((res) => {
-            clothingItem.imagePath = res.data().imagePath;
-            clothingItem.createdTime = res.data().createdTime;
-            clothingItem.lastEditedTime = res.data().lastEditedTime;
-            return storageRef
-            .child(res.data().imagePath)
-            .getDownloadURL()
-            .then((url) => {
-              clothingItem.imageURL = url;
-              return clothes.push(clothingItem);
-            });
-          });
-        });
-      
-      Promise.all(promises).then(() => {
-        // sort imageURLs so content always appears in the same order by link
-        this.setState({clothingItems: clothes, clothingURLs: clothes.map((item) => item.imageURL).sort(), fetched: true});
-      })
-    })
-    .catch(error => {
-      message.error(error.message);
+    Object.keys(filteredCategories).forEach(category => {
+      const clonedArray = [...filteredCategories[category]];
+      clonedArray.sort((a, b) => a[event.key] - b[event.key]);
     });
-  }
 
-  /**
-   * Function defines how clothing images ar displayed
-   */
-  displayData() {
-    let numItems = this.state.itemsIDs.length;
-    let $items = this.state.clothingURLs;
-    if (numItems / 3 === 0) {
-      if ($items[0] != null) {
-        return (
-          <>
-        {this.state.clothingURLs.map((url, i) => (
-          <ClothingItem cover={<img src={url} style={{width: 220, height: 220}}/>} hoverable={true} key={i}/>
-        ))}
-        </>
+    this.setState({ filteredCategories });
+  };
+
+  getData = () => {
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+
+    this.setState({ loading: true });
+
+    db.collection('users')
+      .doc(uid)
+      .collection('clothes')
+      .get()
+      .then(querySnapshot => {
+        const categories = {
+          hats: [],
+          shirts: [],
+          pants: [],
+          shoes: [],
+        };
+        const tagSet = new Set();
+        querySnapshot.forEach(doc => {
+          const c = doc.data();
+          categories[c.category].push({
+            id: doc.id,
+            ...c,
+          });
+          // add tag to tags Set
+          c.tags.forEach(tag => tagSet.add(tag));
+        });
+
+        const tags = [...tagSet];
+        tags.sort();
+
+        this.setState(
+          {
+            loading: false,
+            categories,
+            tags,
+          },
+          () => {
+            // also need to update filtered result
+            this.updateFiltered();
+          }
         );
-      }
-      else {
-        return <p>Sorry, there are no items saved in this category</p>
-      }
-    }
-    else {
-      let content = [];
-        for (let j = 0; j < numItems / 3; j++) {
-          content[j] = $items.slice(j * 3, 3 * (j + 1));
-        }
-        return (
-          <>
-          {content.map((item, i) => (
-            <ClothingRow key={i}>
-              {item.map((url, j) => (
-                <ClothingItem cover={<img src={url} style={{width: 220, height: 220}}/>} hoverable={true} key={j} />
-              ))}
-            </ClothingRow>
-          ))}
-          </>
-        );
-    }
-  }
-  componentDidMount() {
-    this.setState({ location: this.props.match.params.type }); // set current location
-  }
+      })
+      .catch(error => {
+        this.setState({ loading: false });
+        message.error(error.message);
+      });
+  };
+
+  // apply filter to all clothes in categories and save to filteredCategories
+  // call this method everytime filteredTags changes
+  updateFiltered = () => {
+    const { categories, filteredTags } = this.state;
+    const filteredCategories = {
+      all: [],
+    };
+
+    Object.keys(categories).forEach(category => {
+      filteredCategories[category] = categories[category].filter(c => {
+        if (filteredTags.length === 0) return true; // no filters
+        // filter by all tags in filteredTags:
+        // the intersection needs to be the same length
+        return intersection(c.tags, filteredTags).length === filteredTags.length;
+      });
+      filteredCategories.all = filteredCategories.all.concat(filteredCategories[category]);
+    });
+    this.setState({ filteredCategories });
+  };
+
   render() {
+    const {
+      match: {
+        params: { type },
+      },
+    } = this.props;
+    const { loading, filteredCategories } = this.state;
+
     const links = [
       { to: 'all', text: 'All' },
       { to: 'hats', text: 'Hats' },
@@ -247,21 +256,22 @@ export default class ClothesIndex extends React.Component {
       { to: 'shoes', text: 'Shoes' },
     ];
     const sortMenu = (
-      <Menu onClick={(event) => this.handleSort(event)}>
-        <Menu.Item key="lastEditedTime">Date Modified</Menu.Item>
-        <Menu.Divider/>
-        <Menu.Item key="createdTime">Date Added</Menu.Item>
+      <Menu onClick={this.handleSort}>
+        <Menu.Item key="updatedAt">Date Modified</Menu.Item>
+        <Menu.Divider />
+        <Menu.Item key="createdAt">Date Added</Menu.Item>
       </Menu>
     );
-    this.getData(this.props.match.params.type);
     return (
       <Wrapper>
+        <Loading loading={loading} />
+
         <ContainerCard>
           <LeftSidePanel>
             <TabContainer>
-              <Menu onClick={(event) => this.handleClick(event)} style={{ maxWidth: 200 }}>
-                {links.map((link) => (
-                  <Tab style={{ height: 100, fontSize: 26}} key={link.to}>
+              <Menu onClick={this.handleClick} style={{ maxWidth: 200 }}>
+                {links.map(link => (
+                  <Tab style={{ height: 100, fontSize: 26 }} key={link.to}>
                     <Link to={`/my-wardrobe/${link.to}`}>{link.text}</Link>
                   </Tab>
                 ))}
@@ -269,18 +279,21 @@ export default class ClothesIndex extends React.Component {
             </TabContainer>
           </LeftSidePanel>
           <RightSide>
-            <CardHeader>
-              {this.state.itemsIDs.length} {this.state.itemsIDs.length === 1 ? `item` : `items`}
+            <div className="header">
+              {filteredCategories[type].length}{' '}
+              {filteredCategories[type].length === 1 ? `item` : `items`}
               <Dropdown overlay={sortMenu} placement="bottomCenter">
                 <SortButton>Sort By</SortButton>
               </Dropdown>
-            </CardHeader>
-            <div style={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", flex: 1}}>
-            {
-              this.state.fetched ? // Only load if all the images have been set in clothingURLs
-              this.displayData()
-               : <LoadingOutlined style={{fontSize:100}} />
-            }
+            </div>
+            <div className="imgs-wrapper">
+              {filteredCategories[type].map((clothes, i) => (
+                <Link key={i} to={`/clothes-detail/${clothes.id}`}>
+                  <div className="img-wrapper">
+                    <img src={clothes.url} />
+                  </div>
+                </Link>
+              ))}
             </div>
           </RightSide>
         </ContainerCard>

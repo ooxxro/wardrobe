@@ -3,849 +3,752 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
-import { Dropdown, Button } from 'antd';
+import { Stepper, Step, StepLabel, Button, Tooltip, Zoom } from '@material-ui/core';
+import { withStyles } from '@material-ui/core/styles';
+import StepConnector from '@material-ui/core/StepConnector';
+import { PlusOutlined } from '@ant-design/icons';
+import { message, Tag, Input, Radio } from 'antd';
+import { TweenOneGroup } from 'rc-tween-one';
+import plusImg from '../images/plus.svg';
 import uploadImg from '../images/upload-cloud.png';
 import cameraImg from '../images/camera.png';
-import starImg from '../images/star.png';
+import Loading from './Loading';
+import ClothesFitter from './ClothesFitter';
+import IOSSwitch from './IOSSwitch';
+import SimpleDialog from './SimpleDialog';
 import firebase from '../firebase';
-import Popup from 'reactjs-popup';
-import Webcam from 'react-webcam';
-import { message } from 'antd';
 
 const Wrapper = styled.div`
-  width: 75%;
-  margin-left: auto;
-  margin-right: auto;
-`;
-
-const Card = styled.div`
-  width: 100%;
+  max-width: 1000px;
+  margin: 50px auto 100px;
   border-radius: 30px;
-  background-color: #ffdacf;
+  background: #ffdad0;
+  padding: 0px 40px 50px;
 `;
-const Hover = styled.div`
-  background-color: #ffc5b4;
-  font-size: 20px;
-  width: 220px;
-  border-radius: 20px;
-  margin: 5px;
-  text-align: center;
+
+const Up = styled.div`
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  img {
+    width: 40px;
+    height: 40px;
+  }
 `;
-// const previewText = styled.div`
-//   width: 100%;
-// `;
+const UpImgWrapper = styled.div``;
+const Title = styled.div`
+  display: flex;
+  align-items: center;
+  span {
+    font-size: 24px;
+    font-weight: bold;
+    color: #212121;
+    margin-left: 14px;
+  }
+`;
 
-const Top = styled.div`
-  display: inline;
-
-  .plusSign {
-    margin-left: 3vh;
-    margin-top: 1vh;
-    font-size: 30px;
-    font-weight: 100;
-    color: white;
-    display: inline-block;
-  }
-  .titleStyle {
-    font-size: 30px;
-    font-weight: 10px;
-    display: inline-block;
-    white-space: pre;
-  }
-
-  .starIcon {
-    float: right;
-    margin-right: 3vh;
-    margin-top: 1vh;
-    font-size: 30px;
-    background-color: #ffc5b4;
-    border-radius: 30px;
-    white-space: pre;
-  }
-  .starStyle {
-    margin-top: -0.5vh;
-    height: 5vh;
-  }
-  .tipStyle {
-    margin-top: 3vh;
+const Down = styled.div`
+  .MuiPaper-root {
+    background: inherit;
+    padding: 0;
+    margin-top: 5px;
+    .MuiStepLabel-iconContainer {
+      background: #fff;
+      border-radius: 50%;
+    }
   }
 `;
 const Content = styled.div`
+  margin: 40px 60px 10px;
+  h3 {
+    font-size: 18px;
+    margin: 0 auto 10px;
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    font-weight: bold;
+  }
+`;
+const StepOne = styled.div`
   display: flex;
   align-items: center;
-  justify-content: left;
-`;
-const Left = styled.div`
-  width: 50%;
-  height: 70vh;
-  margin: 0;
-  margin-left: 8%;
-  margin-top: 10vh;
-  padding: 0;
-  text-align: center;
-`;
-const Right = styled.div`
-  width: 50%;
-  font-size: 20px;
-  margin: 0;
-  margin-right: 12.5%;
-  .label {
-    font-size: 14px;
-    color: #838383;
+  justify-content: center;
+  .iconButton {
+    width: 160px;
+    height: 160px;
+    background: rgba(255, 209, 134, 0.7);
+    border-radius: 50%;
+    margin: 0 30px;
+    text-align: center;
+    line-height: 200px;
+    &:hover {
+      background: rgba(255, 209, 134, 0.7);
+    }
   }
-  .addTagButton {
-    border-radius: 10px;
-    background-color: #e2dcfe;
+  input {
+    display: none;
+  }
+  img {
+    width: 100px;
+    height: 100px;
   }
 `;
+const StepTwo = styled.div``;
+const StepThree = styled.div`
+  display: flex;
+  padding: 0 0 0 60px;
+  font-size: 16px;
+  .stepThreeMsg {
+    margin: 60px 0 0 40px;
+    h3 {
+      margin-bottom: 20px;
+    }
+  }
+`;
+const StepFour = styled.div`
+  display: flex;
+  .left {
+    padding: 30px;
+    img {
+      width: 300px;
+      height: auto;
+    }
+  }
+  .right {
+    flex: 1;
+    .selectCat {
+      margin: 40px 0;
+    }
+    .radioBtn {
+      margin: 6px 3px;
+      border: 2px solid #46a0fc;
+      border-radius: 5px;
+      background: #edf5ff;
+      color: #212121;
+      width: 90px;
+      height: 40px;
+      font-size: 16px;
+      line-height: 36px;
+      text-align: center;
+      &:before {
+        content: none;
+      }
+      &:hover {
+        color: #2979ff;
+        border: 2px solid #46a0fc;
+      }
+      &.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+        background: #46a0fc;
+        color: #fff;
+        font-weight: bold;
+      }
+    }
+    .tags {
+      .ant-input {
+        width: 120px;
+        height: 40px;
+        border-radius: 5px;
+        padding: 8px 8px 8px 12px;
+        font-size: 16px;
+        margin: 6px;
+        /* &:hover {
+          border: 2px solid #f36d6f;
+          box-shadow: 1px #f36d6f;
+        } */
+      }
+      .ant-tag {
+        margin: 6px 3px;
+        display: inline-block;
+        border-radius: 5px;
+        font-size: 16px;
+        &:hover {
+          opacity: 1;
+        }
+      }
+      .tag-style {
+        color: #212121;
+        background: #e3defe;
+        padding: 8px 8px 8px 12px;
+        border: 2px solid #9887e6;
+        span {
+          padding: 2px;
+          margin-left: 9px;
+          background: #7e69de;
+          border-radius: 50%;
+          svg {
+            width: 12px;
+            height: 12px;
+            color: #fff;
+          }
+        }
+      }
+    }
+    .new-tag {
+      width: 120px;
+      text-align: center;
+      background: #feddde;
+      border: 2px solid #f36d6f;
+      padding: 8px 12px;
+      color: #f36d6f;
+      font-weight: bold;
+      &:hover {
+        background: #f36d6f;
+        color: #fff;
+        font-weight: bold;
+      }
+      span {
+        margin-left: 0;
+      }
+    }
+  }
+`;
+
+const Buttons = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin: 0 60px;
+  .backBtn {
+    border-radius: 19px;
+    padding: 7px 28px;
+    background: #7d64e1;
+    margin-bottom: 20px;
+    color: #fff;
+    &:hover {
+      color: #fff;
+      background-color: #775ce3;
+    }
+  }
+  .nextBtn {
+    border-radius: 19px;
+    padding: 7px 28px;
+    background: #7d64e1;
+    margin-bottom: 20px;
+    &:hover {
+      color: #fff;
+      background-color: #775ce3;
+    }
+  }
+`;
+
+const QontoConnector = withStyles({
+  alternativeLabel: {
+    top: 10,
+    left: 'calc(-50% + 16px)',
+    right: 'calc(50% + 16px)',
+  },
+  active: {
+    '& $line': {
+      borderColor: '#784af4',
+    },
+  },
+  completed: {
+    '& $line': {
+      borderColor: '#784af4',
+    },
+  },
+  line: {
+    borderColor: '#9d8781',
+    borderTopWidth: 3,
+    borderRadius: 1,
+  },
+})(StepConnector);
+
+const steps = [
+  'Upload clothes image',
+  'Remove background',
+  'Modify image',
+  'Select category & add tags',
+];
+
 @withRouter
 @observer
 export default class AddClothes extends React.Component {
   static contextType = StoreContext;
-  constructor(props) {
-    super(props);
-    this.state = {
-      categoryArr: '',
-      file: '',
-      imagePreviewUrl: '',
-      snapshotString: '',
-      defaultCate: '',
-      captured: false,
-      isHat: false,
-      isPants: false,
-      isShoes: false,
-      isShirt: false,
-    };
-  }
-  onCatChange = e => {
-    let arr = [];
-    arr = e.target.value.toLowerCase().split(',');
-    for (let i = 0; i < arr.length; i++) {
-      arr[i] = arr[i].trim();
+
+  state = {
+    loading: false,
+    activeStep: 0,
+
+    // step1: upload img
+    file: null,
+    previewURL: '',
+
+    // step3: fit clothes to mannequin
+    originalAspectRatio: 1,
+    lockAspectRatio: true,
+    clothesFitterState: {
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+    },
+
+    // step 4: category & tags\
+    category: 'shirts',
+    tags: [],
+    tagsInputVisible: false,
+    newTagValue: '',
+
+    // done
+    finishDialogOpen: false,
+  };
+
+  getStepContent = stepIndex => {
+    switch (stepIndex) {
+      case 0:
+        return 'Upload clothes image';
+      case 1:
+        return 'Remove background';
+      case 2:
+        return 'Modify image';
+      case 3:
+        return 'Select category & add tags';
+      default:
+        return 'Unknown stepIndex';
     }
-
-    this.setState({ categoryArr: arr });
   };
 
-  onImgChange = e => this.setState({ file: e.target.files[0] });
-  onSubmit = e => {
-    e.preventDefault();
-    this.setState({
-      categoryArr: '',
-      file: null,
-    });
-  };
-  clearSate = () =>
-    this.setState({
-      categoryArr: '',
-      file: '',
-      imagePreviewUrl: '',
-      defaultCate: '',
-      isHat: false,
-      isPants: false,
-      isShirt: false,
-      isShoes: false,
-    });
-  setHat = () => {
-    this.setState({
-      defaultCate: 'hats',
-      isHat: true,
-      isPants: false,
-      isShirt: false,
-      isShoes: false,
-    });
-    this.printState();
-  };
-  setPants = () => {
-    this.setState({
-      defaultCate: 'pants',
-      isHat: false,
-      isPants: true,
-      isShirt: false,
-      isShoes: false,
-    });
-  };
-  setShirt = () => {
-    this.setState({
-      defaultCate: 'shirts',
-      isHat: false,
-      isPants: false,
-      isShirt: true,
-      isShoes: false,
-    });
-  };
-  setShoes = () => {
-    this.setState({
-      defaultCate: 'shoes',
-      isHat: false,
-      isPants: false,
-      isShirt: false,
-      isShoes: true,
-    });
-  };
-  handleDefaultCate = () => {
-    this.printState();
-  };
-  printState = () => {
-    console.log(this.state.defaultCate);
-  };
+  onSelectImg = e => {
+    // const { loading } = this.state;
+    this.setState({ loading: true });
+    this.resizeImg(e.target.files[0], 'abcd', 600, 600)
+      .then(({ file, aspectRatio }) => {
+        // calculate clothes fitter state
+        const width = aspectRatio > 1 ? 100 : 100 * aspectRatio;
+        const height = aspectRatio > 1 ? 100 / aspectRatio : 100;
+        const x = (ClothesFitter.WIDTH - width) / 2;
+        const y = (ClothesFitter.HEIGHT - height) / 2;
 
-  handleImageChange(e) {
-    e.preventDefault();
-
-    let reader = new FileReader();
-    let file = e.target.files[0];
-
-    reader.onloadend = () => {
-      this.setState({
-        file: file,
-        imagePreviewUrl: reader.result,
-      });
-    };
-
-    reader.readAsDataURL(file);
-  }
-  render() {
-    const menu = <Hover>Make sure your clothes fit the background for background removal!</Hover>;
-    const { userStore } = this.context;
-    let { imagePreviewUrl } = this.state;
-    let { isHat, isPants, isShirt, isShoes } = this.state;
-
-    let $imagePreview = null;
-    if (imagePreviewUrl) {
-      $imagePreview = (
-        <div style={{ height: '100%', width: '100%', textAlign: 'center' }}>
-          <img src={imagePreviewUrl} style={{ height: '100%' }} />
-        </div>
-      );
-    }
-
-    const handChange = () => {
-      const file = this.state.file;
-      if (file) {
-        if (!this.state.defaultCate) {
-          message.error('Need to select one default category');
-          return;
-        }
-        let temp = ['all'];
-        temp.push(this.state.defaultCate);
-        const cates = temp.concat(this.state.categoryArr);
-
-        let uploadPath;
-        if (file['name']) {
-          uploadPath = userStore.currentUser.uid + '/' + file['name'];
-        } else {
-          uploadPath =
-            userStore.currentUser.uid +
-            '/' +
-            this.state.snapshotString.substring(25, 36).replace('/', 'A');
-        }
-        const newData = {
-          createdTime: new Date().toLocaleDateString('en-GB', {
-            minute: 'numeric',
-            hour: 'numeric',
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          }),
-          lastEditedTime: new Date().toLocaleDateString('en-GB', {
-            minute: 'numeric',
-            hour: 'numeric',
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          }),
-          imagePath: uploadPath,
-          categories: cates,
-        };
-        const fileType = file['type'];
-        const validImageTypes = ['image/gif', 'image/jpeg', 'image/png'];
-
-        //Firebase setup
-        let storageRef = firebase.storage().ref(uploadPath);
-        let clothRef = firebase
-          .firestore()
-          .collection('users')
-          .doc(userStore.currentUser.uid)
-          .collection('clothes');
-        clothRef.get().then(function(clothes) {
-          if (!clothes.exists && validImageTypes.includes(fileType)) {
-            if (validImageTypes.includes(fileType)) {
-              storageRef.put(file).then(function(snapshot) {
-                if (snapshot.state == 'success') {
-                  //Document successfully uploaded
-                  clothRef
-                    .add(newData)
-                    .then(function(docRef) {
-                      //Document successfully written to firestore
-                      //Add clothing item ID to corresponding categories in firestore
-                      for (let i = 0; i < newData.categories.length; i++) {
-                        if (newData.categories[i].length > 0) {
-                          let categoryRef = firebase
-                            .firestore()
-                            .collection('users/' + firebase.auth().currentUser.uid + '/categories')
-                            .doc(newData.categories[i]);
-
-                          //Check if category exists. If it does, update it, if it doesn't create it
-                          categoryRef.get().then(function(thisDoc) {
-                            if (thisDoc.exists) {
-                              categoryRef.update({
-                                clothes: firebase.firestore.FieldValue.arrayUnion(docRef.id),
-                              });
-                            } else {
-                              categoryRef.set({
-                                clothes: firebase.firestore.FieldValue.arrayUnion(docRef.id),
-                                name: newData.categories[i],
-                              });
-                            }
-                          });
-                        }
-                      }
-                    })
-                    .catch(function(error) {
-                      message.error(error.message);
-                    });
-                } else {
-                  message.error('Error!');
-                }
-                message.success('Upload completed!');
-              });
-            } else {
-              message.error('File type is incorrect!');
-            }
-          }
+        this.setState({
+          loading: false,
+          activeStep: 1,
+          file,
+          previewURL: URL.createObjectURL(file),
+          originalAspectRatio: aspectRatio,
+          clothesFitterState: { x, y, width, height },
         });
-      } else {
-        alert('Image is reqired!');
-      }
-    };
-    const videoConstraints = {
-      width: '400px',
-      height: '400px',
-      facingMode: 'user',
-    };
-    const convertBase64ToFile = function(image) {
-      const byteString = atob(image.split(',')[1]);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i += 1) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      const newBlob = new Blob([ab], {
-        type: 'image/jpeg',
+      })
+      .catch(error => {
+        message.error(error.message);
+        this.setState({ loading: false });
       });
-      return newBlob;
-    };
+  };
 
-    const WebcamCapture = e => {
-      const webcamRef = React.useRef(null);
-      let convertedFile = null;
-      let webcam = null;
-      if (this.state.imagePreviewUrl) {
-        webcam = null;
-      } else {
-        webcam = (
-          <Webcam
-            audio={false}
-            height={'100%'}
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            width={'100%'}
-            style={{ top: '0', padding: '0' }}
-            videoConstraints={videoConstraints}
-          />
-        );
-      }
-      const capture = React.useCallback(() => {
-        if (this.state.captured) {
-          return null;
+  resizeImg = (file, filename, resizeWidth, resizeHeight) => {
+    return new Promise((resolve, reject) => {
+      // load original image
+      let original = new Image();
+      original.onload = () => {
+        // put image to canvas
+        const canvas = document.createElement('canvas');
+        const wCount = original.width / resizeWidth;
+        const hCount = original.height / resizeHeight;
+        if (wCount > hCount) {
+          // original image is a "wide" one
+          canvas.width = resizeWidth;
+          canvas.height = (resizeWidth * original.height) / original.width;
+        } else {
+          // original image is a "tall" one
+          canvas.height = resizeHeight;
+          canvas.width = (resizeHeight * original.width) / original.height;
         }
-        this.setState({ captured: true });
-        const imageSrc = webcamRef.current.getScreenshot();
-        if (!imageSrc) return;
-        convertedFile = convertBase64ToFile(imageSrc);
-        this.setState({ snapshotString: imageSrc });
-        let reader = new FileReader();
+        // resize image using canvas
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(
+          original,
+          0,
+          0,
+          original.width,
+          original.height,
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+        // read from canvas to png image file
+        let dataURL = canvas.toDataURL('image/png');
+        // https://stackoverflow.com/a/43358515/12017013
+        let arr = dataURL.split(','),
+          mime = arr[0].match(/:(.*?);/)[1],
+          bstr = atob(arr[1]),
+          n = bstr.length,
+          u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        resolve({
+          file: new File([u8arr], filename, { type: mime }),
+          aspectRatio: original.width / original.height,
+        });
+      };
+      original.onerror = error => {
+        reject(error);
+      };
+      original.src = URL.createObjectURL(file);
+    });
+  };
 
-        reader.onloadend = () => {
-          this.setState({
-            file: convertedFile,
-            imagePreviewUrl: reader.result,
+  onRemoveTag = tag => {
+    const tags = this.state.tags.filter(t => t !== tag);
+    this.setState({ tags });
+  };
+
+  showInput = () => {
+    this.setState(
+      { tagsInputVisible: true },
+      () => this.newTagInputRef && this.newTagInputRef.focus()
+    );
+  };
+
+  addTag = () => {
+    const { newTagValue, tags } = this.state;
+
+    if (!newTagValue.trim()) return;
+
+    // TODO: limit tag to use as firebase document ID
+    if (tags.includes(newTagValue.trim())) {
+      message.warn('Tag already exists!');
+    } else {
+      this.setState({
+        tags: [...tags, newTagValue],
+      });
+    }
+    // clear input
+    this.setState({ newTagValue: '' }, () => this.newTagInputRef && this.newTagInputRef.focus());
+  };
+
+  onFinish = () => {
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const { loading, file, category, tags, clothesFitterState } = this.state;
+
+    if (loading) return;
+
+    this.setState({ loading: true });
+
+    const db = firebase.firestore();
+    const timestamp = new Date();
+    const userRef = db.collection('users').doc(uid);
+
+    // we need to write clothes, categories, tags, etc. in "batch" atomically
+    const batch = db.batch();
+
+    // generate new ref id for clothes
+    const clothesRef = userRef.collection('clothes').doc();
+    const clothesId = clothesRef.id;
+
+    // upload image to storage at /<uid>/clothes/<clothesId>.png
+    const storagePath = `${uid}/clothes/${clothesId}.png`;
+    const task = firebase
+      .storage()
+      .ref(storagePath)
+      .put(file);
+    const uploadPromise = new Promise((resolve, reject) => {
+      task.on(
+        'state_changed',
+        snapshot => {
+          // progress
+          this.progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        },
+        err => {
+          // error
+          reject(err);
+        },
+        () => {
+          // success
+          task.snapshot.ref.getDownloadURL().then(url => {
+            resolve(url);
           });
+        }
+      );
+    });
+
+    uploadPromise
+      .then(url => {
+        // firestore clothes data
+        const clothesData = {
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          category: category,
+          tags,
+          storagePath,
+          url,
+          fit: {
+            x: (clothesFitterState.x * 100) / ClothesFitter.WIDTH,
+            y: (clothesFitterState.y * 100) / ClothesFitter.HEIGHT,
+            width: (clothesFitterState.width * 100) / ClothesFitter.WIDTH,
+            height: (clothesFitterState.height * 100) / ClothesFitter.HEIGHT,
+            rotate: 0,
+          },
         };
 
-        reader.readAsDataURL(convertedFile);
-      }, [webcamRef]);
-      return (
-        <form style={modal} onSubmit={this.onSubmit}>
-          <div
-            style={{
-              padding: '0',
-              margin: '0',
-              width: '100%',
-              height: '65%',
-            }}
-          >
-            {webcam}
-            {$imagePreview}
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <Button
-              onClick={capture}
-              style={{
-                fontSize: '15px',
-                fontWeight: 'bold',
-                marginTop: '5px',
-                borderRadius: '30px',
-              }}
-            >
-              Capture photo
-            </Button>
-          </div>
-          <div style={modalActions}>
-            <div style={{ display: 'inline-block' }}>
-              <span style={{ fontSize: '15px', fontWeight: 'bold' }}>
-                Custom Categories:&nbsp;&nbsp;&nbsp;&nbsp;
-              </span>
-            </div>
-            <input
-              type="text"
-              name="cat"
-              placeholder="Seperate tags by comma (Optional)"
-              value={this.state.categoryArr}
-              onChange={this.onCatChange}
-              style={{ width: '60%', display: 'inline-block' }}
-            />
-            <div></div>
-            <input
-              className="btn"
-              type="hat"
-              value="hat"
-              style={hatStyle}
-              onChange={() => {
-                this.setHat();
-              }}
-              onClick={() => {
-                this.setHat();
-              }}
-            />
-            <input
-              className="btn"
-              type="shirt"
-              value="shirt"
-              style={shirtStyle}
-              onChange={() => {
-                this.setShirt();
-              }}
-              onClick={() => {
-                this.setShirt();
-              }}
-            />
-            <input
-              className="btn"
-              type="pants"
-              value="pants"
-              style={pantsStyle}
-              onChange={() => {
-                this.setPants();
-              }}
-              onClick={() => {
-                this.setPants();
-              }}
-            />
-            <input
-              className="btn"
-              type="shoes"
-              value="shoes"
-              style={shoesStyle}
-              onChange={() => {
-                this.setShoes();
-              }}
-              onClick={() => {
-                this.setShoes();
-              }}
-            />
-            <div></div>
-            <input
-              type="submit"
-              value="submit"
-              className="btn"
-              style={btnStyle}
-              onChange={handChange}
-              onClick={() => {
-                handChange();
-                this.clearSate();
-                e.close();
-              }}
-            />
-            <input
-              className="btn"
-              type="cancel"
-              value="cancel"
-              style={btnStyle}
-              onChange={() => {
-                this.clearSate();
-                e.close();
-              }}
-              onClick={() => {
-                this.clearSate();
-                e.close();
-              }}
-            />
-          </div>
-        </form>
-      );
-    };
+        batch.set(clothesRef, clothesData);
 
-    const modal = {
-      fontSize: '12px',
-      borderRadius: '20px',
-      height: '67vh',
-      margin: '0',
-      padding: '0',
-      background: 'linear-gradient(90deg, #6e8fe7 0%, #8261e6 100%)',
-    };
-    const modalHeader = {
-      width: '100%',
-      fontSize: '18px',
-      textAlign: 'center',
-      padding: '5px',
-    };
-    const modalContent = {
-      width: '100%',
-      padding: '10px 5px',
-    };
-    const modalActions = {
-      width: '100%',
-      padding: '10px 5px',
-      margin: 'auto',
-      textAlign: 'center',
-    };
-    const modalClose = {
-      cursor: 'pointer',
-      position: 'absolute',
-      display: 'block',
-      padding: '2px 5px',
-      lineHeight: '20px',
-      right: '-10px',
-      top: '-10px',
-      fontSize: '24px',
-      background: '#ffffff',
-      borderRadius: '18px',
-      border: '1px solid #cfcece',
-    };
-    const UploadButton = {
-      background: '#ffb3a0',
-      borderColor: '#ffb3a0',
-      width: '100%',
-      height: '100%',
-      borderRadius: '20px',
-    };
+        // tags data
+        tags.forEach(tag => {
+          const tagsRef = userRef.collection('tags').doc(tag);
+          batch.set(
+            tagsRef,
+            { clothes: firebase.firestore.FieldValue.arrayUnion({ id: clothesId, url }) },
+            { merge: true }
+          );
+        });
 
-    const imgStyle = {
-      textAlign: 'center',
-      width: '60%',
-    };
-    const spanStyle = {
-      fontSize: '30px',
-    };
-    const divStyle = {
-      height: '10%',
-    };
-    const Upload = () => (
-      <div style={UploadButton}>
-        <div style={divStyle}></div>
-        <span style={spanStyle}>Click to upload image</span>
-        <div></div>
-        <img style={imgStyle} src={uploadImg} />
-      </div>
-    );
+        return batch.commit();
+      })
+      .then(() => {
+        this.setState({ loading: false, finishDialogOpen: true });
+      })
+      .catch(err => {
+        this.setState({ loading: false });
+        message.error(`Error while saving clothes: ${err.message}`);
+      });
+  };
 
-    const photoButtonStyle = {
-      background: '#ffdacf',
-      borderColor: '#ffdacf',
-      marginLeft: '3vw',
-      height: '100%',
-      width: '100%',
-      borderRadius: '20px',
-    };
-    const photoSpanStyle = {
-      fontSize: '30px',
-    };
-    // const photoDivStyle = {
-    //   height: '200px',
-    //   width: '200px',
-    //   backgroundColor: '#ffc774',
-    //   borderRadius: '100%',
-    //   marginLeft: '25%',
-    //   paddingLeft: '3px',
-    // };
-    // const photoImgStyle = {
-    //   padding: 0,
-    //   marginRight: 0,
-    //   marginTop: '10%',
-    //   width: '80%',
-    //   height: '80%',
-    // };
-    const TakePhoto = () => (
-      <div style={photoButtonStyle}>
-        <span style={photoSpanStyle}>Click to take a picture</span>
-        <div></div>
-        <img style={imgStyle} src={cameraImg} />
-      </div>
-    );
-    const transparent = {
-      background: 'transparent',
-      borderColor: 'transparent',
-      height: '50vh',
-      width: '30vw',
-      margin: '0',
-      padding: '0',
-    };
-    const btnStyle = {
-      backgroundColor: 'white',
-      borderRadius: '10px',
-      borderColor: '#888',
-      width: '200px',
-      textAlign: 'center',
-      margin: '10px',
-    };
-    let hatStyle = null;
-    let pantsStyle = null;
-    let shirtStyle = null;
-    let shoesStyle = null;
-    if (isHat) {
-      hatStyle = {
-        borderRadius: '50px',
-        width: '100px',
-        textAlign: 'center',
-        backgroundColor: '#8B1EF9',
-        borderColor: 'transparent',
-        margin: '10px',
-      };
-    } else {
-      hatStyle = {
-        backgroundColor: 'white',
-        borderRadius: '50px',
-        width: '100px',
-        textAlign: 'center',
-        borderColor: 'transparent',
-        margin: '10px',
-      };
-    }
-
-    if (isPants) {
-      pantsStyle = {
-        borderRadius: '50px',
-        width: '100px',
-        textAlign: 'center',
-        backgroundColor: '#8B1EF9',
-        borderColor: 'transparent',
-        margin: '10px',
-      };
-    } else {
-      pantsStyle = {
-        backgroundColor: 'white',
-        borderRadius: '50px',
-        width: '100px',
-        textAlign: 'center',
-        borderColor: 'transparent',
-        margin: '10px',
-      };
-    }
-    if (isShirt) {
-      shirtStyle = {
-        borderRadius: '50px',
-        width: '100px',
-        textAlign: 'center',
-        backgroundColor: '#8B1EF9',
-        borderColor: 'transparent',
-        margin: '10px',
-      };
-    } else {
-      shirtStyle = {
-        backgroundColor: 'white',
-        borderRadius: '50px',
-        width: '100px',
-        textAlign: 'center',
-        borderColor: 'transparent',
-        margin: '10px',
-      };
-    }
-    if (isShoes) {
-      shoesStyle = {
-        borderRadius: '50px',
-        width: '100px',
-        textAlign: 'center',
-        backgroundColor: '#8B1EF9',
-        borderColor: 'transparent',
-        margin: '10px',
-      };
-    } else {
-      shoesStyle = {
-        backgroundColor: 'white',
-        borderRadius: '50px',
-        width: '100px',
-        textAlign: 'center',
-        borderColor: 'transparent',
-        margin: '10px',
-      };
-    }
+  render() {
+    const { history } = this.props;
+    const {
+      activeStep,
+      loading,
+      previewURL,
+      lockAspectRatio,
+      clothesFitterState,
+      category,
+      tags,
+      tagsInputVisible,
+      newTagValue,
+      finishDialogOpen,
+    } = this.state;
 
     return (
       <Wrapper>
-        <Card>
-          <Top>
-            <FontAwesomeIcon icon={faPlus} className="plusSign" />
-            <div className="titleStyle">{'   '}Add Clothes</div>
-            <div className="starIcon">
-              <Dropdown overlay={menu} placement="bottomRight">
-                <div className="tips">
-                  {'  '}
-                  <img src={starImg} className="starStyle" /> <span className="tipStyle">Tips</span>
-                  {'  '}
-                </div>
-              </Dropdown>
-            </div>
-          </Top>
-          <Content>
-            <Left>
-              <Popup
-                trigger={
-                  <Button style={transparent}>
-                    <Upload />
-                  </Button>
-                }
-                modal
-              >
-                {close => (
-                  <div style={modal}>
-                    <a style={modalClose} onClick={close}>
-                      &times;
-                    </a>
-                    <div style={modalHeader}> Please Select Image Here!</div>
-                    <form style={modalContent} onSubmit={this.onSubmit}>
-                      <span>Custom Categories:&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                      <input
-                        type="text"
-                        name="cat"
-                        placeholder="Seperate tags by comma, (Optional)"
-                        value={this.state.categoryArr}
-                        onChange={this.onCatChange}
-                        style={{ width: '30%' }}
-                      />
-                      <div></div>
-                      <input
-                        type="file"
-                        name="file"
-                        value={this.state.image}
-                        onChange={this.onImgChange}
-                      />
-                      <label htmlFor="file"></label>
+        <Loading loading={loading} />
+        <Up>
+          <Title>
+            <UpImgWrapper>
+              <img src={plusImg} />
+            </UpImgWrapper>
+            <span>Add clothes</span>
+          </Title>
+        </Up>
 
-                      <div style={modalActions}>
-                        <input
-                          className="btn"
-                          type="hat"
-                          value="hat"
-                          style={hatStyle}
-                          onChange={() => {
-                            this.setHat();
-                          }}
-                          onClick={() => {
-                            this.setHat();
-                          }}
-                        />
-                        <input
-                          className="btn"
-                          type="shirt"
-                          value="shirt"
-                          style={shirtStyle}
-                          onChange={() => {
-                            this.setShirt();
-                          }}
-                          onClick={() => {
-                            this.setShirt();
-                          }}
-                        />
-                        <input
-                          className="btn"
-                          type="pants"
-                          value="pants"
-                          style={pantsStyle}
-                          onChange={() => {
-                            this.setPants();
-                          }}
-                          onClick={() => {
-                            this.setPants();
-                          }}
-                        />
-                        <input
-                          className="btn"
-                          type="shoes"
-                          value="shoes"
-                          style={shoesStyle}
-                          onChange={() => {
-                            this.setShoes();
-                          }}
-                          onClick={() => {
-                            this.setShoes();
-                          }}
-                        />
-                        <div></div>
-                        <input
-                          type="submit"
-                          value="submit"
-                          className="btn"
-                          style={btnStyle}
-                          onChange={handChange}
-                          onClick={() => {
-                            handChange();
-                            this.clearSate();
-                            close();
-                          }}
-                        />
-                        <input
-                          className="btn"
-                          type="cancel"
-                          value="cancel"
-                          style={btnStyle}
-                          onChange={() => {
-                            this.clearSate();
-                            close();
-                          }}
-                          onClick={() => {
-                            this.clearSate();
-                            close();
-                          }}
-                        />
-                      </div>
-                    </form>
-                  </div>
-                )}
-              </Popup>
-            </Left>
-            <Right>
-              <Popup
-                trigger={
-                  <Button style={transparent}>
-                    <TakePhoto />
+        <Down>
+          <Stepper
+            className="stepper"
+            activeStep={activeStep}
+            alternativeLabel
+            connector={<QontoConnector />}
+          >
+            {steps.map(label => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+
+          <Content>
+            {activeStep === 0 && (
+              <StepOne>
+                <Tooltip
+                  arrow
+                  title="Click to upload image"
+                  TransitionComponent={Zoom}
+                  placement="top"
+                >
+                  <label htmlFor="uploadImg">
+                    <input
+                      accept="image/*"
+                      id="uploadImg"
+                      type="file"
+                      onChange={this.onSelectImg}
+                    />
+                    <Button className="iconButton" component="span">
+                      <img src={uploadImg} />
+                    </Button>
+                  </label>
+                </Tooltip>
+                <Tooltip arrow title="Take a photo" TransitionComponent={Zoom} placement="top">
+                  <Button className="iconButton">
+                    <img src={cameraImg} />
                   </Button>
-                }
-                modal
-                style={modal}
-              >
-                {close => (
-                  <div>
-                    <WebcamCapture close={close} />
+                </Tooltip>
+              </StepOne>
+            )}
+
+            {/* ************************************** */}
+            {/* Step2 */}
+            {activeStep === 1 && (
+              <StepTwo>
+                <img src={previewURL} />
+              </StepTwo>
+            )}
+
+            {/* ************************************** */}
+            {/* Step3 */}
+            {activeStep === 2 && (
+              <StepThree>
+                <ClothesFitter
+                  clothesSrc={previewURL}
+                  lockAspectRatio={lockAspectRatio}
+                  state={clothesFitterState}
+                  onChange={e => this.setState({ clothesFitterState: e })}
+                />
+
+                <div className="stepThreeMsg">
+                  <h3>Drag and resize clothes to fit mannequin</h3>
+                  <IOSSwitch
+                    name="lockAspectRatio"
+                    checked={lockAspectRatio}
+                    onChange={e => this.setState({ lockAspectRatio: e.target.checked })}
+                  />
+                  Lock aspect ratio
+                </div>
+              </StepThree>
+            )}
+
+            {/* ************************************** */}
+            {/* Step4 */}
+            {activeStep === 3 && (
+              <StepFour>
+                <div className="left">
+                  <img src={previewURL} />
+                </div>
+                <div className="right">
+                  <div className="selectCat">
+                    <h3>Select category for your clothes:</h3>
+                    <Radio.Group
+                      name="category"
+                      value={category}
+                      onChange={e => this.setState({ category: e.target.value })}
+                    >
+                      <Radio.Button className="radioBtn" value="hats">
+                        Hats
+                      </Radio.Button>
+                      <Radio.Button className="radioBtn" value="shirts">
+                        Shirts
+                      </Radio.Button>
+                      <Radio.Button className="radioBtn" value="pants">
+                        Pants
+                      </Radio.Button>
+                      <Radio.Button className="radioBtn" value="shoes">
+                        Shoes
+                      </Radio.Button>
+                    </Radio.Group>
                   </div>
-                )}
-              </Popup>
-            </Right>
+                  <div className="addTags">
+                    <h3>Add custom tags:</h3>
+                    <div>
+                      <TweenOneGroup
+                        className="tags"
+                        enter={{
+                          scale: 0.8,
+                          opacity: 0,
+                          type: 'from',
+                          duration: 100,
+                          onComplete: e => {
+                            e.target.style = '';
+                          },
+                        }}
+                        leave={{ opacity: 0, width: 0, scale: 0, duration: 200 }}
+                        appear={false}
+                      >
+                        {tags.map(tag => (
+                          <Tag
+                            className="tag-style"
+                            key={tag}
+                            closable
+                            onClose={e => {
+                              e.preventDefault();
+                              this.onRemoveTag(tag);
+                            }}
+                          >
+                            {tag}
+                          </Tag>
+                        ))}
+                        {tagsInputVisible ? (
+                          <Input
+                            ref={el => (this.newTagInputRef = el)}
+                            type="text"
+                            size="small"
+                            value={newTagValue}
+                            onChange={e => this.setState({ newTagValue: e.target.value })}
+                            onBlur={() => {
+                              this.addTag();
+                              this.setState({ tagsInputVisible: false });
+                            }}
+                            onPressEnter={this.addTag}
+                          />
+                        ) : (
+                          <Tag className="new-tag" onClick={this.showInput}>
+                            <PlusOutlined /> New Tag
+                          </Tag>
+                        )}
+                      </TweenOneGroup>
+                    </div>
+                  </div>
+                </div>
+              </StepFour>
+            )}
           </Content>
-        </Card>
+
+          <Buttons>
+            {activeStep !== 0 && (
+              <Button
+                className="backBtn"
+                variant="contained"
+                color="primary"
+                disabled={activeStep === 0}
+                onClick={() => this.setState(state => ({ activeStep: state.activeStep - 1 }))}
+              >
+                Back
+              </Button>
+            )}
+            {activeStep !== 0 && (
+              <Button
+                className="nextBtn"
+                variant="contained"
+                color="primary"
+                // disabled={activeStep === 2}
+                onClick={() => {
+                  if (activeStep === steps.length - 1) this.onFinish();
+                  else this.setState(state => ({ activeStep: state.activeStep + 1 }));
+                }}
+              >
+                {activeStep >= steps.length - 1 ? 'Finish' : 'Next'}
+              </Button>
+            )}
+          </Buttons>
+        </Down>
+
+        <SimpleDialog
+          open={finishDialogOpen}
+          type="success"
+          buttons={[
+            {
+              text: 'Continue Adding Clothes',
+              onClick: () => {
+                // TODO: reset state instead for better UX
+                location.reload();
+              },
+            },
+            {
+              text: 'Go to Design',
+              onClick: () => {
+                history.push('/design');
+              },
+            },
+            {
+              text: 'Go Back Home',
+              onClick: () => {
+                history.push('/');
+              },
+            },
+          ]}
+          onClose={() => this.setState({ finishDialogOpen: false })}
+        />
       </Wrapper>
     );
   }

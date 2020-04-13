@@ -14,7 +14,7 @@ import {
   Tooltip,
   Popover,
 } from '@material-ui/core';
-import userBgImg from '../images/userBgImg.jpg';
+// import userBgImg from '../images/userBgImg.jpg';
 import IOSSwitch from './IOSSwitch';
 import { ReactComponent as UndoIcon } from '../images/undo.svg';
 import { ReactComponent as LockIcon } from '../images/lock.svg';
@@ -23,6 +23,8 @@ import { ReactComponent as GoBackIcon } from '../images/goback.svg';
 import { ReactComponent as EditPicIcon } from '../images/editpic.svg';
 import firebase from '../firebase';
 import { Tabs } from 'antd';
+import designImg from '../images/design.svg';
+import mannequinImg from '../images/mannequin.svg';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -44,6 +46,28 @@ const GoBack = styled.div`
     &:hover {
       background: #d7cffc;
     }
+  }
+`;
+
+const Up = styled.div`
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  img {
+    width: 50px;
+    height: 50px;
+  }
+`;
+const UpImgWrapper = styled.div``;
+const Title = styled.div`
+  display: flex;
+  align-items: center;
+  span {
+    font-size: 24px;
+    font-weight: bold;
+    color: #212121;
+    margin-left: 14px;
   }
 `;
 
@@ -103,13 +127,24 @@ const EditPic = styled.div`
 const ImgWrapper = styled.div`
   width: 300px;
   height: 400px;
+  background: #e8dcdc;
+  border-radius: 30px;
+  padding: 50px;
+
+  .mannequin {
+    width: 100%;
+    height: 100%;
+  }
+  /* width: 300px;
+  height: 400px;
   img {
     object-fit: cover;
     width: 100%;
     height: 100%;
     border-radius: 40px;
-  }
+  } */
 `;
+
 const IconCol = styled.div`
   display: flex;
   justify-content: space-between;
@@ -391,6 +426,18 @@ export default class DesignComponent extends React.Component {
             </Tooltip>
           </GoBack>
         )}
+
+        {from === 'design' && (
+          <Up>
+            <Title>
+              <UpImgWrapper>
+                <img src={designImg} />
+              </UpImgWrapper>
+              <span>Design</span>
+            </Title>
+          </Up>
+        )}
+
         <Random>
           <Button className="random" variant="contained">
             Random
@@ -398,7 +445,8 @@ export default class DesignComponent extends React.Component {
         </Random>
         <Picture>
           <ImgWrapper>
-            <img src={userBgImg} />
+            <img className="mannequin" src={mannequinImg} draggable={false} />
+            {/* <img src={userBgImg} /> */}
           </ImgWrapper>
           <EditPic>
             <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">

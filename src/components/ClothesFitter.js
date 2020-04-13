@@ -7,8 +7,10 @@ const Wrapper = styled.div`
   width: 300px;
   height: 400px;
   padding: 50px;
-  background: lightblue;
+  background: #e8dcdc;
   position: relative;
+  border-radius: 30px;
+  margin-bottom: 20px;
   .mannequin {
     width: 100%;
     height: 100%;
@@ -50,16 +52,17 @@ export default class ClothesFitter extends React.Component {
   state = {
     x: 0,
     y: 0,
-    width: 100,
-    height: 100,
+    width: this.props.initialAspectRatio > 1 ? 100 : 100 * this.props.initialAspectRatio,
+    height: this.props.initialAspectRatio > 1 ? 100 / this.props.initialAspectRatio : 100,
   };
 
   render() {
     const { x, y, width, height } = this.state;
+    const { lockAspectRatio } = this.props;
 
     return (
       <Wrapper ref={el => (this.parentRef = el)}>
-        <img className="mannequin" src={mannequinImg} />
+        <img className="mannequin" src={mannequinImg} draggable={false} />
 
         <Rnd
           bounds="parent"
@@ -73,6 +76,7 @@ export default class ClothesFitter extends React.Component {
             top: 'side',
             bottom: 'side',
           }}
+          lockAspectRatio={lockAspectRatio}
           size={{ width, height }}
           position={{ x, y }}
           onDragStop={(e, d) => this.setState({ x: d.x, y: d.y })}

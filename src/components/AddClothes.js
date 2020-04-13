@@ -14,13 +14,14 @@ import uploadImg from '../images/upload-cloud.png';
 import cameraImg from '../images/camera.png';
 import Loading from './Loading';
 import ClothesFitter from './ClothesFitter';
+import IOSSwitch from './IOSSwitch';
 
 const Wrapper = styled.div`
   max-width: 1000px;
   margin: 50px auto 100px;
   border-radius: 30px;
   background: #ffdad0;
-  padding: 0px 40px 40px;
+  padding: 0px 40px 50px;
 `;
 
 const Up = styled.div`
@@ -28,6 +29,7 @@ const Up = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-top: 10px;
   img {
     width: 40px;
     height: 40px;
@@ -57,7 +59,13 @@ const Down = styled.div`
   }
 `;
 const Content = styled.div`
-  margin: 60px;
+  margin: 40px 60px 10px;
+  h3 {
+    font-size: 18px;
+    margin: 0 auto 10px;
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    font-weight: bold;
+  }
 `;
 const StepOne = styled.div`
   display: flex;
@@ -84,7 +92,17 @@ const StepOne = styled.div`
   }
 `;
 const StepTwo = styled.div``;
-const StepThree = styled.div``;
+const StepThree = styled.div`
+  display: flex;
+  padding: 0 0 0 60px;
+  font-size: 16px;
+  .stepThreeMsg {
+    margin: 60px 0 0 40px;
+    h3 {
+      margin-bottom: 20px;
+    }
+  }
+`;
 const StepFour = styled.div`
   display: flex;
   .left {
@@ -98,12 +116,6 @@ const StepFour = styled.div`
     flex: 1;
     .selectCat {
       margin: 40px 0;
-    }
-    h3 {
-      font-size: 18px;
-      margin: 0 auto 10px;
-      font-family: Avenir, Helvetica, Arial, sans-serif;
-      font-weight: bold;
     }
     .radioBtn {
       margin: 6px 3px;
@@ -257,6 +269,8 @@ export default class AddClothes extends React.Component {
 
     // step1: upload img
     previewURL: '',
+    aspectRatio: 1,
+    lockAspectRatio: true,
 
     // step 4: category & tags\
     category: 'shirts',
@@ -284,8 +298,13 @@ export default class AddClothes extends React.Component {
     // const { loading } = this.state;
     this.setState({ loading: true });
     this.resizeImg(e.target.files[0], 'abcd', 600, 600)
-      .then(file => {
-        this.setState({ loading: false, activeStep: 1, previewURL: URL.createObjectURL(file) });
+      .then(({ file, aspectRatio }) => {
+        this.setState({
+          loading: false,
+          activeStep: 1,
+          previewURL: URL.createObjectURL(file),
+          aspectRatio,
+        });
       })
       .catch(error => {
         message.error(error.message);
@@ -295,32 +314,35 @@ export default class AddClothes extends React.Component {
 
   resizeImg = (file, filename, resizeWidth, resizeHeight) => {
     return new Promise((resolve, reject) => {
-      //load original image
+      // load original image
       let original = new Image();
       original.onload = () => {
         // put image to canvas
         const canvas = document.createElement('canvas');
-        canvas.width = resizeWidth;
-        canvas.height = resizeHeight;
-        // resize image using canvas
-        const ctx = canvas.getContext('2d');
         const wCount = original.width / resizeWidth;
         const hCount = original.height / resizeHeight;
-        let sx, sy, sw, sh;
         if (wCount > hCount) {
-          // crop "vertically"
-          sh = original.height;
-          sw = (original.height * resizeWidth) / resizeHeight;
-          sy = 0;
-          sx = (original.width - sw) / 2;
+          // original image is a "wide" one
+          canvas.width = resizeWidth;
+          canvas.height = (resizeWidth * original.height) / original.width;
         } else {
-          // crop horizontally
-          sw = original.width;
-          sh = (original.width * resizeHeight) / resizeWidth;
-          sx = 0;
-          sy = (original.height - sh) / 2;
+          // original image is a "tall" one
+          canvas.height = resizeHeight;
+          canvas.width = (resizeHeight * original.width) / original.height;
         }
-        ctx.drawImage(original, sx, sy, sw, sh, 0, 0, resizeWidth, resizeHeight);
+        // resize image using canvas
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(
+          original,
+          0,
+          0,
+          original.width,
+          original.height,
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
         // read from canvas to png image file
         let dataURL = canvas.toDataURL('image/png');
         // https://stackoverflow.com/a/43358515/12017013
@@ -332,7 +354,10 @@ export default class AddClothes extends React.Component {
         while (n--) {
           u8arr[n] = bstr.charCodeAt(n);
         }
-        resolve(new File([u8arr], filename, { type: mime }));
+        resolve({
+          file: new File([u8arr], filename, { type: mime }),
+          aspectRatio: original.width / original.height,
+        });
       };
       original.onerror = error => {
         reject(error);
@@ -382,6 +407,8 @@ export default class AddClothes extends React.Component {
       activeStep,
       loading,
       previewURL,
+      aspectRatio,
+      lockAspectRatio,
       category,
       tags,
       tagsInputVisible,
@@ -455,7 +482,21 @@ export default class AddClothes extends React.Component {
             {/* Step3 */}
             {activeStep === 2 && (
               <StepThree>
-                <ClothesFitter clothesSrc={previewURL} />
+                <ClothesFitter
+                  clothesSrc={previewURL}
+                  initialAspectRatio={aspectRatio}
+                  lockAspectRatio={lockAspectRatio}
+                />
+
+                <div className="stepThreeMsg">
+                  <h3>Drag and resize clothes to fit mannequin</h3>
+                  <IOSSwitch
+                    name="lockAspectRatio"
+                    checked={lockAspectRatio}
+                    onChange={e => this.setState({ lockAspectRatio: e.target.checked })}
+                  />
+                  Lock aspect ratio
+                </div>
               </StepThree>
             )}
 
@@ -487,7 +528,6 @@ export default class AddClothes extends React.Component {
                         Shoes
                       </Radio.Button>
                     </Radio.Group>
-                    
                   </div>
                   <div className="addTags">
                     <h3>Add custom tags:</h3>

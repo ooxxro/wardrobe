@@ -391,7 +391,9 @@ export default class DesignComponent extends React.Component {
     let urls = [];
     let ids = [];
 
-    db.collection('users/' + firebase.auth().currentUser.uid + '/clothes')
+    const promises = [];
+    let promise = db
+      .collection('users/' + firebase.auth().currentUser.uid + '/clothes')
       .get()
       .then(function(querySnapshot) {
         querySnapshot.forEach(function(doc) {
@@ -408,12 +410,15 @@ export default class DesignComponent extends React.Component {
             });
         });
       });
+    promises.push(promise);
 
-    this.setState({
-      clothesids: ids,
-      clothesimages: images,
-      clothescategories: categories,
-      storageUrls: urls,
+    Promise.all(promises).then(() => {
+      this.setState({
+        clothesids: ids,
+        clothesimages: images,
+        clothescategories: categories,
+        storageUrls: urls,
+      });
     });
   };
 
@@ -425,7 +430,9 @@ export default class DesignComponent extends React.Component {
     let customTags = [];
     let toggled = [];
 
-    db.collection('users/' + firebase.auth().currentUser.uid + '/categories')
+    const promises = [];
+    let promise = db
+      .collection('users/' + firebase.auth().currentUser.uid + '/categories')
       .get()
       .then(function(querySnapshot) {
         querySnapshot.forEach(function(doc) {
@@ -444,11 +451,13 @@ export default class DesignComponent extends React.Component {
           }
         });
       });
+    promises.push(promise);
 
     //Make sure order goes Hats Pants Shirts Shoes then custom tags
     //Firestore automatically puts tags in alphabetical order
-
-    this.setState({ tagdata: tags, customtagdata: customTags, tagtoggled: toggled });
+    Promise.all(promises).then(() => {
+      this.setState({ tagdata: tags, customtagdata: customTags, tagtoggled: toggled });
+    });
   };
 
   onSelectTag = i => {
@@ -489,10 +498,25 @@ export default class DesignComponent extends React.Component {
   };
 
   onSaveNewOutfit = () => {
-    //let hat = this.state.selectedHatID;
-    //let shirt = this.state.selectedShirtID;
-    //let pants = this.state.selectedPantsID;
-    //let shoes = this.state.selectedShoesID;
+    let hat = [this.state.selectedHatID, this.state.selectedHat];
+    let shirt = [this.state.selectedShirtID, this.state.selectedShirt];
+    let pants = [this.state.selectedPantsID, this.state.selectedPants];
+    let shoes = [this.state.selectedShoesID, this.state.selectedShoes];
+    let bgUrl = this.state.bgImgUrl;
+
+    let db = firebase.firestore();
+    db.collection('users/' + firebase.auth().currentUser.uid + '/outfits')
+      .doc()
+      .set({
+        hat: hat,
+        shirt: shirt,
+        pants: pants,
+        shoes: shoes,
+        bgUrl: bgUrl,
+      })
+      .then(function() {
+        message.success('Outfit saved!');
+      });
   };
 
   onEditDone = () => {

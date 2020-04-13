@@ -1,125 +1,98 @@
 import React from 'react';
 import styled from 'styled-components';
+import { Rnd } from 'react-rnd';
 import mannequinImg from '../images/mannequin.svg';
 
+const WIDTH = 300;
+const HEIGHT = 400;
+
 const Wrapper = styled.div`
-  width: 300px;
-  height: 400px;
-  padding: 50px;
-  background: lightblue;
+  width: ${WIDTH}px;
+  height: ${HEIGHT}px;
+  padding: 60px 50px;
+  background: #e8dcdc;
   position: relative;
+  border-radius: 30px;
+  margin-bottom: 20px;
   .mannequin {
     width: 100%;
     height: 100%;
   }
+  .react-draggable {
+    .corner,
+    .side {
+      position: relative;
+      &:after {
+        content: '';
+        border: 0.5px solid #07badd;
+        background: #fff;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 6px;
+        height: 6px;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+      }
+    }
+    &:hover {
+      outline: 0.5px solid gray;
+      .corner,
+      .side {
+        &:after {
+          opacity: 1;
+        }
+      }
+    }
+  }
   .clothes {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 50%;
-    height: 50%;
+    width: 100%;
+    height: 100%;
   }
 `;
 
 export default class ClothesFitter extends React.Component {
-  state = {
-    parentBox: {},
-    dragging: false,
-    startX: 0,
-    startY: 0,
-    dX: 0,
-    dY: 0,
-    top: 0,
-    left: 0,
-    width: 30,
-    height: 30,
-  };
-
-  onMouseDown = e => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    this.setState({
-      parentBox: this.parentRef.getBoundingClientRect(),
-      startX: e.clientX,
-      startY: e.clientY,
-      dragging: true,
-      dX: 0,
-      dY: 0,
-    });
-
-    // register event listeners
-    window.addEventListener('mousemove', this.onMouseMove);
-    window.addEventListener('mouseup', this.onMouseUp);
-  };
-  onMouseMove = e => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const { parentBox, startX, startY, left, top, width, height } = this.state;
-
-    let dX = ((e.clientX - startX) * 100) / parentBox.width;
-    let dY = ((e.clientY - startY) * 100) / parentBox.height;
-    if (left + dX < 0) {
-      dX = -left;
-    } else if (left + dX + width > 100) {
-      dX = 100 - left - width;
-    }
-
-    if (top + dY < 0) {
-      dY = -top;
-    } else if (top + dY + height > 100) {
-      dY = 100 - top - height;
-    }
-
-    this.setState({
-      dX,
-      dY,
-    });
-  };
-  onMouseUp = e => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const { top, left, startX, startY, parentBox, width, height } = this.state;
-
-    let dX = ((e.clientX - startX) * 100) / parentBox.width;
-    let dY = ((e.clientY - startY) * 100) / parentBox.height;
-    if (left + dX < 0) {
-      dX = -left;
-    } else if (left + dX + width > 100) {
-      dX = 100 - left - width;
-    }
-
-    if (top + dY < 0) {
-      dY = -top;
-    } else if (top + dY + height > 100) {
-      dY = 100 - top - height;
-    }
-    this.setState({ dragging: false, top: top + dY, left: left + dX, dX: 0, dY: 0 });
-
-    // remove event listeners
-    window.removeEventListener('mousemove', this.onMouseMove);
-    window.removeEventListener('mouseup', this.onMouseUp);
-  };
+  static WIDTH = WIDTH;
+  static HEIGHT = HEIGHT;
 
   render() {
-    const { dX, dY, top, left, width, height } = this.state;
+    const {
+      lockAspectRatio,
+      state,
+      state: { x, y, width, height },
+      onChange,
+    } = this.props;
 
     return (
       <Wrapper ref={el => (this.parentRef = el)}>
-        <img className="mannequin" src={mannequinImg} />
-        <img
-          className="clothes"
-          src={this.props.clothesSrc}
-          style={{
-            top: `${top + dY}%`,
-            left: `${left + dX}%`,
-            width: `${width}%`,
-            height: `${height}%`,
+        <img className="mannequin" src={mannequinImg} draggable={false} />
+
+        <Rnd
+          bounds="parent"
+          resizeHandleClasses={{
+            bottomLeft: 'corner',
+            bottomRight: 'corner',
+            topLeft: 'corner',
+            topRight: 'corner',
+            left: 'side',
+            right: 'side',
+            top: 'side',
+            bottom: 'side',
           }}
-          onMouseDown={this.onMouseDown}
-        />
+          lockAspectRatio={lockAspectRatio}
+          size={{ width, height }}
+          position={{ x, y }}
+          onDragStop={(e, d) => onChange({ ...state, x: d.x, y: d.y })}
+          onResizeStop={(e, direction, ref, delta, position) => {
+            onChange({
+              width: width + delta.width,
+              height: height + delta.height,
+              ...position,
+            });
+          }}
+        >
+          <img draggable={false} className="clothes" src={this.props.clothesSrc} />
+        </Rnd>
       </Wrapper>
     );
   }

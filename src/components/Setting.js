@@ -1,10 +1,10 @@
 import React from 'react';
+import { StoreContext } from '../stores';
 import styled from 'styled-components';
 import { observer } from 'mobx-react';
 import { UserOutlined } from '@ant-design/icons'; //Should be User's current avatar
 import { TextField } from '@material-ui/core';
 import { Avatar, message } from 'antd';
-import { StoreContext } from '../stores';
 import firebase from '../firebase';
 import ButtonWithLoading from './ButtonWithLoading';
 
@@ -34,9 +34,9 @@ const Card1 = styled.div`
   background-color: #ffffff;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
   padding: 60px 50px 86px;
-  .avatar {
+  /* .avatar {
     margin-top: 10px;
-  }
+  } */
   .MuiFormControl-root {
     flex: 1;
     margin-right: 20px;
@@ -67,13 +67,33 @@ const Card1Content = styled.div`
 `;
 
 const User = styled.div`
-  display: flex;
-  align-items: center;
-  .displayName {
-    margin-left: 20px;
+  .user {
+    display: flex;
+    align-items: center;
+    .ant-avatar {
+      cursor: pointer;
+    }
+    .displayName {
+      margin-left: 22px;
+      width: 50%;
+    }
+    .MuiFormControl-root {
+      flex: auto;
+    }
   }
-  .MuiFormControl-root {
-    flex: auto;
+
+  .editAvatarForm input {
+    border-radius: 4px;
+    background-color: #ecf0f7;
+    border: 1px solid #c3c4c8;
+    width: 42.5%;
+    margin-bottom: 20px;
+  }
+
+  .avatar-edit {
+    .card1Btn {
+      margin-right: 5px;
+    }
   }
 `;
 
@@ -127,10 +147,6 @@ const DeleteAccount = styled.div`
   }
 `;
 
-const StyledAvatar = styled(Avatar)`
-  cursor: pointer;
-`;
-
 @observer
 export default class Setting extends React.Component {
   static contextType = StoreContext;
@@ -145,6 +161,8 @@ export default class Setting extends React.Component {
     verifyNewPassword: '',
     changeCurrentPW: '',
     deleteAccountPW: '',
+    avatarEdit: false,
+    avatarLocation: null,
   };
 
   componentDidMount() {
@@ -157,6 +175,14 @@ export default class Setting extends React.Component {
       email: currentUser.email || '',
     });
   }
+
+  editAvatar = () => {
+    this.setState({ avatarEdit: !this.state.avatarEdit });
+  };
+
+  cancelEditAvatar = () => {
+    this.setState({ avatarEdit: false });
+  };
 
   onChangeDisplayName = () => {
     const {
@@ -191,6 +217,54 @@ export default class Setting extends React.Component {
         message.error(error.message);
       });
   };
+
+  // resizeCropImg = (file, filename, resizeWidth, resizeHeight) => {
+  //   return new Promise((resolve, reject) => {
+  //     //load original image
+  //     let original = new Image();
+  //     original.onload = () => {
+  //       // put image to canvas
+  //       const canvas = document.createElement('canvas');
+  //       canvas.width = resizeWidth;
+  //       canvas.height = resizeHeight;
+  //       // resize image using canvas
+  //       const ctx = canvas.getContext('2d');
+  //       const wCount = original.width / resizeWidth;
+  //       const hCount = original.height / resizeHeight;
+  //       let sx, sy, sw, sh;
+  //       if (wCount > hCount) {
+  //         // crop "vertically"
+  //         sh = original.height;
+  //         sw = (original.height * resizeWidth) / resizeHeight;
+  //         sy = 0;
+  //         sx = (original.width - sw) / 2;
+  //       } else {
+  //         // crop horizontally
+  //         sw = original.width;
+  //         sh = (original.width * resizeHeight) / resizeWidth;
+  //         sx = 0;
+  //         sy = (original.height - sh) / 2;
+  //       }
+  //       ctx.drawImage(original, sx, sy, sw, sh, 0, 0, resizeWidth, resizeHeight);
+  //       // read from canvas to png image file
+  //       let dataURL = canvas.toDataURL('image/png');
+  //       // https://stackoverflow.com/a/43358515/12017013
+  //       let arr = dataURL.split(','),
+  //         mime = arr[0].match(/:(.*?);/)[1],
+  //         bstr = atob(arr[1]),
+  //         n = bstr.length,
+  //         u8arr = new Uint8Array(n);
+  //       while (n--) {
+  //         u8arr[n] = bstr.charCodeAt(n);
+  //       }
+  //       resolve(new File([u8arr], filename, { type: mime }));
+  //     };
+  //     original.onerror = error => {
+  //       reject(error);
+  //     };
+  //     original.src = URL.createObjectURL(file);
+  //   });
+  // };
 
   onChangeEmail = () => {
     const {
@@ -296,6 +370,48 @@ export default class Setting extends React.Component {
       });
   };
 
+  handChange = () => {
+    const { userStore } = this.context;
+    const file = this.state.avatarLocation;
+    if (file) {
+      // TODO: resize, crop, and save to fixed place
+      let uploadPath;
+      if (file['name']) {
+        uploadPath = userStore.currentUser.uid + '/' + file['name'];
+      } else {
+        uploadPath =
+          userStore.currentUser.uid + '/' + file.substring(12, file.size).replace('/', 'A');
+      }
+      this.setState({ avatarLocation: uploadPath });
+      let user = firebase.auth().currentUser;
+
+      let storageRef = firebase.storage().ref(uploadPath);
+      storageRef
+        .put(file)
+        .then(snapshot => {
+          return snapshot.ref.getDownloadURL();
+        })
+        .then(url => {
+          return user.updateProfile({ photoURL: url });
+        })
+        .then(() => {
+          // Update successful.
+          return user.reload();
+        })
+        .then(() => {
+          userStore.setUser(firebase.auth().currentUser);
+          message.success('Avatar updated successfully!');
+          this.setState({ avatarEdit: false, avatarLocation: null });
+        })
+        .catch(error => {
+          // Handle Errors here.
+          message.error(error.message);
+        });
+    } else {
+      alert('Image is required!');
+    }
+  };
+
   render() {
     const {
       userStore: { currentUser },
@@ -321,35 +437,85 @@ export default class Setting extends React.Component {
           <Card1Content>
             <h4 />
             <User>
-              <StyledAvatar className="avatar" size={120} icon={<UserOutlined />} />
-              <TextField
-                className="displayName"
-                id="diaplay-name"
-                label="Display Name"
-                type="text"
-                autoComplete="name"
-                variant="outlined"
-                size="small"
-                value={displayName}
-                onChange={e => this.setState({ displayName: e.target.value })}
-                onKeyPress={e => {
-                  if (e.key === 'Enter') this.onChangeDisplayName();
-                }}
-              />
-              <ButtonWithLoading
-                className="card1Btn"
-                variant="contained"
-                color="primary"
-                loading={displayNameLoading}
-                disabled={
-                  !displayName.trim() ||
-                  displayNameLoading ||
-                  displayName.trim() === currentUser.displayName
-                }
-                onClick={this.onChangeDisplayName}
-              >
-                SAVE
-              </ButtonWithLoading>
+              <div className="user">
+                <Avatar
+                  size={130}
+                  icon={<UserOutlined />}
+                  onClick={this.editAvatar}
+                  src={currentUser.photoURL}
+                />
+                <TextField
+                  className="displayName"
+                  id="diaplay-name"
+                  label="Display Name"
+                  type="text"
+                  autoComplete="name"
+                  variant="outlined"
+                  size="small"
+                  value={displayName}
+                  onChange={e => this.setState({ displayName: e.target.value })}
+                  onKeyPress={e => {
+                    if (e.key === 'Enter') this.onChangeDisplayName();
+                  }}
+                />
+                <ButtonWithLoading
+                  className="card1Btn"
+                  variant="contained"
+                  color="primary"
+                  loading={displayNameLoading}
+                  disabled={
+                    !displayName.trim() ||
+                    displayNameLoading ||
+                    displayName.trim() === currentUser.displayName
+                  }
+                  onClick={this.onChangeDisplayName}
+                >
+                  SAVE
+                </ButtonWithLoading>
+              </div>
+
+              <div className="avatar-edit">
+                <form
+                  className="editAvatarForm"
+                  style={{ display: this.state.avatarEdit ? 'block' : 'none' }}
+                >
+                  <br />
+                  <label>
+                    Upload new <a href=""></a>vatar
+                  </label>{' '}
+                  <br></br>
+                  <input
+                    type="file"
+                    id="avatarLocation"
+                    name="avatarLocation"
+                    placeholder="New Avi"
+                    onChange={event => this.setState({ avatarLocation: event.target.files[0] })}
+                    value={this.state.image}
+                  ></input>
+                  <label htmlFor="file"></label>
+                </form>
+                {this.state.avatarEdit && (
+                  <ButtonWithLoading
+                    onClick={this.handChange}
+                    className="card1Btn"
+                    variant="contained"
+                    color="primary"
+                  >
+                    SAVE
+                  </ButtonWithLoading>
+                )}
+
+                {this.state.avatarEdit && (
+                  <ButtonWithLoading
+                    onClick={this.cancelEditAvatar}
+                    className="card1Btn"
+                    variant="contained"
+                    color="primary"
+                  >
+                    CANCEL
+                  </ButtonWithLoading>
+                )}
+              </div>
             </User>
 
             <h4>Change Email</h4>

@@ -145,94 +145,22 @@ export default class SignUp extends React.Component {
     } else {
       this.setState({ loading: true });
 
-      let db = firebase.firestore();
+      const user = firebase.auth().currentUser;
       firebase
         .auth()
         .createUserWithEmailAndPassword(this.state.email, this.state.password)
-        .then(cred => {
-          const promises = [];
-
+        .then(() => {
           // update displayName
-          let promise = firebase.auth().currentUser.updateProfile({
+          return firebase.auth().currentUser.updateProfile({
             displayName: this.state.displayName.trim(),
           });
-          promises.push(promise);
-
-          //Create user in firestore - auth uid matches db id
-          promise = db
-            .collection('users')
-            .doc(cred.user.uid)
-            .set({
-              //Set display name, note that we already have user email and id by this point
-              displayName: this.state.displayName,
-            });
-          promises.push(promise);
-
-          //Iniitialize categories collection for this user
-          //Note: ID of the category is also the name of the category in lowercase
-          promise = db
-            .collection('users/' + cred.user.uid + '/categories')
-            .doc('all')
-            .set({
-              name: 'All',
-              clothes: [],
-            });
-          promises.push(promise);
-          promise = db
-            .collection('users/' + cred.user.uid + '/categories')
-            .doc('hats')
-            .set({
-              name: 'Hats',
-              clothes: [],
-            });
-          promises.push(promise);
-          promise = db
-            .collection('users/' + cred.user.uid + '/categories')
-            .doc('shirts')
-            .set({
-              name: 'Shirts',
-              clothes: [],
-            });
-          promises.push(promise);
-          promise = db
-            .collection('users/' + cred.user.uid + '/categories')
-            .doc('pants')
-            .set({
-              name: 'Pants',
-              clothes: [],
-            });
-          promises.push(promise);
-          promise = db
-            .collection('users/' + cred.user.uid + '/categories')
-            .doc('shoes')
-            .set({
-              name: 'Shoes',
-              clothes: [],
-            });
-          promises.push(promise);
-
-          //Initialize empty backgrounds collection for this user, should contain default image
-          promise = db
-            .collection('users/' + cred.user.uid + '/backgrounds')
-            .doc('Default')
-            .set({
-              url: 'defaultBackgroundImageUrl',
-            });
-          promises.push(promise);
-
-          /*Note, outfits the user creates will have name,
-           *clothes ID array, and image url initialized.
-           *Also maybe a "favorite" boolean field?
-           *The outfit collection is initialized when the user first makes an outfit.*/
-
-          /*Note, clothes the user creates will have name,
-           *category ID array, image url, created timestamp,
-           *and last updated timestamp initialized.
-           *The clothes collection is initialized when the user first makes a clothing item.*/
-
-          return Promise.all(promises);
         })
         .then(() => {
+          // Update successful.
+          return user.reload();
+        })
+        .then(() => {
+          this.context.userStore.setUser(firebase.auth().currentUser);
           this.setState({ loading: false });
           history.replace('/');
         })

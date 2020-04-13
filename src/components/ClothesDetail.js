@@ -120,23 +120,28 @@ const btnStyle = {
 export default class ClothesDetail extends React.Component {
   static contextType = StoreContext;
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      isEdit: false,
-      imgID: '',
-      imagePath: '',
-      storagePathRoot: 'gs://wardrobe-rocks.appspot.com/',
-      imageURL: '',
-      upDateTime: '',
-      createTime: '',
-      cateArr: [],
-      compareArr: [],
-      fetched: false,
-      removalArr: [],
-      newTagArr: [],
-    };
-    this.goBack = this.goBack.bind(this);
+  state = {
+    isEdit: false,
+    imgID: '',
+    imagePath: '',
+    imageURL: '',
+    upDateTime: '',
+    createTime: '',
+    cateArr: [],
+    compareArr: [],
+    fetched: false,
+    removalArr: [],
+    newTagArr: [],
+  };
+
+  componentDidMount() {
+    this.getData();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.match.params.clothesId !== prevProps.match.params.clothesId) {
+      this.getData();
+    }
   }
 
   clearSate() {
@@ -144,9 +149,9 @@ export default class ClothesDetail extends React.Component {
     this.getData();
   }
 
-  goBack() {
+  goBack = () => {
     this.props.history.goBack();
-  }
+  };
 
   edit = () => {
     this.setState({ isEdit: true });
@@ -331,7 +336,6 @@ export default class ClothesDetail extends React.Component {
   }
 
   render() {
-    this.getData();
     let vm = this;
     let { imageURL, createTime, upDateTime, cateArr } = this.state;
     let $imageDisplay = <img src={placeholderImg} />;

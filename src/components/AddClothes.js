@@ -272,12 +272,13 @@ export default class AddClothes extends React.Component {
       removeBackground({ base64: reader.result })
         .then(result => {
           this.setState({
-            afterRemoveBackgroundURL: result.data,
+            afterRemoveBackgroundURL: 'data:image/png;base64,' + result.data,
             loading: false,
           });
         })
         .catch(error => {
           this.setState({ loading: false });
+          // eslint-disable-next-line no-console
           console.error(error);
           message.error(error.message);
         });

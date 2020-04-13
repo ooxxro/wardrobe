@@ -211,15 +211,6 @@ export default class SignUp extends React.Component {
             });
           promises.push(promise);
 
-          //Initialize empty backgrounds collection for this user, should contain default image
-          promise = db
-            .collection('users/' + cred.user.uid + '/backgrounds')
-            .doc('Default')
-            .set({
-              url: 'defaultBackgroundImageUrl',
-            });
-          promises.push(promise);
-
           /*Note, outfits the user creates will have name,
            *clothes ID array, and image url initialized.
            *Also maybe a "favorite" boolean field?

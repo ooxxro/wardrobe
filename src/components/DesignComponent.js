@@ -380,6 +380,7 @@ export default class DesignComponent extends React.Component {
       pants: false,
       shoes: false,
     },
+    undos: [],
 
     //bg image
     bgImgEdit: false,
@@ -555,6 +556,8 @@ export default class DesignComponent extends React.Component {
   };
 
   onSelectClothes = clothes => {
+    // TODO set limit for undo list
+    const clonedForUndo = [...this.state.selectedClothes];
     const selectedClothes = [...this.state.selectedClothes].filter(
       c => c.category !== clothes.category
     );
@@ -564,10 +567,11 @@ export default class DesignComponent extends React.Component {
       selectedClothes.push(clothes);
     }
 
-    this.setState({ selectedClothes });
+    this.setState({ selectedClothes, undos: [...this.state.undos, clonedForUndo] });
   };
 
   onRandomClick = () => {
+    const clonedForUndo = [...this.state.selectedClothes];
     const { selectedClothes, filteredCategories, locked } = this.state;
     // first remove all non-locked categories, becuase will be filled in new one
     const clonedSelectedClothes = [...selectedClothes].filter(c => locked[c.category]);
@@ -580,7 +584,18 @@ export default class DesignComponent extends React.Component {
       clonedSelectedClothes.push(filteredCategories[category][index]);
     });
 
-    this.setState({ selectedClothes: clonedSelectedClothes });
+    this.setState({
+      selectedClothes: clonedSelectedClothes,
+      undos: [...this.state.undos, clonedForUndo],
+    });
+  };
+
+  onUndo = () => {
+    // TODO: disable button
+    if (this.state.undos.length === 0) return;
+    const undos = [...this.state.undos];
+    const last = undos.pop();
+    this.setState({ selectedClothes: last, undos });
   };
 
   loadOneImg = src => {
@@ -832,7 +847,7 @@ export default class DesignComponent extends React.Component {
           <IconCol>
             <UpperIcon>
               <Tooltip arrow title="Undo" TransitionComponent={Zoom} placement="top">
-                <IconButton className="undo">
+                <IconButton className="undo" onClick={this.onUndo}>
                   <SvgIcon fontSize="small">
                     <UndoIcon />
                   </SvgIcon>

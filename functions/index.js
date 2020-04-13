@@ -1,22 +1,26 @@
 const functions = require('firebase-functions');
-
-// Create and Deploy Your First Cloud Functions
-// https://firebase.google.com/docs/functions/write-firebase-functions
-
-exports.helloWorld = functions.https.onRequest((request, response) => {
-  response.send('Hello from Firebase!');
-});
+const removeBackgroundFromImageFile = require('remove.bg');
 
 exports.removeBackground = functions.https.onCall((data, context) => {
-  console.log('***************** removeBackgroud ***************');
+  console.log('********************************');
 
   // the base64 encoded img
-  const base64img = data.base64;
+  let base64img = removeBackgroundFromImageFile({
+    path: tmpFilePath,
+    apiKey: 'wsVQCexgWUVd5BoWJYLgNh1X',
+    size: 'regular',
+    type: 'auto',
+    scale: '50%',
+    outputFile,
+  })
+    // eslint-disable-next-line promise/always-return
+    .then(result => {
+      console.log(`File saved to ${outputFile}`);
+      base64img = result.base64img;
+    })
+    .catch(errors => {
+      console.log(JSON.stringify(errors));
+    });
 
-  // TODO: call remove.bg API, get the result file
-  // const resultBase64img = result.base64img
-  const resultBase64img = base64img;
-
-  // return base64 encoded img
-  return resultBase64img;
+  return base64img;
 });

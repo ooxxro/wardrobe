@@ -7,7 +7,7 @@ import { Stepper, Step, StepLabel, Button, Tooltip, Zoom } from '@material-ui/co
 import { withStyles } from '@material-ui/core/styles';
 import StepConnector from '@material-ui/core/StepConnector';
 import { PlusOutlined } from '@ant-design/icons';
-import { message, Tag, Input } from 'antd';
+import { message, Tag, Input, Radio } from 'antd';
 import { TweenOneGroup } from 'rc-tween-one';
 import plusImg from '../images/plus.svg';
 import uploadImg from '../images/upload-cloud.png';
@@ -88,7 +88,7 @@ const StepThree = styled.div``;
 const StepFour = styled.div`
   display: flex;
   .left {
-    margin-right: 20px;
+    padding: 30px;
     img {
       width: 300px;
       height: auto;
@@ -96,9 +96,94 @@ const StepFour = styled.div`
   }
   .right {
     flex: 1;
+    .selectCat {
+      margin: 40px 0;
+    }
+    h3 {
+      font-size: 18px;
+      margin: 0 auto 10px;
+      font-family: Avenir, Helvetica, Arial, sans-serif;
+      font-weight: bold;
+    }
+    .radioBtn {
+      margin: 6px 3px;
+      border: 2px solid #46a0fc;
+      border-radius: 5px;
+      background: #edf5ff;
+      color: #212121;
+      width: 90px;
+      height: 40px;
+      font-size: 16px;
+      line-height: 36px;
+      text-align: center;
+      &:before {
+        content: none;
+      }
+      &:hover {
+        color: #2979ff;
+        border: 2px solid #46a0fc;
+      }
+      &.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+        background: #46a0fc;
+        color: #fff;
+        font-weight: bold;
+      }
+    }
     .tags {
+      .ant-input {
+        width: 120px;
+        height: 40px;
+        border-radius: 5px;
+        padding: 8px 8px 8px 12px;
+        font-size: 16px;
+        margin: 6px;
+        /* &:hover {
+          border: 2px solid #f36d6f;
+          box-shadow: 1px #f36d6f;
+        } */
+      }
       .ant-tag {
+        margin: 6px 3px;
         display: inline-block;
+        border-radius: 5px;
+        font-size: 16px;
+        &:hover {
+          opacity: 1;
+        }
+      }
+      .tag-style {
+        color: #212121;
+        background: #e3defe;
+        padding: 8px 8px 8px 12px;
+        border: 2px solid #9887e6;
+        span {
+          padding: 2px;
+          margin-left: 9px;
+          background: #7e69de;
+          border-radius: 50%;
+          svg {
+            width: 12px;
+            height: 12px;
+            color: #fff;
+          }
+        }
+      }
+    }
+    .new-tag {
+      width: 120px;
+      text-align: center;
+      background: #feddde;
+      border: 2px solid #f36d6f;
+      padding: 8px 12px;
+      color: #f36d6f;
+      font-weight: bold;
+      &:hover {
+        background: #f36d6f;
+        color: #fff;
+        font-weight: bold;
+      }
+      span {
+        margin-left: 0;
       }
     }
   }
@@ -154,6 +239,13 @@ const QontoConnector = withStyles({
   },
 })(StepConnector);
 
+const steps = [
+  'Upload clothes image',
+  'Remove background',
+  'Modify image',
+  'Select category & add tags',
+];
+
 @withRouter
 @observer
 export default class AddClothes extends React.Component {
@@ -166,19 +258,11 @@ export default class AddClothes extends React.Component {
     // step1: upload img
     previewURL: '',
 
-    // step 4: category & tags
+    // step 4: category & tags\
+    category: 'shirts',
     tags: [],
     tagsInputVisible: false,
     newTagValue: '',
-  };
-
-  getSteps = () => {
-    return [
-      'Upload clothes image',
-      'Remove background',
-      'Modify image',
-      'Select category & add tags',
-    ];
   };
 
   getStepContent = stepIndex => {
@@ -282,7 +366,7 @@ export default class AddClothes extends React.Component {
 
     if (!newTagValue.trim()) return;
 
-    if (tags.includes(newTagValue)) {
+    if (tags.includes(newTagValue.trim())) {
       message.warn('Tag already exists!');
     } else {
       this.setState({
@@ -294,10 +378,15 @@ export default class AddClothes extends React.Component {
   };
 
   render() {
-    const steps = this.getSteps();
-    const { activeStep, loading, previewURL } = this.state;
-
-    const { tags, tagsInputVisible, newTagValue } = this.state;
+    const {
+      activeStep,
+      loading,
+      previewURL,
+      category,
+      tags,
+      tagsInputVisible,
+      newTagValue,
+    } = this.state;
 
     return (
       <Wrapper>
@@ -378,53 +467,78 @@ export default class AddClothes extends React.Component {
                   <img src={previewURL} />
                 </div>
                 <div className="right">
-                  <div>
-                    <TweenOneGroup
-                      className="tags"
-                      enter={{
-                        scale: 0.8,
-                        opacity: 0,
-                        type: 'from',
-                        duration: 100,
-                        onComplete: e => {
-                          e.target.style = '';
-                        },
-                      }}
-                      leave={{ opacity: 0, width: 0, scale: 0, duration: 200 }}
-                      appear={false}
+                  <div className="selectCat">
+                    <h3>Select category for your clothes:</h3>
+                    <Radio.Group
+                      name="category"
+                      value={category}
+                      onChange={e => this.setState({ category: e.target.value })}
                     >
-                      {tags.map(tag => (
-                        <Tag
-                          key={tag}
-                          closable
-                          onClose={e => {
-                            e.preventDefault();
-                            this.onRemoveTag(tag);
-                          }}
-                        >
-                          {tag}
-                        </Tag>
-                      ))}
-                      {tagsInputVisible ? (
-                        <Input
-                          ref={el => (this.newTagInputRef = el)}
-                          type="text"
-                          size="small"
-                          style={{ width: 78 }}
-                          value={newTagValue}
-                          onChange={e => this.setState({ newTagValue: e.target.value })}
-                          onBlur={() => {
-                            this.addTag();
-                            this.setState({ tagsInputVisible: false });
-                          }}
-                          onPressEnter={this.addTag}
-                        />
-                      ) : (
-                        <Tag onClick={this.showInput} className="new-tag">
-                          <PlusOutlined /> New Tag
-                        </Tag>
-                      )}
-                    </TweenOneGroup>
+                      <Radio.Button className="radioBtn" value="hats">
+                        Hats
+                      </Radio.Button>
+                      <Radio.Button className="radioBtn" value="shirts">
+                        Shirts
+                      </Radio.Button>
+                      <Radio.Button className="radioBtn" value="pants">
+                        Pants
+                      </Radio.Button>
+                      <Radio.Button className="radioBtn" value="shoes">
+                        Shoes
+                      </Radio.Button>
+                    </Radio.Group>
+                    
+                  </div>
+                  <div className="addTags">
+                    <h3>Add custom tags:</h3>
+                    <div>
+                      <TweenOneGroup
+                        className="tags"
+                        enter={{
+                          scale: 0.8,
+                          opacity: 0,
+                          type: 'from',
+                          duration: 100,
+                          onComplete: e => {
+                            e.target.style = '';
+                          },
+                        }}
+                        leave={{ opacity: 0, width: 0, scale: 0, duration: 200 }}
+                        appear={false}
+                      >
+                        {tags.map(tag => (
+                          <Tag
+                            className="tag-style"
+                            key={tag}
+                            closable
+                            onClose={e => {
+                              e.preventDefault();
+                              this.onRemoveTag(tag);
+                            }}
+                          >
+                            {tag}
+                          </Tag>
+                        ))}
+                        {tagsInputVisible ? (
+                          <Input
+                            ref={el => (this.newTagInputRef = el)}
+                            type="text"
+                            size="small"
+                            value={newTagValue}
+                            onChange={e => this.setState({ newTagValue: e.target.value })}
+                            onBlur={() => {
+                              this.addTag();
+                              this.setState({ tagsInputVisible: false });
+                            }}
+                            onPressEnter={this.addTag}
+                          />
+                        ) : (
+                          <Tag className="new-tag" onClick={this.showInput}>
+                            <PlusOutlined /> New Tag
+                          </Tag>
+                        )}
+                      </TweenOneGroup>
+                    </div>
                   </div>
                 </div>
               </StepFour>

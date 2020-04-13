@@ -34,9 +34,9 @@ const Card1 = styled.div`
   background-color: #ffffff;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
   padding: 60px 50px 86px;
-  .avatar {
+  /* .avatar {
     margin-top: 10px;
-  }
+  } */
   .MuiFormControl-root {
     flex: 1;
     margin-right: 20px;
@@ -58,7 +58,6 @@ const Card1Content = styled.div`
   .card1Btn {
     border-radius: 3px;
     padding: 8px 20px;
-    margin-left: 5px;
     background: #7d64e1;
     &:hover {
       color: #fff;
@@ -87,10 +86,13 @@ const Card1Content = styled.div`
 
 const User = styled.div`
   display: flex;
-  flex-direction: column;
-  align-items: left;
+  align-items: center;
+  .ant-avatar {
+    width: 130px;
+    height: 130px;
+  }
   .displayName {
-    margin-left: 20px;
+    margin-left: 22px;
     width: 50%;
   }
   .MuiFormControl-root {
@@ -436,44 +438,42 @@ export default class Setting extends React.Component {
         <Card1>
           <h3>Account Settings</h3>
           <Card1Content>
-            <h4> {currentUser.displayName} </h4>
+            <h4 />
             <User>
-              <div>
-                <StyledAvatar
-                  size="large"
-                  icon={<UserOutlined />}
-                  onClick={this.editAvatar}
-                  src={currentUser.photoURL}
-                ></StyledAvatar>
-                <TextField
-                  className="displayName"
-                  id="diaplay-name"
-                  label="Display Name"
-                  type="text"
-                  autoComplete="name"
-                  variant="outlined"
-                  size="small"
-                  value={displayName}
-                  onChange={e => this.setState({ displayName: e.target.value })}
-                  onKeyPress={e => {
-                    if (e.key === 'Enter') this.onChangeDisplayName();
-                  }}
-                />
-                <ButtonWithLoading
-                  className="card1Btn"
-                  variant="contained"
-                  color="primary"
-                  loading={displayNameLoading}
-                  disabled={
-                    !displayName.trim() ||
-                    displayNameLoading ||
-                    displayName.trim() === currentUser.displayName
-                  }
-                  onClick={this.onChangeDisplayName}
-                >
-                  SAVE
-                </ButtonWithLoading>
-              </div>
+              <StyledAvatar
+                size="large"
+                icon={<UserOutlined />}
+                onClick={this.editAvatar}
+                src={currentUser.photoURL}
+              ></StyledAvatar>
+              <TextField
+                className="displayName"
+                id="diaplay-name"
+                label="Display Name"
+                type="text"
+                autoComplete="name"
+                variant="outlined"
+                size="small"
+                value={displayName}
+                onChange={e => this.setState({ displayName: e.target.value })}
+                onKeyPress={e => {
+                  if (e.key === 'Enter') this.onChangeDisplayName();
+                }}
+              />
+              <ButtonWithLoading
+                className="card1Btn"
+                variant="contained"
+                color="primary"
+                loading={displayNameLoading}
+                disabled={
+                  !displayName.trim() ||
+                  displayNameLoading ||
+                  displayName.trim() === currentUser.displayName
+                }
+                onClick={this.onChangeDisplayName}
+              >
+                SAVE
+              </ButtonWithLoading>
               <div>
                 <form
                   className="editAvatarForm"

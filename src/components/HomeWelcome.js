@@ -8,7 +8,7 @@ import pantImg from '../images/welcome-jeans.svg';
 import shoeImg from '../images/welcome-shoe.svg';
 import arrowImg from '../images/arrow.png';
 import { Button } from '@material-ui/core';
-import { Link } from 'react-router-dom';
+import { Link, withRouter } from 'react-router-dom';
 
 const Wrapper = styled.div``;
 const Hero = styled.section`
@@ -163,6 +163,7 @@ const ImgWrapper = styled.div`
     box-shadow: 2px 2px 8px 0.5px #dedede;
   }
 `;
+@withRouter
 export default class HomeWelcome extends React.Component {
   render() {
     return (

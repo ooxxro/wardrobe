@@ -269,14 +269,17 @@ const ClothesMenu = styled.div`
     border-color: #fff;
   }
   .clothingItemWrapper {
+    cursor: pointer;
     width: calc(50% - 20px);
     position: relative;
     margin: 10px;
     border: 2px solid #46a0fc;
     background: #fff;
+    transition: all 0.3s ease;
     /* #fbe644; */
     &.selected {
-      border-color: red;
+      border: 2px solid #2962ff;
+      box-shadow: 3px 3px 8px 1px #aabed1;
     }
     .clothingItem {
       padding-top: 100%;
@@ -308,7 +311,7 @@ const ClothesMenu = styled.div`
     .ant-tabs-content {
       overflow: auto;
       flex: 1;
-      /* margin-top: -16px; */
+      margin-top: -16px;
     }
   }
   .ant-tabs-tab {
@@ -682,7 +685,6 @@ export default class DesignComponent extends React.Component {
                           selectedClothes.some(c => clothes.id === c.id) ? 'selected' : ''
                         }`}
                         key={i}
-                        tabIndex="0"
                         onClick={() => this.onSelectClothes(clothes)}
                       >
                         <div className="clothingItem">

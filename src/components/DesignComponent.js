@@ -14,7 +14,7 @@ import {
   Tooltip,
   Popover,
 } from '@material-ui/core';
-import userBgImg from '../images/userBgImg.jpg';
+import userBgImg from '../images/userBgImg.jpg'; //Should be user's current bg img
 import IOSSwitch from './IOSSwitch';
 import { ReactComponent as UndoIcon } from '../images/undo.svg';
 import { ReactComponent as LockIcon } from '../images/lock.svg';
@@ -23,6 +23,8 @@ import { ReactComponent as GoBackIcon } from '../images/goback.svg';
 import { ReactComponent as EditPicIcon } from '../images/editpic.svg';
 import firebase from '../firebase';
 import { Tabs } from 'antd';
+import { message } from 'antd';
+import ButtonWithLoading from './ButtonWithLoading';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -98,6 +100,9 @@ const EditPic = styled.div`
     &:hover {
       background: #d7cffc;
     }
+  }
+  .changeBackground {
+    background-color: #e3ddff;
   }
 `;
 const ImgWrapper = styled.div`
@@ -296,13 +301,87 @@ export default class DesignComponent extends React.Component {
     selectedShirtID: null,
     selectedPantsID: null,
     selectedShoesID: null,
+    //bg image
+    bgImgEdit: false,
+    bgImgLocation: null,
+    bgImgUrl: null,
   };
 
   //Execute upon rendering the page
   componentDidMount() {
+    this.getBg();
     this.getTagData();
     this.getClothesData();
   }
+
+  getBg = () => {
+    //Get Bg from firestore if there is one otherwise set img url to default
+    let imageUrl = '';
+    let db = firebase.firestore();
+    let docRef = db
+      .collection('users/' + firebase.auth().currentUser.uid + '/background')
+      .doc('image');
+
+    docRef.get().then(doc => {
+      if (doc.exists) {
+        imageUrl = doc.data().url;
+        this.setState({ bgImgUrl: imageUrl });
+      } else {
+        imageUrl = userBgImg;
+        this.setState({ bgImgUrl: imageUrl });
+      }
+    });
+  };
+
+  editBg = () => {
+    this.setState({ bgImgEdit: !this.state.bgImgEdit });
+  };
+
+  cancelEditBg = () => {
+    this.setState({ bgImgEdit: false });
+  };
+
+  changeBackground = () => {
+    const { userStore } = this.context;
+    const file = this.state.bgImgLocation;
+    if (file) {
+      let uploadPath;
+      if (file['name']) {
+        uploadPath = userStore.currentUser.uid + '/' + file['name'];
+      } else {
+        uploadPath =
+          userStore.currentUser.uid + '/' + file.substring(12, file.size).replace('/', 'A');
+      }
+      this.setState({ bgImgLocation: uploadPath });
+
+      let storageRef = firebase.storage().ref(uploadPath);
+      storageRef
+        .put(file)
+        .then(snapshot => {
+          return snapshot.ref.getDownloadURL();
+        })
+        .then(url => {
+          firebase
+            .firestore()
+            .collection('users/' + firebase.auth().currentUser.uid + '/background')
+            .doc('image')
+            .set({
+              url: url,
+            });
+          this.setState({ bgImgUrl: url });
+        })
+        .then(() => {
+          message.success('Background updated successfully!');
+          this.setState({ bgImgEdit: false, bgImgLocation: null });
+        })
+        .catch(error => {
+          // Handle Errors here.
+          message.error(error.message);
+        });
+    } else {
+      alert('Image is required!');
+    }
+  };
 
   getClothesData = () => {
     let db = firebase.firestore();
@@ -472,7 +551,7 @@ export default class DesignComponent extends React.Component {
         </Random>
         <Picture>
           <ImgWrapper>
-            <img className="bgImg" src={userBgImg} />
+            <img className="bgImg" src={this.state.bgImgUrl} />
             <HatImageArea>
               <img src={this.state.selectedHat} />
             </HatImageArea>
@@ -488,12 +567,51 @@ export default class DesignComponent extends React.Component {
           </ImgWrapper>
           <EditPic>
             <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
-              <IconButton className="editPic" size="small">
+              <IconButton className="editPic" size="small" onClick={() => this.editBg()}>
                 <SvgIcon fontSize="inherit">
                   <EditPicIcon />
                 </SvgIcon>
               </IconButton>
             </Tooltip>
+            <div className="changeBackground">
+              <form
+                className="editBgImgForm"
+                style={{ display: this.state.bgImgEdit ? 'block' : 'none' }}
+              >
+                <br />
+                <label>Upload New Background Image</label> <br></br>
+                <input
+                  type="file"
+                  id="bgImgLocation"
+                  name="bgImgLocation"
+                  placeholder="New Background"
+                  onChange={event => this.setState({ bgImgLocation: event.target.files[0] })}
+                  value={this.state.image}
+                ></input>
+                <label htmlFor="file"></label>
+              </form>
+              {this.state.bgImgEdit && (
+                <ButtonWithLoading
+                  onClick={this.changeBackground}
+                  className="card1Btn"
+                  variant="contained"
+                  color="primary"
+                >
+                  SAVE
+                </ButtonWithLoading>
+              )}
+
+              {this.state.bgImgEdit && (
+                <ButtonWithLoading
+                  onClick={this.cancelEditBg}
+                  className="card1Btn"
+                  variant="contained"
+                  color="primary"
+                >
+                  CANCEL
+                </ButtonWithLoading>
+              )}
+            </div>
           </EditPic>
         </Picture>
         <IconCol>
@@ -617,6 +735,9 @@ export default class DesignComponent extends React.Component {
             <Tabs defaultActiveKey="1" type="card" onChange={this.onSelectTab.bind(this)}>
               <TabPane tab="Hats" key="1">
                 {(this.state.clothesimages || []).map((path, index) => {
+                  if (!this.state.tagtoggled.includes(true)) {
+                    return;
+                  }
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -658,6 +779,9 @@ export default class DesignComponent extends React.Component {
               </TabPane>
               <TabPane tab="Pants" key="2">
                 {(this.state.clothesimages || []).map((path, index) => {
+                  if (!this.state.tagtoggled.includes(true)) {
+                    return;
+                  }
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -699,6 +823,9 @@ export default class DesignComponent extends React.Component {
               </TabPane>
               <TabPane tab="Shirts" key="3">
                 {(this.state.clothesimages || []).map((path, index) => {
+                  if (!this.state.tagtoggled.includes(true)) {
+                    return;
+                  }
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {
@@ -740,6 +867,9 @@ export default class DesignComponent extends React.Component {
               </TabPane>
               <TabPane tab="Shoes" key="4">
                 {(this.state.clothesimages || []).map((path, index) => {
+                  if (!this.state.tagtoggled.includes(true)) {
+                    return;
+                  }
                   let includesAllFilters = true;
 
                   for (let i = 0; i < this.state.tagtoggled.length; i++) {

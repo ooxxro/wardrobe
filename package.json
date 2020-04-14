@@ -24,6 +24,7 @@
     "eslint-plugin-prettier": "^3.1.2",
     "fake-indexeddb": "^3.0.0",
     "firebase": "^7.14.0",
+    "firebase-mock": "^2.3.2",
     "firebase-tools": "^7.14.0",
     "less": "^3.11.1",
     "less-loader": "^5.0.0",
@@ -57,6 +58,13 @@
     "format": "prettier --write '**/*.{js,ts,css,scss,html}'",
     "lint": "eslint '**/*.{js,ts}'",
     "firebase": "cd functions && npm i && cd .. && firebase deploy --token \"$FIREBASE_TOKEN\" -f"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!<rootDir>/node_modules/",
+      "!<rootDir>/src/serviceWorker.js"
+    ]
   },
   "browserslist": {
     "production": [

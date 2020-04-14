@@ -154,7 +154,6 @@ export default class ClothesIndex extends React.Component {
    * Sorts images by time created or by last modified time
    */
   handleSort = event => {
-    console.log('handleSort', event.key);
     // sort clothes by createdAt or updatedAt
     // TODO: do this in updateFiltered together
     const filteredCategories = {

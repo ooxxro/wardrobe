@@ -3,6 +3,7 @@ import 'firebase/analytics';
 import 'firebase/auth';
 import 'firebase/firestore';
 import 'firebase/storage';
+import 'firebase/functions';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {

@@ -2,6 +2,15 @@
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/dd13f707-aa91-4842-a4ab-a0e6bbc475f4/deploy-status)](https://app.netlify.com/sites/mywardrobe/deploys)
 
+## README for Iteration 2 Progress Report
+
+Online Website: [https://wardrobe.rocks](https://wardrobe.rocks).  
+To build the application, you need node.js and npm installed.  
+After cloning this repo, run `npm install` to install dependencies.  
+Run `npm start` to start the development server.  
+Run `npm test` to run unit tests.
+Run `npm test -- --coverage --watchAll=false` to run for the code coverage
+
 ## README for Iteration 1 Progress Report
 
 Online Website: [https://wardrobe.rocks](https://wardrobe.rocks).  

@@ -95,6 +95,9 @@ const StepOne = styled.div`
 `;
 const StepTwo = styled.div`
   text-align: center;
+  .MuiButton-root {
+    margin: 10px;
+  }
   .imgs {
     display: flex;
     align-items: center;
@@ -287,9 +290,12 @@ export default class AddClothes extends React.Component {
     activeStep: 0,
 
     // step1: upload img
-    file: null,
-    previewURL: '',
+    file: null, // user uploaded image after resizing but before rm.bg
+    previewURL: '', // user uploaded image after resizing but before rm.bg
+
+    // step2: remove background
     afterRemoveBackgroundURL: '',
+    selectedImageURL: '',
 
     // step3: fit clothes to mannequin
     originalAspectRatio: 1,
@@ -330,7 +336,7 @@ export default class AddClothes extends React.Component {
     // const { loading } = this.state;
     this.setState({ loading: true });
 
-    this.resizeImg(e.target.files[0], 'abcd', 800, 800)
+    this.resizeImg(e.target.files[0], 'image.png', 800, 800)
       .then(({ file, aspectRatio }) => {
         // calculate clothes fitter state
         const width = aspectRatio > 1 ? 100 : 100 * aspectRatio;
@@ -338,11 +344,13 @@ export default class AddClothes extends React.Component {
         const x = (ClothesFitter.WIDTH - width) / 2;
         const y = (ClothesFitter.HEIGHT - height) / 2;
 
+        const previewURL = URL.createObjectURL(file);
         this.setState({
           loading: false,
           activeStep: 1,
           file,
-          previewURL: URL.createObjectURL(file),
+          previewURL,
+          selectedImageURL: previewURL,
           originalAspectRatio: aspectRatio,
           clothesFitterState: { x, y, width, height },
         });
@@ -386,17 +394,9 @@ export default class AddClothes extends React.Component {
         );
         // read from canvas to png image file
         let dataURL = canvas.toDataURL('image/png');
-        // https://stackoverflow.com/a/43358515/12017013
-        let arr = dataURL.split(','),
-          mime = arr[0].match(/:(.*?);/)[1],
-          bstr = atob(arr[1]),
-          n = bstr.length,
-          u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
-        }
+
         resolve({
-          file: new File([u8arr], filename, { type: mime }),
+          file: this.dataURL2file(dataURL, filename),
           aspectRatio: original.width / original.height,
         });
       };
@@ -405,6 +405,19 @@ export default class AddClothes extends React.Component {
       };
       original.src = URL.createObjectURL(file);
     });
+  };
+
+  dataURL2file = (dataURL, filename = 'image.png') => {
+    // https://stackoverflow.com/a/43358515/12017013
+    let arr = dataURL.split(','),
+      mime = arr[0].match(/:(.*?);/)[1],
+      bstr = atob(arr[1]),
+      n = bstr.length,
+      u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
   };
 
   removeBackground = () => {
@@ -419,8 +432,10 @@ export default class AddClothes extends React.Component {
       const removeBackground = firebase.functions().httpsCallable('removeBackground');
       removeBackground({ base64: reader.result })
         .then(result => {
+          const url = 'data:image/png;base64,' + result.data;
           this.setState({
-            afterRemoveBackgroundURL: 'data:image/png;base64,' + result.data,
+            afterRemoveBackgroundURL: url,
+            selectedImageURL: url,
             loading: false,
           });
         })
@@ -431,7 +446,7 @@ export default class AddClothes extends React.Component {
           message.error(error.message);
         });
     };
-    reader.readAsDataURL(this.state.previewImg);
+    reader.readAsDataURL(this.state.file);
   };
 
   onRemoveTag = tag => {
@@ -469,7 +484,14 @@ export default class AddClothes extends React.Component {
         currentUser: { uid },
       },
     } = this.context;
-    const { loading, file, category, tags, clothesFitterState } = this.state;
+    const {
+      loading,
+      file,
+      category,
+      tags,
+      clothesFitterState,
+      afterRemoveBackgroundURL,
+    } = this.state;
 
     if (loading) return;
 
@@ -488,10 +510,13 @@ export default class AddClothes extends React.Component {
 
     // upload image to storage at /<uid>/clothes/<clothesId>.png
     const storagePath = `${uid}/clothes/${clothesId}.png`;
+    const chosenFile = afterRemoveBackgroundURL
+      ? this.dataURL2file(afterRemoveBackgroundURL, `${clothesId}png`)
+      : file;
     const task = firebase
       .storage()
       .ref(storagePath)
-      .put(file);
+      .put(chosenFile);
     const uploadPromise = new Promise((resolve, reject) => {
       task.on(
         'state_changed',
@@ -560,6 +585,8 @@ export default class AddClothes extends React.Component {
       activeStep,
       loading,
       previewURL,
+      afterRemoveBackgroundURL,
+      selectedImageURL,
       lockAspectRatio,
       clothesFitterState,
       category,
@@ -632,6 +659,20 @@ export default class AddClothes extends React.Component {
                   <Button variant="contained" color="primary" onClick={this.removeBackground}>
                     Remove Background
                   </Button>
+                  {afterRemoveBackgroundURL && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() =>
+                        this.setState({
+                          selectedImageURL: previewURL,
+                          afterRemoveBackgroundURL: '',
+                        })
+                      }
+                    >
+                      Cancel
+                    </Button>
+                  )}
                 </div>
                 <div className="imgs">
                   <img src={previewURL} />
@@ -649,7 +690,7 @@ export default class AddClothes extends React.Component {
             {activeStep === 2 && (
               <StepThree>
                 <ClothesFitter
-                  clothesSrc={previewURL}
+                  clothesSrc={selectedImageURL}
                   lockAspectRatio={lockAspectRatio}
                   state={clothesFitterState}
                   onChange={e => this.setState({ clothesFitterState: e })}
@@ -672,7 +713,7 @@ export default class AddClothes extends React.Component {
             {activeStep === 3 && (
               <StepFour>
                 <div className="left">
-                  <img src={previewURL} />
+                  <img src={selectedImageURL} />
                 </div>
                 <div className="right">
                   <div className="selectCat">

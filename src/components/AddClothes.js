@@ -317,21 +317,6 @@ export default class AddClothes extends React.Component {
     finishDialogOpen: false,
   };
 
-  getStepContent = stepIndex => {
-    switch (stepIndex) {
-      case 0:
-        return 'Upload clothes image';
-      case 1:
-        return 'Remove background';
-      case 2:
-        return 'Modify image';
-      case 3:
-        return 'Select category & add tags';
-      default:
-        return 'Unknown stepIndex';
-    }
-  };
-
   onSelectImg = e => {
     // const { loading } = this.state;
     this.setState({ loading: true });

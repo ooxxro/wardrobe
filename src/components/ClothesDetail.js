@@ -3,120 +3,194 @@ import { observer } from 'mobx-react';
 import { StoreContext } from '../stores';
 import { /*Link,*/ withRouter } from 'react-router-dom';
 import styled from 'styled-components';
-import backImg from '../images/back.png';
-import deleteImg from '../images/delete.png';
-import closeImg from '../images/closeIcon.png';
-import editImg from '../images/pen.png';
-import { Button, message } from 'antd';
-import firebase from '../firebase';
-import Popup from 'reactjs-popup';
+import { Button, SvgIcon, IconButton, Zoom, Tooltip } from '@material-ui/core';
+import { message, Tag, Input, Radio } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
+import { TweenOneGroup } from 'rc-tween-one';
 import Loading from './Loading';
+import firebase from '../firebase';
+import SimpleDialog from './SimpleDialog';
+import { ReactComponent as GoBackIcon } from '../images/goback.svg';
+import { ReactComponent as EditIcon } from '../images/editpic.svg';
+import { ReactComponent as DeleteIcon } from '../images/trashCan.svg';
 
 const db = firebase.firestore();
 
 const Wrapper = styled.div`
-  width: 75%;
-  margin-left: auto;
-  margin-right: auto;
-`;
-
-const Card = styled.div`
-  width: 100%;
-  background-color: #e9e9e9;
+  max-width: 1000px;
+  margin: 50px auto 100px;
   border-radius: 30px;
+  background: #e9e9e9;
+  padding: 10px 10px;
 `;
 
 const Top = styled.div`
-  padding: 1rem 1rem;
-
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 20px 0;
   .backButton {
-    background: url(${backImg}) center/60% no-repeat;
-    background-color: #e2dcfe;
+    background: #e3ddff;
+    &:hover {
+      background: #d7cffc;
+    }
   }
-
-  .editButton {
-    float: right;
-    background: url(${editImg}) center/60% no-repeat;
-    background-color: #e2dcfe;
-  }
-
-  .deleteButton {
-    float: right;
-    background: url(${deleteImg}) center/60% no-repeat;
-    background-color: #e2dcfe;
-    margin-left: 10px;
+  div {
+    display: flex;
+    .editButton,
+    .deleteButton {
+      background: #e3ddff;
+      &:hover {
+        background: #d7cffc;
+      }
+    }
+    .deleteButton {
+      margin-left: 14px;
+    }
   }
 `;
 const Bottom = styled.div`
-  padding: 3rem 3rem;
-  .saveButton {
-    float: right;
-    padding-left: 20px;
-    padding-right: 20px;
-    border-radius: 10px;
+  margin-top: -10px;
+  padding: 0 60px 40px;
+  text-align: right;
+  .backBtn {
+    border-radius: 19px;
+    padding: 7px 28px;
+    background: #7d64e1;
+    margin-bottom: 20px;
+    color: #fff;
+    &:hover {
+      color: #fff;
+      background-color: #775ce3;
+    }
   }
 `;
 
 const ClothingContent = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: left;
+  padding: 10px 100px 20px;
 `;
 const Left = styled.div`
-  width: 50%;
-  text-align: center;
+  position: relative;
+  margin-right: 70px;
+  .loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
   img {
-    width: 80%;
+    width: 300px;
+    height: 400px;
+    object-fit: contain;
   }
 `;
 const Right = styled.div`
-  width: 50%;
-  font-size: 20px;
-  .label {
-    font-size: 14px;
-    color: #838383;
+  padding-top: 30px;
+  h3 {
+    font-size: 18px;
+    margin: 0 auto 5px;
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    font-weight: bold;
   }
-  .addTagButton {
-    border-radius: 10px;
-    background-color: #e2dcfe;
+  h4 {
+    font-size: 16px;
+    margin: 14px auto 2px;
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+  }
+  .category {
+    margin: 6px 0;
+    border: 2px solid #46a0fc;
+    border-radius: 5px;
+    background: #46a0fc;
+    color: #fff;
+    width: 70px;
+    height: 40px;
+    font-size: 16px;
+    line-height: 36px;
+    text-align: center;
+    font-weight: bold;
+  }
+  .radioBtn {
+    margin: 6px 3px 6px 0;
+    border: 2px solid #46a0fc;
+    border-radius: 5px;
+    background: #edf5ff;
+    color: #212121;
+    width: 90px;
+    height: 40px;
+    font-size: 16px;
+    line-height: 36px;
+    text-align: center;
+    &:before {
+      content: none;
+    }
+    &:hover {
+      color: #2979ff;
+      border: 2px solid #46a0fc;
+    }
+    &.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+      background: #46a0fc;
+      color: #fff;
+      border-color: #46a0fc;
+      font-weight: bold;
+    }
+  }
+  .tags {
+    .ant-input {
+      width: 120px;
+      height: 40px;
+      border-radius: 5px;
+      padding: 8px 8px 8px 12px;
+      font-size: 16px;
+      margin: 6px;
+    }
+    .ant-tag {
+      margin: 6px 6px 6px 0;
+      display: inline-block;
+      border-radius: 5px;
+      font-size: 16px;
+      &:hover {
+        opacity: 1;
+      }
+    }
+    .tag-style {
+      color: #212121;
+      background: #e3defe;
+      padding: 8px 10px 8px 12px;
+      border: 2px solid #9887e6;
+      span {
+        padding: 2px;
+        margin-left: 10px;
+        background: #7e69de;
+        border-radius: 50%;
+        svg {
+          width: 12px;
+          height: 12px;
+          color: #fff;
+        }
+      }
+    }
+  }
+  .new-tag {
+    width: 120px;
+    text-align: center;
+    background: #feddde;
+    border: 2px solid #f36d6f;
+    padding: 8px 12px;
+    color: #f36d6f;
+    font-weight: bold;
+    &:hover {
+      background: #f36d6f;
+      color: #fff;
+      font-weight: bold;
+    }
+    span {
+      margin-left: 0;
+    }
   }
 `;
-const TagButton = styled.div`
-  border-radius: 10px;
-  background-color: #e2dcfe;
-  display: block;
-  border: 3px solid purple;
-  width: 20%;
-  text-align: center;
-  margin-top: 5px;
-  margin-right: 5px;
-  margin-bottom: 10px;
-  display: inline-block;
-`;
-const modal = {
-  fontSize: '12px',
-  borderRadius: '20px',
-  height: '30vh',
-  width: '100%',
-  margin: '0',
-  padding: '0',
-  background: 'linear-gradient(90deg, #6e8fe7 0%, #8261e6 100%)',
-};
 
-const modalContent = {
-  width: '100%',
-  padding: '10px 5px',
-  textAlign: 'center',
-  font: 'bold',
-};
-const btnStyle = {
-  backgroundColor: 'white',
-  borderRadius: '10px',
-  borderColor: '#888',
-  width: '200px',
-  textAlign: 'center',
-  margin: '10px',
-};
 @withRouter
 @observer
 export default class ClothesDetail extends React.Component {
@@ -127,7 +201,13 @@ export default class ClothesDetail extends React.Component {
     clothes: null,
     isEdit: false,
     removedTags: [],
+
     newTagArr: [],
+    category: 'shirts',
+    tags: [],
+    tagsInputVisible: false,
+    newTagValue: '',
+    goBackDialogOpen: false,
   };
 
   componentDidMount() {
@@ -144,14 +224,6 @@ export default class ClothesDetail extends React.Component {
     this.setState({ removedTags: [], newTagArr: [] });
     this.getData();
   }
-
-  goBack = () => {
-    this.props.history.goBack();
-  };
-
-  edit = () => {
-    this.setState({ isEdit: true });
-  };
 
   save = () => {
     this.setState({ isEdit: false });
@@ -302,238 +374,252 @@ export default class ClothesDetail extends React.Component {
       });
   };
 
-  onCatChange = e => {
-    let arr = [];
-    arr = e.target.value
-      .toLowerCase()
-      .split(',')
-      .map(t => t.trim());
-
-    this.setState({ newTagArr: arr });
+  onRemoveTag = tag => {
+    const tags = this.state.tags.filter(t => t !== tag);
+    this.setState({ tags });
   };
 
-  combineNew = () => {
-    let newArr = [...this.state.newTagArr];
-    let tags = [...this.state.clothes.tags];
-
-    //remove duplicated tag
-    newArr.map(newTag => {
-      if (tags.includes(newTag)) {
-        newArr.splice(newArr.indexOf(newTag), 1);
-      }
-    });
-
-    // console.log(newArr);
-    newArr.map(newTag => {
-      tags.push(newTag);
-    });
-    this.setState({
-      newTagArr: newArr,
-      clothes: {
-        ...this.state.clothes,
-        tags,
-      },
-    });
+  showInput = () => {
+    this.setState(
+      { tagsInputVisible: true },
+      () => this.newTagInputRef && this.newTagInputRef.focus()
+    );
   };
 
-  removeTag = index => {
-    const { removedTags, clothes } = this.state;
-    const tags = [...clothes.tags];
+  addTag = () => {
+    const { newTagValue, tags } = this.state;
 
-    const [tag] = tags.splice(index, 1);
+    if (!newTagValue.trim()) return;
 
-    if (!removedTags.includes(tag)) {
-      removedTags.push(tag);
+    // TODO: limit tag to use as firebase document ID
+    if (tags.includes(newTagValue.trim())) {
+      message.warn('Tag already exists!');
+    } else {
+      this.setState({
+        tags: [...tags, newTagValue],
+      });
     }
-    this.setState({
-      clothes: {
-        ...this.state.clothes,
-        tags,
-      },
-      removedTags,
-    });
+    // clear input
+    this.setState({ newTagValue: '' }, () => this.newTagInputRef && this.newTagInputRef.focus());
   };
 
   render() {
-    let vm = this;
-    let { loading, clothes, isEdit } = this.state;
+    const {
+      loading,
+      clothes,
+      isEdit,
+      tags,
+      category,
+      tagsInputVisible,
+      newTagValue,
+      goBackDialogOpen,
+    } = this.state;
 
     return (
       <Wrapper>
-        <Loading loading={loading} />
+        <Top>
+          <Tooltip arrow title="Go back" TransitionComponent={Zoom} placement="top">
+            <IconButton
+              className="backButton"
+              onClick={
+                !isEdit
+                  ? () => this.props.history.goBack()
+                  : () => this.setState({ goBackDialogOpen: true })
+              }
+            >
+              <SvgIcon fontSize="small">
+                <GoBackIcon />
+              </SvgIcon>
+            </IconButton>
+          </Tooltip>
 
-        <Card>
-          <Top>
-            <div className="topButtons">
-              <Button className="backButton" shape="circle" size="large" onClick={this.goBack} />
-              {!isEdit && (
-                <Button
-                  className="deleteButton"
-                  shape="circle"
-                  size="large"
-                  onClick={this.deleteClothes}
-                />
-              )}
-              <Button
-                className="editButton"
-                shape="circle"
-                size="large"
-                onClick={this.edit}
-                style={{ display: this.state.isEdit ? 'none' : 'block' }}
-              />
-            </div>
-          </Top>
+          <div>
+            {!isEdit && (
+              <Tooltip arrow title="Edit clothes" TransitionComponent={Zoom} placement="top">
+                <IconButton
+                  className="editButton"
+                  onClick={() => this.setState({ isEdit: true })}
+                  style={{ display: this.state.isEdit ? 'none' : 'block' }}
+                >
+                  <SvgIcon fontSize="small">
+                    <EditIcon />
+                  </SvgIcon>
+                </IconButton>
+              </Tooltip>
+            )}
+            <Tooltip arrow title="Delete clothes" TransitionComponent={Zoom} placement="top">
+              <IconButton className="deleteButton" onClick={this.deleteClothes}>
+                <SvgIcon fontSize="small">
+                  <DeleteIcon />
+                </SvgIcon>
+              </IconButton>
+            </Tooltip>
+          </div>
+        </Top>
 
-          {!loading && !clothes && <div>Clothes Not Found</div>}
+        {!loading && !clothes && <div>Clothes Not Found</div>}
 
-          {clothes && (
-            <ClothingContent>
-              <Left>
-                <div className="clothingImage">
-                  <img src={clothes.url} />
-                </div>
-              </Left>
+        {clothes && (
+          <ClothingContent>
+            <Left>
+              <div className="loading">
+                <Loading loading={loading} backdrop={false} />
+              </div>
+              <img src={clothes.url} />
+            </Left>
 
-              <Right>
-                <div className="dateAdded">
-                  <div className="label">Date added:</div>
-                  <div>{clothes.createdAt && clothes.createdAt.toLocaleString()}</div>
-                </div>
-                <br />
-                <div className="dateModified">
-                  <div className="label">Date modified:</div>
-                  <div>{clothes.updatedAt && clothes.updatedAt.toLocaleString()}</div>
-                </div>
-                <br />
-                <div className="categories">
-                  <div className="label">Category:</div>
-                  <div>{clothes.category}</div>
-                </div>
-                <br />
-                <div className="tags">
-                  <div className="label">Tags:</div>
-                  <div>
-                    {clothes.tags &&
-                      clothes.tags.map((tag, i) =>
-                        !vm.state.isEdit ? (
-                          <TagButton
-                            key={tag}
-                            className="editButton"
-                            shape="rectangle"
-                            size="large"
-                          >
-                            {tag}
-                          </TagButton>
-                        ) : (
-                          <TagButton
-                            key={tag}
-                            className="editButton"
-                            shape="rectangle"
-                            size="large"
-                          >
-                            {tag}
-                            <Button
-                              shape="circle"
-                              size="small"
-                              style={{
-                                backgroundColor: '#8162EA',
-                                margin: '0',
-                                padding: '0',
-                                marginLeft: '20%',
-                                top: '-3px',
-                                height: '100%',
-                                width: '10%',
-                                display: 'inline-block',
-                              }}
-                              onClick={() => this.removeTag(i)}
-                            >
-                              <img
-                                src={closeImg}
-                                style={{
-                                  height: '100%',
-                                  width: '100%',
-                                  textAlign: 'center',
-                                  display: 'inline-block',
-                                }}
-                              />
-                            </Button>
-                          </TagButton>
-                        )
-                      )}
-                    <Popup
-                      trigger={
-                        <Button
-                          className="addTagButton"
-                          style={{ display: this.state.isEdit ? 'block' : 'none' }}
-                        >
-                          + Add New Tags
-                        </Button>
-                      }
-                      modal
-                    >
-                      {close => (
-                        <div style={modal}>
-                          <form style={modalContent}>
-                            <span>Custom Categories:&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                            <input
-                              type="text"
-                              name="cat"
-                              placeholder="Seperate tags by comma"
-                              value={this.state.newTagArr}
-                              onChange={this.onCatChange}
-                              style={{ width: '30%' }}
-                            />
-                            <div></div>
-                            <input
-                              type="submit"
-                              value="submit"
-                              className="btn"
-                              style={btnStyle}
-                              onChange={this.onChange}
-                              onClick={() => {
-                                this.combineNew();
-                                close();
-                              }}
-                            />
-                            <input
-                              className="btn"
-                              type="cancel"
-                              value="cancel"
-                              style={btnStyle}
-                              onChange={() => {
-                                this.clearSate();
-                                close();
-                              }}
-                              onClick={() => {
-                                this.clearSate();
-                                close();
-                              }}
-                            />
-                          </form>
-                        </div>
-                      )}
-                    </Popup>
+            <Right>
+              {!isEdit ? (
+                <div>
+                  <h4>Date added:</h4>
+                  <h3>{clothes.createdAt && clothes.createdAt.toLocaleString()}</h3>
+
+                  <h4>Date modified:</h4>
+                  <h3>{clothes.updatedAt && clothes.updatedAt.toLocaleString()}</h3>
+
+                  <h4>Category:</h4>
+                  <div className="category">{clothes.category}</div>
+
+                  <h4>Tags:</h4>
+                  <div className="tags">
+                    {clothes.tags.map(tag => (
+                      <Tag className="tag-style" key={tag}>
+                        {tag}
+                      </Tag>
+                    ))}
                   </div>
                 </div>
-                <br />
-              </Right>
-            </ClothingContent>
-          )}
+              ) : (
+                <div>
+                  <h4>Date added:</h4>
+                  <h3>{clothes.createdAt && clothes.createdAt.toLocaleString()}</h3>
 
-          <Bottom>
-            <Button
-              type="primary"
-              className="saveButton"
-              onClick={() => {
-                this.save();
-                this.updateTags();
-              }}
-              style={{ display: this.state.isEdit ? 'block' : 'none' }}
-            >
-              Save
-            </Button>
-          </Bottom>
-        </Card>
+                  <h4>Date modified:</h4>
+                  <h3>{clothes.updatedAt && clothes.updatedAt.toLocaleString()}</h3>
+
+                  <h4>Change category:</h4>
+                  <Radio.Group
+                    name="category"
+                    value={category}
+                    onChange={e => this.setState({ category: e.target.value })}
+                  >
+                    <Radio.Button className="radioBtn" value="hats">
+                      Hats
+                    </Radio.Button>
+                    <Radio.Button className="radioBtn" value="shirts">
+                      Shirts
+                    </Radio.Button>
+                    <Radio.Button className="radioBtn" value="pants">
+                      Pants
+                    </Radio.Button>
+                    <Radio.Button className="radioBtn" value="shoes">
+                      Shoes
+                    </Radio.Button>
+                  </Radio.Group>
+                  <h4>Add/Remove tags:</h4>
+                  <div>
+                    <TweenOneGroup
+                      className="tags"
+                      enter={{
+                        scale: 0.8,
+                        opacity: 0,
+                        type: 'from',
+                        duration: 100,
+                        onComplete: e => {
+                          e.target.style = '';
+                        },
+                      }}
+                      leave={{ opacity: 0, width: 0, scale: 0, duration: 200 }}
+                      appear={false}
+                    >
+                      {clothes.tags.map(tag => (
+                        <Tag
+                          className="tag-style"
+                          key={tag}
+                          closable
+                          onClose={e => {
+                            e.preventDefault();
+                            this.onRemoveTag(tag);
+                          }}
+                        >
+                          {tag}
+                        </Tag>
+                      ))}
+                      {tags.map(tag => (
+                        <Tag
+                          className="tag-style"
+                          key={tag}
+                          closable
+                          onClose={e => {
+                            e.preventDefault();
+                            this.onRemoveTag(tag);
+                          }}
+                        >
+                          {tag}
+                        </Tag>
+                      ))}
+                      {tagsInputVisible ? (
+                        <Input
+                          ref={el => (this.newTagInputRef = el)}
+                          type="text"
+                          size="small"
+                          value={newTagValue}
+                          onChange={e => this.setState({ newTagValue: e.target.value })}
+                          onBlur={() => {
+                            this.addTag();
+                            this.setState({ tagsInputVisible: false });
+                          }}
+                          onPressEnter={this.addTag}
+                        />
+                      ) : (
+                        <Tag className="new-tag" onClick={this.showInput}>
+                          <PlusOutlined /> New Tag
+                        </Tag>
+                      )}
+                    </TweenOneGroup>
+                  </div>
+                </div>
+              )}
+            </Right>
+          </ClothingContent>
+        )}
+
+        <Bottom style={{ display: isEdit ? 'block' : 'none' }}>
+          <Button
+            className="saveButton"
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              this.save();
+              this.updateTags();
+            }}
+          >
+            Save
+          </Button>
+        </Bottom>
+        <SimpleDialog
+          open={goBackDialogOpen}
+          type="warning"
+          description={
+            <span>
+              Are you sure
+              <br />
+              you want to exit without saving?
+            </span>
+          }
+          buttons={[
+            {
+              text: 'Cancel, Continue Editing',
+              onClick: () => this.setState({ goBackDialogOpen: false }),
+            },
+            {
+              text: 'Exit without Saving',
+              exit: true,
+              onClick: () => this.setState({ isEdit: false, goBackDialogOpen: false }),
+            },
+          ]}
+          onClose={() => this.setState({ goBackDialogOpen: false })}
+        />
       </Wrapper>
     );
   }

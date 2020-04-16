@@ -528,7 +528,7 @@ export default class AddClothes extends React.Component {
         const clothesData = {
           createdAt: timestamp,
           updatedAt: timestamp,
-          category: category,
+          category,
           tags,
           storagePath,
           url,

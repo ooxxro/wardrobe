@@ -296,8 +296,8 @@ export default class ClothesIndex extends React.Component {
               </Dropdown>
             </div>
             <div className="imgs-wrapper">
-              {filteredCategories[type].map((clothes, i) => (
-                <Link key={i} to={`/clothes-detail/${clothes.id}`}>
+              {filteredCategories[type].map(clothes => (
+                <Link key={clothes.id} to={`/clothes-detail/${clothes.id}`}>
                   <div className="img-wrapper">
                     <img src={clothes.url} />
                   </div>

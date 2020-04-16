@@ -7,6 +7,8 @@ import { Button, SvgIcon, IconButton, Zoom, Tooltip } from '@material-ui/core';
 import { message, Tag, Input, Radio } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { TweenOneGroup } from 'rc-tween-one';
+import difference from 'lodash/difference';
+import xor from 'lodash/xor';
 import Loading from './Loading';
 import firebase from '../firebase';
 import SimpleDialog from './SimpleDialog';
@@ -73,6 +75,8 @@ const ClothingContent = styled.div`
 const Left = styled.div`
   position: relative;
   margin-right: 70px;
+  width: 300px;
+  height: 400px;
   .loading {
     position: absolute;
     top: 50%;
@@ -85,6 +89,7 @@ const Left = styled.div`
     object-fit: contain;
   }
 `;
+const ImgWrapper = styled.div``;
 const Right = styled.div`
   padding-top: 30px;
   h3 {
@@ -110,6 +115,7 @@ const Right = styled.div`
     line-height: 36px;
     text-align: center;
     font-weight: bold;
+    text-transform: capitalize;
   }
   .radioBtn {
     margin: 6px 3px 6px 0;
@@ -200,14 +206,13 @@ export default class ClothesDetail extends React.Component {
     loading: false,
     clothes: null,
     isEdit: false,
-    removedTags: [],
 
-    newTagArr: [],
-    category: 'shirts',
+    category: '',
     tags: [],
     tagsInputVisible: false,
     newTagValue: '',
     goBackDialogOpen: false,
+    deleteDialogOpen: false,
   };
 
   componentDidMount() {
@@ -219,15 +224,6 @@ export default class ClothesDetail extends React.Component {
       this.getData();
     }
   }
-
-  clearSate() {
-    this.setState({ removedTags: [], newTagArr: [] });
-    this.getData();
-  }
-
-  save = () => {
-    this.setState({ isEdit: false });
-  };
 
   getData = () => {
     const {
@@ -253,12 +249,13 @@ export default class ClothesDetail extends React.Component {
         if (!doc.exists) throw new Error('Oops! clothes does not exist!');
         const data = doc.data();
         const clothes = {
+          id: clothesId,
           ...data,
           createdAt: data.createdAt.toDate(),
           updatedAt: data.updatedAt.toDate(),
         };
 
-        this.setState({ clothes, loading: false });
+        this.setState({ clothes, loading: false, category: clothes.category, tags: clothes.tags });
       })
       .catch(error => {
         this.setState({ loading: false });
@@ -266,50 +263,68 @@ export default class ClothesDetail extends React.Component {
       });
   };
 
-  updateTags = () => {
+  onSave = () => {
+    const { loading, clothes, category, tags } = this.state;
     const {
       userStore: {
         currentUser: { uid },
       },
     } = this.context;
-    const {
-      match: {
-        params: { clothesId },
-      },
-    } = this.props;
-    const { clothes, newTagArr, removedTags } = this.state;
-
-    if (newTagArr.length === 0 && removedTags.length === 0) return;
-
+    if (!this.hasModified()) {
+      this.setState({ isEdit: false });
+      return;
+    }
+    if (loading) return;
     this.setState({ loading: true });
 
-    const userRef = db.collection('users').doc(uid);
-    const clothesRef = userRef.collection('clothes').doc(clothesId);
-
-    //Add new tag to firebase
     const batch = db.batch();
 
-    batch.update(clothesRef, { updatedAt: new Date(), tags: clothes.tags });
+    // update clothes
+    const clothesRef = db
+      .collection('users')
+      .doc(uid)
+      .collection('clothes')
+      .doc(clothes.id);
+    batch.set(
+      clothesRef,
+      {
+        category,
+        updatedAt: new Date(),
+        tags,
+      },
+      { merge: true }
+    );
 
-    newTagArr.forEach(tag => {
-      if (tag.length > 0) {
-        const tagsRef = userRef.collection('tags').doc(tag);
-        batch.set(
-          tagsRef,
-          {
-            clothes: firebase.firestore.FieldValue.arrayUnion({ id: clothesId, url: clothes.url }),
-          },
-          { merge: true }
-        );
-      }
+    // add new tags
+    const newTags = difference(tags, clothes.tags);
+    newTags.forEach(tag => {
+      const tagRef = db
+        .collection('users')
+        .doc(uid)
+        .collection('tags')
+        .doc(tag);
+      batch.set(
+        tagRef,
+        {
+          clothes: firebase.firestore.FieldValue.arrayUnion({ id: clothes.id, url: clothes.url }),
+        },
+        { merge: true }
+      );
     });
 
-    //Remove deleted tag from firebase
+    // remove removed tags
+    const removedTags = difference(clothes.tags, tags);
     removedTags.forEach(tag => {
-      const tagsRef = userRef.collection('tags').doc(tag);
+      const tagRef = db
+        .collection('users')
+        .doc(uid)
+        .collection('tags')
+        .doc(tag);
       batch.set(
-        tagsRef,
-        { clothes: firebase.firestore.FieldValue.arrayRemove({ id: clothesId, url: clothes.url }) },
+        tagRef,
+        {
+          clothes: firebase.firestore.FieldValue.arrayRemove({ id: clothes.id, url: clothes.url }),
+        },
         { merge: true }
       );
     });
@@ -317,13 +332,22 @@ export default class ClothesDetail extends React.Component {
     batch
       .commit()
       .then(() => {
-        this.setState({ loading: false });
+        this.setState({ loading: false, isEdit: false });
         this.getData();
       })
       .catch(err => {
         this.setState({ loading: false });
         message.error(`Error while saving: ${err.message}`);
       });
+  };
+
+  hasModified = () => {
+    const { clothes, category, tags } = this.state;
+
+    if (clothes.category !== category) return true;
+    if (xor(clothes.tags, tags).length > 0) return true;
+
+    return false;
   };
 
   deleteClothes = () => {
@@ -413,6 +437,7 @@ export default class ClothesDetail extends React.Component {
       tagsInputVisible,
       newTagValue,
       goBackDialogOpen,
+      deleteDialogOpen,
     } = this.state;
 
     return (
@@ -421,11 +446,14 @@ export default class ClothesDetail extends React.Component {
           <Tooltip arrow title="Go back" TransitionComponent={Zoom} placement="top">
             <IconButton
               className="backButton"
-              onClick={
-                !isEdit
-                  ? () => this.props.history.goBack()
-                  : () => this.setState({ goBackDialogOpen: true })
-              }
+              onClick={() => {
+                if (isEdit) {
+                  if (this.hasModified()) this.setState({ goBackDialogOpen: true });
+                  else this.setState({ isEdit: false });
+                } else {
+                  this.props.history.goBack();
+                }
+              }}
             >
               <SvgIcon fontSize="small">
                 <GoBackIcon />
@@ -448,7 +476,10 @@ export default class ClothesDetail extends React.Component {
               </Tooltip>
             )}
             <Tooltip arrow title="Delete clothes" TransitionComponent={Zoom} placement="top">
-              <IconButton className="deleteButton" onClick={this.deleteClothes}>
+              <IconButton
+                className="deleteButton"
+                onClick={() => this.setState({ deleteDialogOpen: true })}
+              >
                 <SvgIcon fontSize="small">
                   <DeleteIcon />
                 </SvgIcon>
@@ -459,28 +490,31 @@ export default class ClothesDetail extends React.Component {
 
         {!loading && !clothes && <div>Clothes Not Found</div>}
 
-        {clothes && (
-          <ClothingContent>
-            <Left>
-              <div className="loading">
-                <Loading loading={loading} backdrop={false} />
-              </div>
-              <img src={clothes.url} />
-            </Left>
+        <ClothingContent>
+          <Left>
+            <div className="loading">
+              <Loading loading={loading} backdrop={false} />
+            </div>
+            {clothes && (
+              <ImgWrapper>
+                <img src={clothes.url} />
+              </ImgWrapper>
+            )}
+          </Left>
+          <Right>
+            {!isEdit ? (
+              <div>
+                <h4>Date added:</h4>
+                {clothes && <h3>{clothes.createdAt && clothes.createdAt.toLocaleString()}</h3>}
 
-            <Right>
-              {!isEdit ? (
-                <div>
-                  <h4>Date added:</h4>
-                  <h3>{clothes.createdAt && clothes.createdAt.toLocaleString()}</h3>
+                <h4>Date modified:</h4>
+                {clothes && <h3>{clothes.updatedAt && clothes.updatedAt.toLocaleString()}</h3>}
 
-                  <h4>Date modified:</h4>
-                  <h3>{clothes.updatedAt && clothes.updatedAt.toLocaleString()}</h3>
+                <h4>Category:</h4>
+                {clothes && <div className="category">{clothes.category}</div>}
 
-                  <h4>Category:</h4>
-                  <div className="category">{clothes.category}</div>
-
-                  <h4>Tags:</h4>
+                <h4>Tags:</h4>
+                {clothes && (
                   <div className="tags">
                     {clothes.tags.map(tag => (
                       <Tag className="tag-style" key={tag}>
@@ -488,101 +522,88 @@ export default class ClothesDetail extends React.Component {
                       </Tag>
                     ))}
                   </div>
-                </div>
-              ) : (
+                )}
+              </div>
+            ) : (
+              <div>
+                <h4>Date added:</h4>
+                <h3>{clothes.createdAt && clothes.createdAt.toLocaleString()}</h3>
+
+                <h4>Date modified:</h4>
+                <h3>{clothes.updatedAt && clothes.updatedAt.toLocaleString()}</h3>
+
+                <h4>Change category:</h4>
+                <Radio.Group
+                  name="category"
+                  value={category}
+                  onChange={e => this.setState({ category: e.target.value })}
+                >
+                  <Radio.Button className="radioBtn" value="hats">
+                    Hats
+                  </Radio.Button>
+                  <Radio.Button className="radioBtn" value="shirts">
+                    Shirts
+                  </Radio.Button>
+                  <Radio.Button className="radioBtn" value="pants">
+                    Pants
+                  </Radio.Button>
+                  <Radio.Button className="radioBtn" value="shoes">
+                    Shoes
+                  </Radio.Button>
+                </Radio.Group>
+                <h4>Add/Remove tags:</h4>
                 <div>
-                  <h4>Date added:</h4>
-                  <h3>{clothes.createdAt && clothes.createdAt.toLocaleString()}</h3>
-
-                  <h4>Date modified:</h4>
-                  <h3>{clothes.updatedAt && clothes.updatedAt.toLocaleString()}</h3>
-
-                  <h4>Change category:</h4>
-                  <Radio.Group
-                    name="category"
-                    value={category}
-                    onChange={e => this.setState({ category: e.target.value })}
+                  <TweenOneGroup
+                    className="tags"
+                    enter={{
+                      scale: 0.8,
+                      opacity: 0,
+                      type: 'from',
+                      duration: 100,
+                      onComplete: e => {
+                        e.target.style = '';
+                      },
+                    }}
+                    leave={{ opacity: 0, width: 0, scale: 0, duration: 200 }}
+                    appear={false}
                   >
-                    <Radio.Button className="radioBtn" value="hats">
-                      Hats
-                    </Radio.Button>
-                    <Radio.Button className="radioBtn" value="shirts">
-                      Shirts
-                    </Radio.Button>
-                    <Radio.Button className="radioBtn" value="pants">
-                      Pants
-                    </Radio.Button>
-                    <Radio.Button className="radioBtn" value="shoes">
-                      Shoes
-                    </Radio.Button>
-                  </Radio.Group>
-                  <h4>Add/Remove tags:</h4>
-                  <div>
-                    <TweenOneGroup
-                      className="tags"
-                      enter={{
-                        scale: 0.8,
-                        opacity: 0,
-                        type: 'from',
-                        duration: 100,
-                        onComplete: e => {
-                          e.target.style = '';
-                        },
-                      }}
-                      leave={{ opacity: 0, width: 0, scale: 0, duration: 200 }}
-                      appear={false}
-                    >
-                      {clothes.tags.map(tag => (
-                        <Tag
-                          className="tag-style"
-                          key={tag}
-                          closable
-                          onClose={e => {
-                            e.preventDefault();
-                            this.onRemoveTag(tag);
-                          }}
-                        >
-                          {tag}
-                        </Tag>
-                      ))}
-                      {tags.map(tag => (
-                        <Tag
-                          className="tag-style"
-                          key={tag}
-                          closable
-                          onClose={e => {
-                            e.preventDefault();
-                            this.onRemoveTag(tag);
-                          }}
-                        >
-                          {tag}
-                        </Tag>
-                      ))}
-                      {tagsInputVisible ? (
-                        <Input
-                          ref={el => (this.newTagInputRef = el)}
-                          type="text"
-                          size="small"
-                          value={newTagValue}
-                          onChange={e => this.setState({ newTagValue: e.target.value })}
-                          onBlur={() => {
-                            this.addTag();
-                            this.setState({ tagsInputVisible: false });
-                          }}
-                          onPressEnter={this.addTag}
-                        />
-                      ) : (
-                        <Tag className="new-tag" onClick={this.showInput}>
-                          <PlusOutlined /> New Tag
-                        </Tag>
-                      )}
-                    </TweenOneGroup>
-                  </div>
+                    {tags.map(tag => (
+                      <Tag
+                        className="tag-style"
+                        key={tag}
+                        closable
+                        onClose={e => {
+                          e.preventDefault();
+                          this.onRemoveTag(tag);
+                        }}
+                      >
+                        {tag}
+                      </Tag>
+                    ))}
+                    {tagsInputVisible ? (
+                      <Input
+                        ref={el => (this.newTagInputRef = el)}
+                        type="text"
+                        size="small"
+                        value={newTagValue}
+                        onChange={e => this.setState({ newTagValue: e.target.value })}
+                        onBlur={() => {
+                          this.addTag();
+                          this.setState({ tagsInputVisible: false });
+                        }}
+                        onPressEnter={this.addTag}
+                      />
+                    ) : (
+                      <Tag className="new-tag" onClick={this.showInput}>
+                        <PlusOutlined /> New Tag
+                      </Tag>
+                    )}
+                  </TweenOneGroup>
                 </div>
-              )}
-            </Right>
-          </ClothingContent>
-        )}
+              </div>
+            )}
+          </Right>
+        </ClothingContent>
 
         <Bottom style={{ display: isEdit ? 'block' : 'none' }}>
           <Button
@@ -590,8 +611,7 @@ export default class ClothesDetail extends React.Component {
             variant="contained"
             color="primary"
             onClick={() => {
-              this.save();
-              this.updateTags();
+              this.onSave();
             }}
           >
             Save
@@ -615,10 +635,46 @@ export default class ClothesDetail extends React.Component {
             {
               text: 'Exit without Saving',
               exit: true,
-              onClick: () => this.setState({ isEdit: false, goBackDialogOpen: false }),
+              onClick: () =>
+                this.setState({
+                  isEdit: false,
+                  goBackDialogOpen: false,
+                  tags: clothes.tags,
+                  category: clothes.category,
+                }),
             },
           ]}
           onClose={() => this.setState({ goBackDialogOpen: false })}
+        />
+
+        <SimpleDialog
+          open={deleteDialogOpen}
+          type="warning"
+          description={
+            <span>
+              Are you sure
+              <br />
+              you want to delete this clothes?
+            </span>
+          }
+          buttons={[
+            {
+              text: 'Yes',
+              onClick: () => {
+                this.setState({
+                  isEdit: false,
+                  deleteDialogOpen: false,
+                });
+                this.deleteClothes();
+              },
+            },
+            {
+              text: 'Cancel',
+              exit: true,
+              onClick: () => this.setState({ deleteDialogOpen: false }),
+            },
+          ]}
+          onClose={() => this.setState({ deleteDialogOpen: false })}
         />
       </Wrapper>
     );

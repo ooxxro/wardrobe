@@ -481,7 +481,7 @@ export default class Setting extends React.Component {
                 >
                   <br />
                   <label>
-                    Upload new <a href=""></a>vatar
+                    Upload new <a href=""></a>avatar
                   </label>{' '}
                   <br></br>
                   <input

@@ -107,7 +107,7 @@ export default class Header extends React.Component {
     const menu = (
       <StyledMenu>
         <Menu.Item>
-          <Link to="/setting">Setting</Link>
+          <Link to="/setting">Settings</Link>
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item onClick={this.onLogout}>Logout</Menu.Item>

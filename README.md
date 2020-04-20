@@ -1,6 +1,11 @@
-# Wardrobe
+<h1 align="center">Wardrobe</h1>
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/dd13f707-aa91-4842-a4ab-a0e6bbc475f4/deploy-status)](https://app.netlify.com/sites/mywardrobe/deploys)
+<p align="center">
+  <a href="https://app.netlify.com/sites/mywardrobe/deploys"><img src="https://api.netlify.com/api/v1/badges/dd13f707-aa91-4842-a4ab-a0e6bbc475f4/deploy-status" alt="Deploy Status"></a>
+  <a href="https://circleci.com/gh/ooxxro/wardrobe/tree/master"><img src="https://img.shields.io/circleci/project/github/ooxxro/wardrobe/master.svg?sanitize=true" alt="Test Status"></a>
+<!--   <a href="https://codecov.io/github/ooxxro/wardrobe?branch=master"><img src="https://img.shields.io/codecov/c/github/ooxxro/wardrobe/master.svg?sanitize=true" alt="Coverage Status"></a> -->
+</p>
+
 
 ## README for Iteration 2 Progress Report
 
@@ -8,7 +13,7 @@ Online Website: [https://wardrobe.rocks](https://wardrobe.rocks).
 To build the application, you need node.js and npm installed.  
 After cloning this repo, run `npm install` to install dependencies.  
 Run `npm start` to start the development server.  
-Run `npm test` to run unit tests.
+Run `npm test` to run unit tests.  
 Run `npm test -- --coverage --watchAll=false` to run for the code coverage
 
 ## README for Iteration 1 Progress Report

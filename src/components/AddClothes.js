@@ -17,6 +17,7 @@ import ClothesFitter from './ClothesFitter';
 import IOSSwitch from './IOSSwitch';
 import SimpleDialog from './SimpleDialog';
 import firebase from '../firebase';
+import { dataURL2file, resizeImg } from '../utils/image-processing';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -275,8 +276,8 @@ const QontoConnector = withStyles({
 
 const steps = [
   'Upload clothes image',
-  'Remove background',
-  'Modify image',
+  'Background removal',
+  'Mannequin fitting',
   'Select category & add tags',
 ];
 
@@ -321,7 +322,7 @@ export default class AddClothes extends React.Component {
     // const { loading } = this.state;
     this.setState({ loading: true });
 
-    this.resizeImg(e.target.files[0], 'image.png', 800, 800)
+    resizeImg(e.target.files[0], 'image.png', 800, 800)
       .then(({ file, aspectRatio }) => {
         // calculate clothes fitter state
         const width = aspectRatio > 1 ? 100 : 100 * aspectRatio;
@@ -344,65 +345,6 @@ export default class AddClothes extends React.Component {
         message.error(error.message);
         this.setState({ loading: false });
       });
-  };
-
-  resizeImg = (file, filename, resizeWidth, resizeHeight) => {
-    return new Promise((resolve, reject) => {
-      // load original image
-      let original = new Image();
-      original.onload = () => {
-        // put image to canvas
-        const canvas = document.createElement('canvas');
-        const wCount = original.width / resizeWidth;
-        const hCount = original.height / resizeHeight;
-        if (wCount > hCount) {
-          // original image is a "wide" one
-          canvas.width = resizeWidth;
-          canvas.height = (resizeWidth * original.height) / original.width;
-        } else {
-          // original image is a "tall" one
-          canvas.height = resizeHeight;
-          canvas.width = (resizeHeight * original.width) / original.height;
-        }
-        // resize image using canvas
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(
-          original,
-          0,
-          0,
-          original.width,
-          original.height,
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        );
-        // read from canvas to png image file
-        let dataURL = canvas.toDataURL('image/png');
-
-        resolve({
-          file: this.dataURL2file(dataURL, filename),
-          aspectRatio: original.width / original.height,
-        });
-      };
-      original.onerror = error => {
-        reject(error);
-      };
-      original.src = URL.createObjectURL(file);
-    });
-  };
-
-  dataURL2file = (dataURL, filename = 'image.png') => {
-    // https://stackoverflow.com/a/43358515/12017013
-    let arr = dataURL.split(','),
-      mime = arr[0].match(/:(.*?);/)[1],
-      bstr = atob(arr[1]),
-      n = bstr.length,
-      u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new File([u8arr], filename, { type: mime });
   };
 
   removeBackground = () => {
@@ -496,33 +438,15 @@ export default class AddClothes extends React.Component {
     // upload image to storage at /<uid>/clothes/<clothesId>.png
     const storagePath = `${uid}/clothes/${clothesId}.png`;
     const chosenFile = afterRemoveBackgroundURL
-      ? this.dataURL2file(afterRemoveBackgroundURL, `${clothesId}png`)
+      ? dataURL2file(afterRemoveBackgroundURL, `${clothesId}png`)
       : file;
     const task = firebase
       .storage()
       .ref(storagePath)
       .put(chosenFile);
-    const uploadPromise = new Promise((resolve, reject) => {
-      task.on(
-        'state_changed',
-        snapshot => {
-          // progress
-          this.progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        },
-        err => {
-          // error
-          reject(err);
-        },
-        () => {
-          // success
-          task.snapshot.ref.getDownloadURL().then(url => {
-            resolve(url);
-          });
-        }
-      );
-    });
 
-    uploadPromise
+    task
+      .then(() => task.snapshot.ref.getDownloadURL())
       .then(url => {
         // firestore clothes data
         const clothesData = {
@@ -619,6 +543,7 @@ export default class AddClothes extends React.Component {
                   <label htmlFor="uploadImg">
                     <input
                       accept="image/*"
+                      data-testid="uploadImg"
                       id="uploadImg"
                       type="file"
                       onChange={this.onSelectImg}
@@ -660,9 +585,9 @@ export default class AddClothes extends React.Component {
                   )}
                 </div>
                 <div className="imgs">
-                  <img src={previewURL} />
+                  <img src={previewURL} alt="original image" />
                   {afterRemoveBackgroundURL ? (
-                    <img src={afterRemoveBackgroundURL} />
+                    <img src={afterRemoveBackgroundURL} alt="image with background removed" />
                   ) : (
                     <div className="img-placeholder" />
                   )}

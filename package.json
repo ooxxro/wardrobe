@@ -18,6 +18,7 @@
     "antd": "^4.0.2",
     "babel-plugin-import": "^1.13.0",
     "bootstrap": "^4.4.1",
+    "canvas": "^2.6.1",
     "customize-cra": "^0.9.1",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.0",
@@ -26,6 +27,7 @@
     "firebase": "^7.14.0",
     "firebase-mock": "^2.3.2",
     "firebase-tools": "^7.14.0",
+    "jest-canvas-mock": "^2.2.0",
     "less": "^3.11.1",
     "less-loader": "^5.0.0",
     "lodash": "^4.17.15",
@@ -60,10 +62,16 @@
     "firebase": "cd functions && npm i && cd .. && firebase deploy --token \"$FIREBASE_TOKEN\" -f"
   },
   "jest": {
+    "testEnvironmentOptions": {
+      "resources": "usable"
+    },
     "collectCoverageFrom": [
       "src/**/*.{js,jsx,ts,tsx}",
       "!<rootDir>/node_modules/",
-      "!<rootDir>/src/serviceWorker.js"
+      "!<rootDir>/src/serviceWorker.js",
+      "!<rootDir>/src/firebase.js",
+      "!<rootDir>/src/index.js",
+      "!<rootDir>/src/test-utils.js"
     ]
   },
   "browserslist": {

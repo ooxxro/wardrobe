@@ -1,4 +1,23 @@
 const firebasemock = require('firebase-mock');
+const MockStorageReference = require('./firebase-storage-reference');
+
+// fix some missing features in storage, copied from
+// https://github.com/dmurvihill/firebase-mock/blob/4a6a54d1651d51943aa82bc4d419114a6344e5a5/src/storage.js
+firebasemock.MockStorage.prototype.ref = function(path) {
+  path = path.replace(/\/+/g, '/');
+  path = path.replace(/^\//g, '');
+  path = path.replace(/\/$/g, '');
+  let paths = path.split('/');
+  let rootPath = paths.shift();
+  if (!this.refs[rootPath]) {
+    this.refs[rootPath] = new MockStorageReference(this, null, rootPath);
+  }
+  if (paths.length === 0) {
+    return this.refs[rootPath];
+  } else {
+    return this.refs[rootPath].child(paths.join('/'));
+  }
+};
 
 const mockauth = new firebasemock.MockAuthentication();
 // const mockdatabase = new firebasemock.MockFirebase();
@@ -27,22 +46,14 @@ const mocksdk = new firebasemock.MockFirebaseSdk(
   // }
 );
 
-// const firebase = {
-//   auth: () => ({
-//     onAuthStateChanged: jest.fn(),
-//     currentUser: {
-//       displayName: 'testDisplayName',
-//       email: 'test@test.com',
-//       emailVerified: true,
-//     },
-//     sendPasswordResetEmail: jest.fn(() => Promise.resolve()),
-//     createUserWithEmailAndPassword: jest.fn(() =>
-//       Promise.resolve('result of createUserWithEmailAndPassword')
-//     ),
-//     signInWithEmailAndPassword: jest.fn(() =>
-//       Promise.resolve('result of signInWithEmailAndPassword')
-//     ),
-//   }),
-// };
+/**
+ * mock functions()
+ */
+const cloudFunction = jest.fn(() => Promise.resolve({}));
+const httpsCallable = jest.fn(() => cloudFunction);
+const functions = {
+  httpsCallable,
+};
+mocksdk.functions = jest.fn(() => functions);
 
 export default mocksdk;

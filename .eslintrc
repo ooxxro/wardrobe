@@ -14,8 +14,19 @@
       "legacyDecorators": true,
       "experimentalObjectRestSpread": true,
       "impliedStrict": true,
-      "classes": true
+      "classes": true,
+      "jsx": true
     }
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    },
+    "linkComponents": [
+      // Components used as alternatives to <a> for linking, eg. <Link to={ url } />
+      "Hyperlink",
+      { "name": "Link", "linkAttribute": "to" }
+    ]
   },
   "rules": {
     "react/jsx-filename-extension": [

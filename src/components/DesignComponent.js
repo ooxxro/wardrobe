@@ -395,12 +395,16 @@ export default class DesignComponent extends React.Component {
   }
 
   getBg = () => {
-    //Get Bg from firestore if there is one otherwise set img url to default
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+
+    // Get Bg from firestore if there is one otherwise set img url to default
     let imageUrl = '';
     let db = firebase.firestore();
-    let docRef = db
-      .collection('users/' + firebase.auth().currentUser.uid + '/background')
-      .doc('image');
+    let docRef = db.collection('users/' + uid + '/background').doc('image');
 
     docRef.get().then(doc => {
       if (doc.exists) {

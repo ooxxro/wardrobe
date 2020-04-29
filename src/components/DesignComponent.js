@@ -762,7 +762,7 @@ export default class DesignComponent extends React.Component {
       })
       .catch(err => {
         this.setState({ loading: false, dialogOpen: false });
-        message.error(`Error while saving clothes: ${err.message}`);
+        message.error(`Error while saving outfit: ${err.message}`);
       });
   };
 

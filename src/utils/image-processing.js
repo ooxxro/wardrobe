@@ -1,3 +1,38 @@
+/**
+ * Given a image url, load the image and return a Image object
+ *
+ * @param {string} url
+ */
+export function loadOneImg(url) {
+  return new Promise((resolve, reject) => {
+    // load original image
+    let img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      resolve(img);
+    };
+    img.onerror = error => {
+      reject(error);
+    };
+    img.src = url;
+  });
+}
+
+/**
+ * Given an Image object (for example load using loadOneImg(url) above), return it's dataURL
+ * @param {Image} img
+ */
+export function img2dataURL(img) {
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, img.width, img.height);
+  // read from canvas to png image file
+  const dataURL = canvas.toDataURL('image/png');
+  return dataURL;
+}
+
 export function dataURL2file(dataURL, filename = 'image.png') {
   // https://stackoverflow.com/a/43358515/12017013
   let arr = dataURL.split(','),
@@ -64,4 +99,19 @@ export function resizeImg(file, filename = 'image.png', resizeWidth, resizeHeigh
     };
     original.src = URL.createObjectURL(file);
   });
+}
+
+/**
+ * Given a dataURL, download the image to user computer.
+ *
+ * @param {string} dataURL
+ * @param {string} [filename='download.png'] - filename, optional defaults to 'download.png'
+ */
+export function downloadImg(dataURL, filename = 'download.png') {
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = dataURL;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }

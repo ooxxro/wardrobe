@@ -29,6 +29,8 @@ import { ReactComponent as EditPicIcon } from '../images/editpic.svg';
 import designImg from '../images/design.svg';
 import mannequinImg from '../images/mannequin.svg';
 import ClothesFitter from './ClothesFitter';
+import Loading from './Loading';
+import { loadOneImg, downloadImg } from '../utils/image-processing';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -353,6 +355,7 @@ export default class DesignComponent extends React.Component {
 
   state = {
     // UI state
+    loading: false,
     lockPopoverOpen: false,
     filterPopoverOpen: false,
     dialogOpen: false,
@@ -602,21 +605,6 @@ export default class DesignComponent extends React.Component {
     this.setState({ selectedClothes: last, undos });
   };
 
-  loadOneImg = src => {
-    return new Promise((resolve, reject) => {
-      // load original image
-      let img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        resolve(img);
-      };
-      img.onerror = error => {
-        reject(error);
-      };
-      img.src = src;
-    });
-  };
-
   /**
    * type can be 'file' or 'dataURL
    */
@@ -637,9 +625,9 @@ export default class DesignComponent extends React.Component {
       </svg>
     `;
     const svgDataURL = 'data:image/svg+xml; charset=utf8, ' + encodeURIComponent(svgString);
-    // const bgP = this.loadOneImg(`${location.protocol}//${location.host}${mannequinImg}`);
-    const bgP = this.loadOneImg(svgDataURL);
-    const imgsP = this.state.selectedClothes.map(c => this.loadOneImg(c.url));
+    // const bgP = loadOneImg(`${location.protocol}//${location.host}${mannequinImg}`);
+    const bgP = loadOneImg(svgDataURL);
+    const imgsP = this.state.selectedClothes.map(c => loadOneImg(c.url));
     return Promise.all([bgP, ...imgsP]).then(([bg, ...imgs]) => {
       const canvas = document.createElement('canvas');
       canvas.width = ClothesFitter.WIDTH * 2;
@@ -697,15 +685,91 @@ export default class DesignComponent extends React.Component {
 
   onDownload = async () => {
     const dataURL = await this.generateImg('dataURL');
-    const link = document.createElement('a');
-    link.download = 'wardrobe-download.png';
-    link.href = dataURL;
-    link.click();
+
+    downloadImg(dataURL, 'wardrobe-download.png');
+  };
+
+  saveToFavorites = async () => {
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const { loading, selectedClothes } = this.state;
+    const { history } = this.props;
+
+    if (loading) return;
+
+    this.setState({ loading: true });
+
+    const file = await this.generateImg('file');
+
+    const db = firebase.firestore();
+    const timestamp = new Date();
+    const userRef = db.collection('users').doc(uid);
+
+    // we need to write clothes, categories, tags, etc. in "batch" atomically
+    const batch = db.batch();
+
+    // generate new ref id for clothes
+    const outfitsRef = userRef.collection('outfits').doc();
+    const outfitsId = outfitsRef.id;
+
+    // upload image to storage at /<uid>/outfits/<outfitsId>.png
+    const storagePath = `${uid}/outfits/${outfitsId}.png`;
+    const task = firebase
+      .storage()
+      .ref(storagePath)
+      .put(file);
+
+    task
+      .then(() => task.snapshot.ref.getDownloadURL())
+      .then(url => {
+        //merge tags
+        let tags = new Set();
+        selectedClothes.forEach(c => {
+          c.tags.forEach(tag => tags.add(tag));
+        });
+        tags = [...tags];
+
+        // firestore outfits data
+        const outfitsData = {
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          tags,
+          storagePath,
+          url,
+          clothes: selectedClothes.map(c => ({ id: c.id })),
+        };
+
+        batch.set(outfitsRef, outfitsData);
+
+        // tags data
+        tags.forEach(tag => {
+          const tagsRef = userRef.collection('tags').doc(tag);
+          batch.set(
+            tagsRef,
+            { outfits: firebase.firestore.FieldValue.arrayUnion({ id: outfitsId, url }) },
+            { merge: true }
+          );
+        });
+
+        return batch.commit();
+      })
+      .then(() => {
+        // this.setState({ loading: false, dialogOpen: false });
+        history.push(`/my-favorites/${outfitsId}`);
+      })
+      .catch(err => {
+        this.setState({ loading: false, dialogOpen: false });
+        message.error(`Error while saving outfit: ${err.message}`);
+      });
   };
 
   render() {
     const { from } = this.props;
     const {
+      loading,
       lockPopoverOpen,
       filterPopoverOpen,
       dialogOpen,
@@ -723,20 +787,21 @@ export default class DesignComponent extends React.Component {
     if (from === 'design') {
       buttonsZone = [
         { text: 'Download', onClick: this.onDownload },
-        { text: 'Save to My Favorites', onClick: () => {} },
+        { text: 'Save to My Favorites', onClick: this.saveToFavorites },
         { text: 'Exit without Saving', exit: true, onClick: () => this.props.history.push('/') },
       ];
     } else {
       buttonsZone = [
         { text: 'Download', onClick: this.onDownload },
         { text: 'Save to Current', onClick: () => {} },
-        { text: 'Save as New', onClick: () => {} },
+        { text: 'Save as New', onClick: this.saveToFavorites },
         { text: 'Exit without Saving', exit: true, onClick: () => this.props.history.push('/') },
       ];
     }
 
     return (
       <Wrapper>
+        <Loading loading={loading} />
         {from === 'edit' && (
           <GoBack>
             <Tooltip arrow title="Go back" TransitionComponent={Zoom} placement="top">

@@ -1,19 +1,27 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
-import { Button, Zoom, FormControlLabel, Checkbox, Tooltip, Popover } from '@material-ui/core';
-import heartImg from '../images/heart.svg';
-import filterImg from '../images/filter.svg';
-import placeHolderImg from '../images/userBgImg.jpg';
-import placeHolder1Img from '../images/userBgImg1.jpg';
-import placeHolder2Img from '../images/userBgImg2.jpg';
-import placeHolder3Img from '../images/userBgImg3.jpg';
-import placeHolder4Img from '../images/userBgImg4.jpg';
-
+import intersection from 'lodash/intersection';
+import {
+  Button,
+  Zoom,
+  FormControlLabel,
+  Checkbox,
+  Tooltip,
+  Popover,
+  IconButton,
+} from '@material-ui/core';
+import GetAppIcon from '@material-ui/icons/GetApp';
 import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
+import { message } from 'antd';
+
+import { StoreContext } from '../stores';
+import { loadOneImg, downloadImg, img2dataURL } from '../utils/image-processing';
+import firebase from '../firebase';
+import heartImg from '../images/heart.svg';
+import filterImg from '../images/filter.svg';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -80,6 +88,8 @@ const Content = styled.div`
 const CheckboxoxList = styled.div`
   padding: 0 6px;
   background: #d8d0fc;
+  max-height: 300px;
+  overflow: auto;
   .filterItem {
     padding-right: 11px;
     font-size: 14px;
@@ -98,25 +108,135 @@ const CheckboxoxList = styled.div`
   }
 `;
 
-const images = [placeHolderImg, placeHolder1Img, placeHolder2Img, placeHolder3Img, placeHolder4Img];
+const LightboxBottom = styled.div`
+  width: 100vw;
+  margin: -10px -20px;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .lightbox-menubar-button {
+    color: #fff;
+    opacity: 0.7;
+    &:hover {
+      opacity: 1;
+    }
+  }
+`;
+
 @withRouter
 @observer
 export default class MyFavorites extends React.Component {
   static contextType = StoreContext;
   state = {
     turnon: false,
-    tagdata: [],
-    tagtoggled: [],
-    summer: false,
-    pink: false,
+    tags: [],
+    outfits: [],
+    filteredTags: [],
+    filteredOutfits: [],
 
     // lightbox
-    photoIndex: 0,
     isOpen: false,
   };
 
+  componentDidMount() {
+    this.getData();
+  }
+
+  getData = () => {
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+
+    this.setState({ loading: true });
+
+    const db = firebase.firestore();
+    return db
+      .collection('users')
+      .doc(uid)
+      .collection('outfits')
+      .orderBy('createdAt', 'desc')
+      .get()
+      .then(querySnapshot => {
+        const tagSet = new Set();
+        const outfits = [];
+        querySnapshot.forEach(doc => {
+          const outfit = doc.data();
+          outfits.push({
+            id: doc.id,
+            ...outfit,
+          });
+          // add tag to tags Set
+          outfit.tags.forEach(tag => tagSet.add(tag));
+        });
+
+        const tags = [...tagSet];
+        tags.sort();
+
+        this.setState(
+          {
+            loading: false,
+            outfits,
+            tags,
+          },
+          () => {
+            // also need to update filtered result
+            this.updateFiltered();
+          }
+        );
+      })
+      .catch(error => {
+        this.setState({ loading: false });
+        message.error(error.message);
+      });
+  };
+
+  // apply filter to all outfits and save to filteredOutfits
+  // call this method everytime filteredTags changes
+  updateFiltered = () => {
+    const { outfitId } = this.props.match.params;
+    const { outfits, filteredTags } = this.state;
+    const filteredOutfits = outfits.filter(outfit => {
+      if (filteredTags.length === 0) return true; // no filters
+      // filter by all tags in filteredTags:
+      // the intersection needs to be the same length
+      return intersection(outfit.tags, filteredTags).length === filteredTags.length;
+    });
+
+    const photoIndex = filteredOutfits.findIndex(outfit => outfit.id === outfitId);
+    this.setState({ filteredOutfits, isOpen: photoIndex !== -1 });
+  };
+
+  onSelectTag = (tag, checked) => {
+    // shallow clone filteredTags array
+    const filteredTags = [...this.state.filteredTags];
+    if (checked) {
+      filteredTags.push(tag);
+    } else {
+      const index = filteredTags.indexOf(tag);
+      if (index >= 0) filteredTags.splice(index, 1);
+    }
+
+    this.setState({ filteredTags }, () => {
+      this.updateFiltered();
+    });
+  };
+
+  onDownload = async url => {
+    const img = await loadOneImg(url);
+    const dataURL = img2dataURL(img);
+    downloadImg(dataURL, 'wardrobe-download.png');
+  };
+
   render() {
-    const { photoIndex, isOpen } = this.state;
+    const { history } = this.props;
+    const { outfitId } = this.props.match.params;
+    const { isOpen, filteredOutfits, tags, filteredTags } = this.state;
+
+    const photoIndex = filteredOutfits.findIndex(outfit => outfit.id === outfitId);
+
     return (
       <Wrapper>
         <Up>
@@ -156,55 +276,32 @@ export default class MyFavorites extends React.Component {
           >
             {/* show all user defined tags */}
             <CheckboxoxList>
-              {/* {(this.state.tagdata || []).map((tag, index) => (
+              {tags.map(tag => (
                 <div className="filterItem" key={tag}>
                   <FormControlLabel
                     control={
                       <Checkbox
                         name={tag}
                         color="primary"
-                        onChange={() => this.onSelectTag(index)}
+                        checked={filteredTags.includes(tag)}
+                        onChange={e => this.onSelectTag(tag, e.target.checked)}
                       />
                     }
                     label={tag}
                   />
                 </div>
-              ))} */}
-
-              <div className="filterItem">
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={this.state.summer}
-                      onChange={() => this.setState(state => ({ summer: !state.summer }))}
-                      name="summer"
-                      color="primary"
-                    />
-                  }
-                  label="Summer"
-                />
-              </div>
-              <div className="filterItem">
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={this.state.pink}
-                      onChange={() => this.setState(state => ({ pink: !state.pink }))}
-                      name="pink"
-                      color="primary"
-                    />
-                  }
-                  label="Pink"
-                />
-              </div>
+              ))}
             </CheckboxoxList>
           </Popover>
           <Content>
-            {images.map((url, i) => (
+            {filteredOutfits.map((outfit, i) => (
               <img
                 key={i}
-                src={url}
-                onClick={() => this.setState({ isOpen: true, photoIndex: i })}
+                src={outfit.url}
+                onClick={() => {
+                  history.push(`/my-favorites/${outfit.id}`);
+                  this.setState({ isOpen: true });
+                }}
               />
             ))}
           </Content>
@@ -212,20 +309,39 @@ export default class MyFavorites extends React.Component {
 
         {isOpen && (
           <Lightbox
-            mainSrc={images[photoIndex]}
-            nextSrc={images[(photoIndex + 1) % images.length]}
-            prevSrc={images[(photoIndex + images.length - 1) % images.length]}
-            onCloseRequest={() => this.setState({ isOpen: false })}
-            onMovePrevRequest={() =>
-              this.setState({
-                photoIndex: (photoIndex + images.length - 1) % images.length,
-              })
+            clickOutsideToClose={false}
+            mainSrc={filteredOutfits[photoIndex].url}
+            nextSrc={
+              photoIndex < filteredOutfits.length - 1
+                ? filteredOutfits[photoIndex + 1].url
+                : undefined
             }
-            onMoveNextRequest={() =>
-              this.setState({
-                photoIndex: (photoIndex + 1) % images.length,
-              })
+            imageCaption={
+              <LightboxBottom>
+                <Tooltip arrow title="Download" TransitionComponent={Zoom} placement="top">
+                  <IconButton
+                    key="download"
+                    className="lightbox-menubar-button"
+                    onClick={() => this.onDownload(filteredOutfits[photoIndex].url)}
+                  >
+                    <GetAppIcon />
+                  </IconButton>
+                </Tooltip>
+              </LightboxBottom>
             }
+            prevSrc={photoIndex > 0 ? filteredOutfits[photoIndex - 1].url : undefined}
+            onCloseRequest={() => {
+              this.setState({ isOpen: false });
+              history.push('/my-favorites');
+            }}
+            onMovePrevRequest={() => {
+              if (photoIndex <= 0) return;
+              history.push(`/my-favorites/${filteredOutfits[photoIndex - 1].id}`);
+            }}
+            onMoveNextRequest={() => {
+              if (photoIndex >= filteredOutfits.length - 1) return;
+              history.push(`/my-favorites/${filteredOutfits[photoIndex + 1].id}`);
+            }}
           />
         )}
       </Wrapper>

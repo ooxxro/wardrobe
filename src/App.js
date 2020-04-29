@@ -37,7 +37,7 @@ function App() {
 
           <Route path="/random" exact component={Random} />
 
-          <Route path="/my-favorites" exact component={MyFavorites} />
+          <Route path="/my-favorites/:outfitId?" exact component={MyFavorites} />
           <Route path="/my-favorites/:outfitId/edit" exact component={MyFavoritesEdit} />
           <Route path="*" component={FourOhFour} />
         </Switch>

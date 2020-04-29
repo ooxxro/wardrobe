@@ -7,8 +7,10 @@ import intersection from 'lodash/intersection';
 
 import { Button, Popover, FormControlLabel, Checkbox, Tooltip, Zoom } from '@material-ui/core';
 import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
+import { message } from 'antd';
 
 import firebase from '../firebase';
+import { loadOneImg, downloadImg } from '../utils/image-processing';
 import IOSSwitch from './IOSSwitch';
 import SimpleDialog from './SimpleDialog';
 import ProgressBar from './ProgressBar';
@@ -363,21 +365,6 @@ export default class Random extends React.Component {
     this.setState({ selectedClothes: clonedSelectedClothes });
   };
 
-  loadOneImg = src => {
-    return new Promise((resolve, reject) => {
-      // load original image
-      let img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        resolve(img);
-      };
-      img.onerror = error => {
-        reject(error);
-      };
-      img.src = src;
-    });
-  };
-
   /**
    * type can be 'file' or 'dataURL
    */
@@ -398,9 +385,9 @@ export default class Random extends React.Component {
       </svg>
     `;
     const svgDataURL = 'data:image/svg+xml; charset=utf8, ' + encodeURIComponent(svgString);
-    // const bgP = this.loadOneImg(`${location.protocol}//${location.host}${mannequinImg}`);
-    const bgP = this.loadOneImg(svgDataURL);
-    const imgsP = this.state.selectedClothes.map(c => this.loadOneImg(c.url));
+    // const bgP = loadOneImg(`${location.protocol}//${location.host}${mannequinImg}`);
+    const bgP = loadOneImg(svgDataURL);
+    const imgsP = this.state.selectedClothes.map(c => loadOneImg(c.url));
     return Promise.all([bgP, ...imgsP]).then(([bg, ...imgs]) => {
       const canvas = document.createElement('canvas');
       canvas.width = ClothesFitter.WIDTH * 2;
@@ -458,10 +445,85 @@ export default class Random extends React.Component {
 
   onDownload = async () => {
     const dataURL = await this.generateImg('dataURL');
-    const link = document.createElement('a');
-    link.download = 'wardrobe-download.png';
-    link.href = dataURL;
-    link.click();
+
+    downloadImg(dataURL, 'wardrobe-download.png');
+  };
+
+  saveToFavorites = async () => {
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const { loading, selectedClothes } = this.state;
+    const { history } = this.props;
+
+    if (loading) return;
+
+    this.setState({ loading: true });
+
+    const file = await this.generateImg('file');
+
+    const db = firebase.firestore();
+    const timestamp = new Date();
+    const userRef = db.collection('users').doc(uid);
+
+    // we need to write clothes, categories, tags, etc. in "batch" atomically
+    const batch = db.batch();
+
+    // generate new ref id for clothes
+    const outfitsRef = userRef.collection('outfits').doc();
+    const outfitsId = outfitsRef.id;
+
+    // upload image to storage at /<uid>/outfits/<outfitsId>.png
+    const storagePath = `${uid}/outfits/${outfitsId}.png`;
+    const task = firebase
+      .storage()
+      .ref(storagePath)
+      .put(file);
+
+    task
+      .then(() => task.snapshot.ref.getDownloadURL())
+      .then(url => {
+        //merge tags
+        let tags = new Set();
+        selectedClothes.forEach(c => {
+          c.tags.forEach(tag => tags.add(tag));
+        });
+        tags = [...tags];
+
+        // firestore outfits data
+        const outfitsData = {
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          tags,
+          storagePath,
+          url,
+          clothes: selectedClothes.map(c => ({ id: c.id })),
+        };
+
+        batch.set(outfitsRef, outfitsData);
+
+        // tags data
+        tags.forEach(tag => {
+          const tagsRef = userRef.collection('tags').doc(tag);
+          batch.set(
+            tagsRef,
+            { outfits: firebase.firestore.FieldValue.arrayUnion({ id: outfitsId, url }) },
+            { merge: true }
+          );
+        });
+
+        return batch.commit();
+      })
+      .then(() => {
+        // this.setState({ loading: false, dialogOpen: false });
+        history.push(`/my-favorites/${outfitsId}`);
+      })
+      .catch(err => {
+        this.setState({ loading: false, dialogOpen: false });
+        message.error(`Error while saving outfit: ${err.message}`);
+      });
   };
 
   render() {
@@ -476,7 +538,7 @@ export default class Random extends React.Component {
 
     let buttonsZone = [
       { text: 'Download', onClick: this.onDownload },
-      { text: 'Save to My Favorites', onClick: () => {} },
+      { text: 'Save to My Favorites', onClick: this.saveToFavorites },
       // { text: 'Go to Design', onClick: () => {} }, // TODO
       { text: 'Exit without Saving', exit: true, onClick: () => this.props.history.push('/') },
     ];

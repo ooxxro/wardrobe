@@ -9,6 +9,7 @@ import { Button, Popover, FormControlLabel, Checkbox, Tooltip, Zoom } from '@mat
 import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 
 import firebase from '../firebase';
+import { loadOneImg, downloadImg } from '../utils/image-processing';
 import IOSSwitch from './IOSSwitch';
 import SimpleDialog from './SimpleDialog';
 import ProgressBar from './ProgressBar';
@@ -363,21 +364,6 @@ export default class Random extends React.Component {
     this.setState({ selectedClothes: clonedSelectedClothes });
   };
 
-  loadOneImg = src => {
-    return new Promise((resolve, reject) => {
-      // load original image
-      let img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        resolve(img);
-      };
-      img.onerror = error => {
-        reject(error);
-      };
-      img.src = src;
-    });
-  };
-
   /**
    * type can be 'file' or 'dataURL
    */
@@ -398,9 +384,9 @@ export default class Random extends React.Component {
       </svg>
     `;
     const svgDataURL = 'data:image/svg+xml; charset=utf8, ' + encodeURIComponent(svgString);
-    // const bgP = this.loadOneImg(`${location.protocol}//${location.host}${mannequinImg}`);
-    const bgP = this.loadOneImg(svgDataURL);
-    const imgsP = this.state.selectedClothes.map(c => this.loadOneImg(c.url));
+    // const bgP = loadOneImg(`${location.protocol}//${location.host}${mannequinImg}`);
+    const bgP = loadOneImg(svgDataURL);
+    const imgsP = this.state.selectedClothes.map(c => loadOneImg(c.url));
     return Promise.all([bgP, ...imgsP]).then(([bg, ...imgs]) => {
       const canvas = document.createElement('canvas');
       canvas.width = ClothesFitter.WIDTH * 2;
@@ -458,10 +444,8 @@ export default class Random extends React.Component {
 
   onDownload = async () => {
     const dataURL = await this.generateImg('dataURL');
-    const link = document.createElement('a');
-    link.download = 'wardrobe-download.png';
-    link.href = dataURL;
-    link.click();
+
+    downloadImg(dataURL, 'wardrobe-download.png');
   };
 
   render() {

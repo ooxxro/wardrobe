@@ -1,17 +1,27 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { StoreContext } from '../stores';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
 import intersection from 'lodash/intersection';
-import { Button, Zoom, FormControlLabel, Checkbox, Tooltip, Popover } from '@material-ui/core';
-import firebase from '../firebase';
-import heartImg from '../images/heart.svg';
-import filterImg from '../images/filter.svg';
-
+import {
+  Button,
+  Zoom,
+  FormControlLabel,
+  Checkbox,
+  Tooltip,
+  Popover,
+  IconButton,
+} from '@material-ui/core';
+import GetAppIcon from '@material-ui/icons/GetApp';
 import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
 import { message } from 'antd';
+
+import { StoreContext } from '../stores';
+import { loadOneImg, downloadImg, img2dataURL } from '../utils/image-processing';
+import firebase from '../firebase';
+import heartImg from '../images/heart.svg';
+import filterImg from '../images/filter.svg';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -95,6 +105,22 @@ const CheckboxoxList = styled.div`
   }
   .MuiSvgIcon-root {
     color: #7d64e1;
+  }
+`;
+
+const LightboxBottom = styled.div`
+  width: 100vw;
+  margin: -10px -20px;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .lightbox-menubar-button {
+    color: #fff;
+    opacity: 0.7;
+    &:hover {
+      opacity: 1;
+    }
   }
 `;
 
@@ -198,6 +224,12 @@ export default class MyFavorites extends React.Component {
     });
   };
 
+  onDownload = async url => {
+    const img = await loadOneImg(url);
+    const dataURL = img2dataURL(img);
+    downloadImg(dataURL, 'wardrobe-download.png');
+  };
+
   render() {
     const { history } = this.props;
     const { outfitId } = this.props.match.params;
@@ -284,7 +316,19 @@ export default class MyFavorites extends React.Component {
                 ? filteredOutfits[photoIndex + 1].url
                 : undefined
             }
-            // imageCaption={<div>hahahaha</div>}
+            imageCaption={
+              <LightboxBottom>
+                <Tooltip arrow title="Download" TransitionComponent={Zoom} placement="top">
+                  <IconButton
+                    key="download"
+                    className="lightbox-menubar-button"
+                    onClick={() => this.onDownload(filteredOutfits[photoIndex].url)}
+                  >
+                    <GetAppIcon />
+                  </IconButton>
+                </Tooltip>
+              </LightboxBottom>
+            }
             prevSrc={photoIndex > 0 ? filteredOutfits[photoIndex - 1].url : undefined}
             onCloseRequest={() => {
               this.setState({ isOpen: false });

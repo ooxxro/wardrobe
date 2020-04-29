@@ -22,6 +22,7 @@ import { loadOneImg, downloadImg, img2dataURL } from '../utils/image-processing'
 import firebase from '../firebase';
 import heartImg from '../images/heart.svg';
 import filterImg from '../images/filter.svg';
+import Loading from './Loading';
 
 const Wrapper = styled.div`
   max-width: 1000px;
@@ -77,11 +78,19 @@ const Down = styled.div`
 
 const Content = styled.div`
   padding: 0 110px 10px;
+  min-height: 400px;
+  position: relative;
   img {
     width: 150px;
     height: 200px;
     margin: 20px 10px;
     cursor: pointer;
+  }
+  .loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 `;
 
@@ -129,6 +138,7 @@ const LightboxBottom = styled.div`
 export default class MyFavorites extends React.Component {
   static contextType = StoreContext;
   state = {
+    loading: false,
     turnon: false,
     tags: [],
     outfits: [],
@@ -233,7 +243,7 @@ export default class MyFavorites extends React.Component {
   render() {
     const { history } = this.props;
     const { outfitId } = this.props.match.params;
-    const { isOpen, filteredOutfits, tags, filteredTags } = this.state;
+    const { loading, isOpen, filteredOutfits, tags, filteredTags } = this.state;
 
     const photoIndex = filteredOutfits.findIndex(outfit => outfit.id === outfitId);
 
@@ -294,6 +304,10 @@ export default class MyFavorites extends React.Component {
             </CheckboxoxList>
           </Popover>
           <Content>
+            <div className="loading">
+              <Loading loading={loading} backdrop={false} />
+            </div>
+
             {filteredOutfits.map((outfit, i) => (
               <img
                 key={i}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { withRouter } from 'react-router-dom';
+import { withRouter, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import intersection from 'lodash/intersection';
 import {
@@ -13,6 +13,9 @@ import {
   IconButton,
 } from '@material-ui/core';
 import GetAppIcon from '@material-ui/icons/GetApp';
+import EditIcon from '@material-ui/icons/Edit';
+import InfoIcon from '@material-ui/icons/Info';
+import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
 import { message } from 'antd';
@@ -22,6 +25,7 @@ import { loadOneImg, downloadImg, img2dataURL } from '../utils/image-processing'
 import firebase from '../firebase';
 import heartImg from '../images/heart.svg';
 import filterImg from '../images/filter.svg';
+import SimpleDialog from './SimpleDialog';
 import Loading from './Loading';
 
 const Wrapper = styled.div`
@@ -133,13 +137,29 @@ const LightboxBottom = styled.div`
   }
 `;
 
+const Info = styled.div`
+  padding: 1rem;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: normal;
+  .label {
+    color: #ddd;
+    margin-top: 0.5rem;
+  }
+  .value {
+  }
+`;
+
 @withRouter
 @observer
 export default class MyFavorites extends React.Component {
   static contextType = StoreContext;
   state = {
+    dataLoading: true,
     loading: false,
     turnon: false,
+    deleteDialogOpen: false,
+
     tags: [],
     outfits: [],
     filteredTags: [],
@@ -160,7 +180,7 @@ export default class MyFavorites extends React.Component {
       },
     } = this.context;
 
-    this.setState({ loading: true });
+    this.setState({ dataLoading: true });
 
     const db = firebase.firestore();
     return db
@@ -177,6 +197,8 @@ export default class MyFavorites extends React.Component {
           outfits.push({
             id: doc.id,
             ...outfit,
+            createdAt: outfit.createdAt.toDate(),
+            updatedAt: outfit.updatedAt.toDate(),
           });
           // add tag to tags Set
           outfit.tags.forEach(tag => tagSet.add(tag));
@@ -187,7 +209,7 @@ export default class MyFavorites extends React.Component {
 
         this.setState(
           {
-            loading: false,
+            dataLoading: false,
             outfits,
             tags,
           },
@@ -198,7 +220,7 @@ export default class MyFavorites extends React.Component {
         );
       })
       .catch(error => {
-        this.setState({ loading: false });
+        this.setState({ dataLoading: false });
         message.error(error.message);
       });
   };
@@ -240,27 +262,113 @@ export default class MyFavorites extends React.Component {
     downloadImg(dataURL, 'wardrobe-download.png');
   };
 
+  deleteOutfit = async outfit => {
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const { loading } = this.state;
+    const { history } = this.props;
+
+    if (loading) return;
+
+    this.setState({ loading: true });
+
+    const db = firebase.firestore();
+    const userRef = db.collection('users').doc(uid);
+
+    // we need to write clothes, categories, tags, etc. in "batch" atomically
+    const batch = db.batch();
+
+    const outfitsRef = userRef.collection('outfits').doc(outfit.id);
+
+    batch.delete(outfitsRef);
+
+    outfit.tags.forEach(tag => {
+      const tagsRef = userRef.collection('tags').doc(tag);
+      batch.set(
+        tagsRef,
+        { outfits: firebase.firestore.FieldValue.arrayRemove({ id: outfit.id, url: outfit.url }) },
+        { merge: true }
+      );
+    });
+
+    const firestorePromise = batch.commit();
+
+    const storagePromise = firebase
+      .storage()
+      .ref(outfit.storagePath)
+      .delete();
+
+    Promise.all([firestorePromise, storagePromise])
+      .then(() => {
+        this.setState({ loading: false, deleteDialogOpen: false, isOpen: false });
+        this.getData();
+
+        history.replace(`/my-favorites`);
+      })
+      .catch(err => {
+        this.setState({ loading: false, deleteDialogOpen: false });
+        message.error(`Error while deleting outfit: ${err.message}`);
+      });
+  };
+
   render() {
     const { history } = this.props;
     const { outfitId } = this.props.match.params;
-    const { loading, isOpen, filteredOutfits, tags, filteredTags } = this.state;
+    const {
+      dataLoading,
+      loading,
+      isOpen,
+      filteredOutfits,
+      tags,
+      filteredTags,
+      deleteDialogOpen,
+    } = this.state;
+
+    const up = (
+      <Up>
+        <Title>
+          <UpImgWrapper>
+            <img src={heartImg} />
+          </UpImgWrapper>
+          <span>My favorites</span>
+        </Title>
+      </Up>
+    );
 
     const photoIndex = filteredOutfits.findIndex(outfit => outfit.id === outfitId);
+    if (!dataLoading && outfitId && photoIndex === -1) {
+      return (
+        <Wrapper>
+          {up}
+          <Down>
+            <Content style={{ paddingTop: '2rem', textAlign: 'center' }}>
+              <h2>Outfit ID: {outfitId} Not Found</h2>
+              <Link to="/my-favorites">Back to all outfits</Link>
+            </Content>
+          </Down>
+        </Wrapper>
+      );
+    }
+    const outfit = filteredOutfits[photoIndex];
 
     return (
       <Wrapper>
-        <Up>
-          <Title>
-            <UpImgWrapper>
-              <img src={heartImg} />
-            </UpImgWrapper>
-            <span>My favorites</span>
-          </Title>
-        </Up>
+        <Loading loading={loading} />
+
+        {up}
 
         <Down>
           {/* filter */}
-          <Tooltip arrow title="Filter categories" TransitionComponent={Zoom} placement="top">
+          <Tooltip
+            interactive
+            arrow
+            title="Filter categories"
+            TransitionComponent={Zoom}
+            placement="top"
+          >
             <Button
               className="filter"
               variant="contained"
@@ -305,7 +413,7 @@ export default class MyFavorites extends React.Component {
           </Popover>
           <Content>
             <div className="loading">
-              <Loading loading={loading} backdrop={false} />
+              <Loading loading={dataLoading} backdrop={false} />
             </div>
 
             {filteredOutfits.map((outfit, i) => (
@@ -324,7 +432,7 @@ export default class MyFavorites extends React.Component {
         {isOpen && (
           <Lightbox
             clickOutsideToClose={false}
-            mainSrc={filteredOutfits[photoIndex].url}
+            mainSrc={outfit.url}
             nextSrc={
               photoIndex < filteredOutfits.length - 1
                 ? filteredOutfits[photoIndex + 1].url
@@ -332,13 +440,71 @@ export default class MyFavorites extends React.Component {
             }
             imageCaption={
               <LightboxBottom>
-                <Tooltip arrow title="Download" TransitionComponent={Zoom} placement="top">
+                <Tooltip
+                  interactive
+                  arrow
+                  title="Download"
+                  TransitionComponent={Zoom}
+                  placement="top"
+                >
                   <IconButton
-                    key="download"
                     className="lightbox-menubar-button"
-                    onClick={() => this.onDownload(filteredOutfits[photoIndex].url)}
+                    onClick={() => this.onDownload(outfit.url)}
                   >
                     <GetAppIcon />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip
+                  interactive
+                  arrow
+                  title="Edit this outfit in design page"
+                  TransitionComponent={Zoom}
+                  placement="top"
+                >
+                  <IconButton
+                    className="lightbox-menubar-button"
+                    onClick={() => history.push(`/my-favorites/${outfit.id}/edit`)}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip
+                  interactive
+                  arrow
+                  title="Delete this outfit"
+                  TransitionComponent={Zoom}
+                  placement="top"
+                >
+                  <IconButton
+                    className="lightbox-menubar-button"
+                    onClick={() => this.setState({ deleteDialogOpen: true })}
+                  >
+                    <DeleteForeverIcon />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip
+                  interactive
+                  arrow
+                  title={
+                    <Info>
+                      <div className="label">Date added:</div>
+                      <div className="value">
+                        {outfit.createdAt && outfit.createdAt.toLocaleString()}
+                      </div>
+                      <div className="label">Date modified:</div>
+                      <div className="value">
+                        {outfit.updatedAt && outfit.updatedAt.toLocaleString()}
+                      </div>
+                    </Info>
+                  }
+                  TransitionComponent={Zoom}
+                  placement="top"
+                >
+                  <IconButton className="lightbox-menubar-button">
+                    <InfoIcon />
                   </IconButton>
                 </Tooltip>
               </LightboxBottom>
@@ -358,6 +524,36 @@ export default class MyFavorites extends React.Component {
             }}
           />
         )}
+
+        {/* delete outfit confirm dialog */}
+        <SimpleDialog
+          open={deleteDialogOpen}
+          type="warning"
+          description={
+            <span>
+              Are you sure
+              <br />
+              you want to delete this outfit?
+            </span>
+          }
+          buttons={[
+            {
+              text: 'Yes',
+              onClick: () => {
+                this.setState({
+                  deleteDialogOpen: false,
+                });
+                this.deleteOutfit(outfit);
+              },
+            },
+            {
+              text: 'Cancel',
+              exit: true,
+              onClick: () => this.setState({ deleteDialogOpen: false }),
+            },
+          ]}
+          onClose={() => this.setState({ deleteDialogOpen: false })}
+        />
       </Wrapper>
     );
   }

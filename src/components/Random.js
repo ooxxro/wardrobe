@@ -582,6 +582,7 @@ export default class Random extends React.Component {
                   <img src={filterImg} />
                 </div>
                 <Tooltip
+                  interactive
                   arrow
                   title="Toggle filters to restrict Random from choosing in these categories."
                   TransitionComponent={Zoom}

@@ -3,6 +3,7 @@ import { observer } from 'mobx-react';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
 import intersection from 'lodash/intersection';
+import difference from 'lodash/difference';
 import {
   Button,
   SvgIcon,
@@ -20,7 +21,6 @@ import firebase from '../firebase';
 import IOSSwitch from './IOSSwitch';
 import SimpleDialog from './SimpleDialog';
 import ButtonWithLoading from './ButtonWithLoading';
-
 import { ReactComponent as UndoIcon } from '../images/undo.svg';
 import { ReactComponent as LockIcon } from '../images/lock.svg';
 import { ReactComponent as FilterIcon } from '../images/filter.svg';
@@ -362,12 +362,6 @@ export default class DesignComponent extends React.Component {
     goBackDialogOpen: false,
 
     // data
-    categories: {
-      hats: [],
-      shirts: [],
-      pants: [],
-      shoes: [],
-    },
     filteredCategories: {
       hats: [],
       shirts: [],
@@ -394,7 +388,12 @@ export default class DesignComponent extends React.Component {
   //Execute upon rendering the page
   componentDidMount() {
     this.getBg();
-    this.getClothesData();
+
+    // also need to update filtered result
+    this.updateFiltered();
+
+    if (this.props.from === 'edit')
+      this.setState({ selectedClothes: this.props.editSelectedClothes });
   }
 
   getBg = () => {
@@ -415,52 +414,6 @@ export default class DesignComponent extends React.Component {
         this.setState({ bgImgUrl: imageUrl });
       }
     });
-  };
-
-  getClothesData = () => {
-    const {
-      userStore: {
-        currentUser: { uid },
-      },
-    } = this.context;
-    const db = firebase.firestore();
-
-    db.collection('users')
-      .doc(uid)
-      .collection('clothes')
-      .get()
-      .then(querySnapshot => {
-        const categories = {
-          hats: [],
-          shirts: [],
-          pants: [],
-          shoes: [],
-        };
-        const tagSet = new Set();
-        querySnapshot.forEach(doc => {
-          const c = doc.data();
-          categories[c.category].push({
-            id: doc.id,
-            ...c,
-          });
-          // add tag to tags Set
-          c.tags.forEach(tag => tagSet.add(tag));
-        });
-
-        const tags = [...tagSet];
-        tags.sort();
-
-        this.setState(
-          {
-            categories,
-            tags,
-          },
-          () => {
-            // also need to update filtered result
-            this.updateFiltered();
-          }
-        );
-      });
   };
 
   changeBackground = () => {
@@ -529,7 +482,8 @@ export default class DesignComponent extends React.Component {
   // apply filter to all clothes in categories and save to filteredCategories
   // call this method everytime filteredTags changes
   updateFiltered = () => {
-    const { categories, filteredTags } = this.state;
+    const { categories } = this.props;
+    const { filteredTags } = this.state;
     if (filteredTags.length === 0) {
       // no filters
       this.setState({ filteredCategories: categories });
@@ -603,6 +557,23 @@ export default class DesignComponent extends React.Component {
     const undos = [...this.state.undos];
     const last = undos.pop();
     this.setState({ selectedClothes: last, undos });
+  };
+
+  onBack = () => {
+    // compare if has changed something, then show dialog
+    const { editSelectedClothes, history } = this.props;
+    const { selectedClothes } = this.state;
+    const hasChanged = () => {
+      if (editSelectedClothes.length !== selectedClothes.length) return true;
+
+      for (let i = 0; i < selectedClothes.length; ++i) {
+        if (selectedClothes[i].id !== editSelectedClothes[i].id) return true;
+      }
+      return false;
+    };
+
+    if (hasChanged()) this.setState({ goBackDialogOpen: true });
+    else history.goBack();
   };
 
   /**
@@ -725,7 +696,7 @@ export default class DesignComponent extends React.Component {
     task
       .then(() => task.snapshot.ref.getDownloadURL())
       .then(url => {
-        //merge tags
+        // merge tags
         let tags = new Set();
         selectedClothes.forEach(c => {
           c.tags.forEach(tag => tags.add(tag));
@@ -766,15 +737,99 @@ export default class DesignComponent extends React.Component {
       });
   };
 
+  saveToCurrent = async () => {
+    const {
+      userStore: {
+        currentUser: { uid },
+      },
+    } = this.context;
+    const { loading, selectedClothes } = this.state;
+    const { editOutfit, history } = this.props;
+
+    if (loading) return;
+
+    this.setState({ loading: true });
+
+    const file = await this.generateImg('file');
+
+    const db = firebase.firestore();
+    const timestamp = new Date();
+    const userRef = db.collection('users').doc(uid);
+
+    // we need to write clothes, categories, tags, etc. in "batch" atomically
+    const batch = db.batch();
+
+    // generate new ref id for clothes
+    const outfitsId = editOutfit.id;
+    const outfitsRef = userRef.collection('outfits').doc(outfitsId);
+
+    // upload image to storage at /<uid>/outfits/<outfitsId>.png
+    const storagePath = `${uid}/outfits/${outfitsId}.png`;
+    const task = firebase
+      .storage()
+      .ref(storagePath)
+      .put(file);
+
+    task
+      .then(() => task.snapshot.ref.getDownloadURL())
+      .then(url => {
+        // merge tags
+        let tags = new Set();
+        selectedClothes.forEach(c => {
+          c.tags.forEach(tag => tags.add(tag));
+        });
+        tags = [...tags];
+
+        // firestore outfits data
+        const outfitsData = {
+          updatedAt: timestamp,
+          tags,
+          url,
+          clothes: selectedClothes.map(c => ({ id: c.id })),
+        };
+
+        batch.set(outfitsRef, outfitsData, { merge: true });
+
+        // new tags for this edit
+        difference(tags, editOutfit.tags).forEach(tag => {
+          const tagsRef = userRef.collection('tags').doc(tag);
+          batch.set(
+            tagsRef,
+            { outfits: firebase.firestore.FieldValue.arrayUnion({ id: outfitsId, url }) },
+            { merge: true }
+          );
+        });
+
+        // removed tag for this edit
+        difference(editOutfit.tags, tags).forEach(tag => {
+          const tagsRef = userRef.collection('tags').doc(tag);
+          batch.set(
+            tagsRef,
+            { outfits: firebase.firestore.FieldValue.arrayRemove({ id: outfitsId, url }) },
+            { merge: true }
+          );
+        });
+
+        return batch.commit();
+      })
+      .then(() => {
+        // this.setState({ loading: false, dialogOpen: false });
+        history.push(`/my-favorites/${outfitsId}`);
+      })
+      .catch(err => {
+        this.setState({ loading: false, dialogOpen: false });
+        message.error(`Error while saving outfit: ${err.message}`);
+      });
+  };
+
   render() {
-    const { from } = this.props;
+    const { tags, from, history } = this.props;
     const {
       loading,
       lockPopoverOpen,
       filterPopoverOpen,
       dialogOpen,
       goBackDialogOpen,
-      tags,
       filteredTags,
       filteredCategories,
       locked,
@@ -788,14 +843,15 @@ export default class DesignComponent extends React.Component {
       buttonsZone = [
         { text: 'Download', onClick: this.onDownload },
         { text: 'Save to My Favorites', onClick: this.saveToFavorites },
-        { text: 'Exit without Saving', exit: true, onClick: () => this.props.history.push('/') },
+        { text: 'Exit without Saving', exit: true, onClick: () => history.push('/') },
       ];
     } else {
+      // from === 'edit'
       buttonsZone = [
         { text: 'Download', onClick: this.onDownload },
-        { text: 'Save to Current', onClick: () => {} },
+        { text: 'Save to Current', onClick: this.saveToCurrent },
         { text: 'Save as New', onClick: this.saveToFavorites },
-        { text: 'Exit without Saving', exit: true, onClick: () => this.props.history.push('/') },
+        { text: 'Exit without Saving', exit: true, onClick: () => history.push('/') },
       ];
     }
 
@@ -804,11 +860,8 @@ export default class DesignComponent extends React.Component {
         <Loading loading={loading} />
         {from === 'edit' && (
           <GoBack>
-            <Tooltip arrow title="Go back" TransitionComponent={Zoom} placement="top">
-              <IconButton
-                className="goBack"
-                onClick={() => this.setState({ goBackDialogOpen: true })}
-              >
+            <Tooltip interactive arrow title="Go back" TransitionComponent={Zoom} placement="top">
+              <IconButton className="goBack" onClick={this.onBack}>
                 <SvgIcon fontSize="small">
                   <GoBackIcon />
                 </SvgIcon>
@@ -854,7 +907,13 @@ export default class DesignComponent extends React.Component {
                 />
               ))}
               <EditPic>
-                <Tooltip arrow title="Change background" TransitionComponent={Zoom} placement="top">
+                <Tooltip
+                  interactive
+                  arrow
+                  title="Change background"
+                  TransitionComponent={Zoom}
+                  placement="top"
+                >
                   <IconButton
                     className="editPic"
                     size="small"
@@ -915,14 +974,20 @@ export default class DesignComponent extends React.Component {
           </Picture>
           <IconCol>
             <UpperIcon>
-              <Tooltip arrow title="Undo" TransitionComponent={Zoom} placement="top">
+              <Tooltip interactive arrow title="Undo" TransitionComponent={Zoom} placement="top">
                 <IconButton className="undo" onClick={this.onUndo}>
                   <SvgIcon fontSize="small">
                     <UndoIcon />
                   </SvgIcon>
                 </IconButton>
               </Tooltip>
-              <Tooltip arrow title="Lock categories" TransitionComponent={Zoom} placement="top">
+              <Tooltip
+                interactive
+                arrow
+                title="Lock categories"
+                TransitionComponent={Zoom}
+                placement="top"
+              >
                 <IconButton
                   ref={el => (this.lockBtnRef = el)}
                   className="lock"
@@ -984,7 +1049,13 @@ export default class DesignComponent extends React.Component {
             </Save>
           </IconCol>
           <ChooseClothes>
-            <Tooltip arrow title="Filter tags" TransitionComponent={Zoom} placement="top">
+            <Tooltip
+              interactive
+              arrow
+              title="Filter tags"
+              TransitionComponent={Zoom}
+              placement="top"
+            >
               <IconButton
                 className="filter"
                 ref={el => (this.filterBtnRef = el)}
@@ -1071,8 +1142,15 @@ export default class DesignComponent extends React.Component {
               </span>
             }
             buttons={[
-              { text: 'Cancel, Continue Editing', onClick: () => {} },
-              { text: 'Exit without Saving', exit: true, onClick: () => {} },
+              {
+                text: 'Cancel, Continue Editing',
+                onClick: () => this.setState({ goBackDialogOpen: false }),
+              },
+              {
+                text: 'Exit without Saving',
+                exit: true,
+                onClick: () => history.goBack(),
+              },
             ]}
             onClose={() => this.setState({ goBackDialogOpen: false })}
           />

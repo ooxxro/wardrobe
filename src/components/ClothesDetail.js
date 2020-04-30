@@ -381,7 +381,7 @@ export default class ClothesDetail extends React.Component {
     });
     const firestorePromise = batch.commit();
 
-    // firestore
+    // storage
     const storagePromise = firebase
       .storage()
       .ref(clothes.storagePath)
@@ -443,7 +443,7 @@ export default class ClothesDetail extends React.Component {
     return (
       <Wrapper>
         <Top>
-          <Tooltip arrow title="Go back" TransitionComponent={Zoom} placement="top">
+          <Tooltip interactive arrow title="Go back" TransitionComponent={Zoom} placement="top">
             <IconButton
               className="backButton"
               onClick={() => {
@@ -463,7 +463,13 @@ export default class ClothesDetail extends React.Component {
 
           <div>
             {!isEdit && (
-              <Tooltip arrow title="Edit clothes" TransitionComponent={Zoom} placement="top">
+              <Tooltip
+                interactive
+                arrow
+                title="Edit clothes"
+                TransitionComponent={Zoom}
+                placement="top"
+              >
                 <IconButton
                   className="editButton"
                   onClick={() => this.setState({ isEdit: true })}
@@ -475,7 +481,13 @@ export default class ClothesDetail extends React.Component {
                 </IconButton>
               </Tooltip>
             )}
-            <Tooltip arrow title="Delete clothes" TransitionComponent={Zoom} placement="top">
+            <Tooltip
+              interactive
+              arrow
+              title="Delete clothes"
+              TransitionComponent={Zoom}
+              placement="top"
+            >
               <IconButton
                 className="deleteButton"
                 onClick={() => this.setState({ deleteDialogOpen: true })}

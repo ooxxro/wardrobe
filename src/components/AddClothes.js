@@ -535,6 +535,7 @@ export default class AddClothes extends React.Component {
             {activeStep === 0 && (
               <StepOne>
                 <Tooltip
+                  interactive
                   arrow
                   title="Click to upload image"
                   TransitionComponent={Zoom}
@@ -553,7 +554,13 @@ export default class AddClothes extends React.Component {
                     </Button>
                   </label>
                 </Tooltip>
-                <Tooltip arrow title="Take a photo" TransitionComponent={Zoom} placement="top">
+                <Tooltip
+                  interactive
+                  arrow
+                  title="Take a photo"
+                  TransitionComponent={Zoom}
+                  placement="top"
+                >
                   <Button className="iconButton">
                     <img src={cameraImg} />
                   </Button>

@@ -368,7 +368,6 @@ export default class DesignComponent extends React.Component {
       pants: [],
       shoes: [],
     },
-    tags: [],
     filteredTags: [],
     selectedClothes: [],
     locked: {

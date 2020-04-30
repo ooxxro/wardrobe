@@ -13,17 +13,34 @@ describe('<DesignComponent>', () => {
   });
 
   it('renders DesignComponent from="design" without crashing', () => {
-    const { container } = render(<DesignComponent from="design" />);
+    const categories = {
+      hats: [],
+      shirts: [],
+      pants: [],
+      shoes: [],
+    };
+    const { container } = render(
+      <DesignComponent from="design" categories={categories} tags={[]} />
+    );
     expect(container.innerHTML).toMatch('Design');
   });
 
-  it('renders DesignComponent from="random" without crashing', () => {
-    const { container } = render(<DesignComponent from="random" />);
-    expect(container.innerHTML).toMatch('Random');
-  });
-
   it('renders DesignComponent from="edit" without crashing', () => {
-    const { getByText } = render(<DesignComponent from="edit" />);
+    const categories = {
+      hats: [],
+      shirts: [],
+      pants: [],
+      shoes: [],
+    };
+    const { getByText } = render(
+      <DesignComponent
+        from="edit"
+        categories={categories}
+        tags={[]}
+        editOutfit={{}}
+        editSelectedClothes={[]}
+      />
+    );
     expect(getByText(/done/i)).toBeInTheDocument();
   });
 });

@@ -92,7 +92,7 @@ export default class MyFavoritesEdit extends React.Component {
         };
         const tagSet = new Set();
         const selectedIds = outfit.clothes.map(c => c.id);
-        const selectedClothes = [...outfit.clothes];
+        let selectedClothes = [...outfit.clothes];
 
         querySnapshot.forEach(doc => {
           const c = {
@@ -108,6 +108,12 @@ export default class MyFavoritesEdit extends React.Component {
           // add tag to tags Set
           c.tags.forEach(tag => tagSet.add(tag));
         });
+
+        selectedClothes = selectedClothes.filter(c => c.fit);
+
+        if (selectedClothes.length !== selectedIds.length) {
+          message.warn('NOTICE: Some clothes for this outfit is no longer available (deleted)');
+        }
 
         const tags = [...tagSet];
         tags.sort();

@@ -461,6 +461,7 @@ export default class Setting extends React.Component {
                 />
                 <ButtonWithLoading
                   id="displayNameSubmit"
+                  data-testid="displayNameSaveBtn"
                   className="card1Btn"
                   variant="contained"
                   color="primary"

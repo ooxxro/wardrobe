@@ -20,6 +20,8 @@
     "bootstrap": "^4.4.1",
     "canvas": "^2.6.1",
     "customize-cra": "^0.9.1",
+    "cypress": "^4.5.0",
+    "cypress-file-upload": "^4.0.6",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-prettier": "^3.1.2",
@@ -57,6 +59,7 @@
     "start": "react-app-rewired start",
     "build": "npm run firebase && react-app-rewired build",
     "test": "react-app-rewired test",
+    "e2e": "cypress open",
     "format": "prettier --write '**/*.{js,ts,css,scss,html}'",
     "lint": "eslint '**/*.{js,ts}'",
     "firebase": "cd functions && npm i && cd .. && firebase deploy --token \"$FIREBASE_TOKEN\" -f"

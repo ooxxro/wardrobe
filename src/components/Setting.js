@@ -439,6 +439,7 @@ export default class Setting extends React.Component {
             <User>
               <div className="user">
                 <Avatar
+                  id="avatarIcon"
                   size={130}
                   icon={<UserOutlined />}
                   onClick={this.editAvatar}
@@ -459,6 +460,7 @@ export default class Setting extends React.Component {
                   }}
                 />
                 <ButtonWithLoading
+                  id="displayNameSubmit"
                   className="card1Btn"
                   variant="contained"
                   color="primary"
@@ -476,6 +478,7 @@ export default class Setting extends React.Component {
 
               <div className="avatar-edit">
                 <form
+                  id="editAvatarForm"
                   className="editAvatarForm"
                   style={{ display: this.state.avatarEdit ? 'block' : 'none' }}
                 >

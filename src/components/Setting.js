@@ -266,6 +266,7 @@ export default class Setting extends React.Component {
   //   });
   // };
 
+  /* istanbul ignore next */
   onChangeEmail = () => {
     const {
       userStore: { currentUser },
@@ -298,6 +299,7 @@ export default class Setting extends React.Component {
       });
   };
 
+  /* istanbul ignore next */
   onChangePassword = () => {
     const { changeCurrentPW, newPassword, verifyNewPassword, passwordLoading } = this.state;
 
@@ -331,6 +333,7 @@ export default class Setting extends React.Component {
   };
 
   // TODO
+  /* istanbul ignore next */
   onDeleteAccount = () => {
     const { deleteAccountPW, deleteAccountLoading } = this.state;
     if (!deleteAccountPW || deleteAccountLoading) return;
@@ -370,6 +373,7 @@ export default class Setting extends React.Component {
       });
   };
 
+  /* istanbul ignore next */
   handChange = () => {
     const { userStore } = this.context;
     const file = this.state.avatarLocation;

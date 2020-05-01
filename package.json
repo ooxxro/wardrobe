@@ -74,7 +74,17 @@
       "!<rootDir>/src/serviceWorker.js",
       "!<rootDir>/src/firebase.js",
       "!<rootDir>/src/index.js",
-      "!<rootDir>/src/test-utils.js"
+      "!<rootDir>/src/test-utils.js",
+      "!<rootDir>/src/utils/image-processing.js",
+      "!<rootDir>/src/components/ClothesIndex.js",
+      "!<rootDir>/src/components/ClothesDetail.js",
+      "!<rootDir>/src/components/Random.js",
+      "!<rootDir>/src/components/MyFavorites.js",
+      "!<rootDir>/src/components/MyFavoritesEdit.js",
+      "!<rootDir>/src/components/Design.js",
+      "!<rootDir>/src/components/Login.js",
+      "!<rootDir>/src/components/SignUp.js",
+      "!<rootDir>/src/components/DesignComponent.js"
     ]
   },
   "browserslist": {

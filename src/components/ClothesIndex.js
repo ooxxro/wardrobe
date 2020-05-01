@@ -255,6 +255,7 @@ export default class ClothesIndex extends React.Component {
       },
     } = this.props;
     const { loading, filteredCategories } = this.state;
+    console.log(type);
 
     const links = [
       { to: 'all', text: 'All' },

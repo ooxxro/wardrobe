@@ -342,12 +342,15 @@ export default class AddClothes extends React.Component {
         });
       })
       .catch(error => {
+        /* istanbul ignore next */
         message.error(error.message);
+        /* istanbul ignore next */
         this.setState({ loading: false });
       });
   };
 
   removeBackground = () => {
+    /* istanbul ignore next */
     if (this.state.loading) return;
 
     this.setState({ loading: true });
@@ -367,20 +370,22 @@ export default class AddClothes extends React.Component {
           });
         })
         .catch(error => {
+          /* istanbul ignore next */
           this.setState({ loading: false });
-          // eslint-disable-next-line no-console
-          console.error(error);
+          /* istanbul ignore next */
           message.error(error.message);
         });
     };
     reader.readAsDataURL(this.state.file);
   };
 
+  /* istanbul ignore next */
   onRemoveTag = tag => {
     const tags = this.state.tags.filter(t => t !== tag);
     this.setState({ tags });
   };
 
+  /* istanbul ignore next */
   showInput = () => {
     this.setState(
       { tagsInputVisible: true },
@@ -388,6 +393,7 @@ export default class AddClothes extends React.Component {
     );
   };
 
+  /* istanbul ignore next */
   addTag = () => {
     const { newTagValue, tags } = this.state;
 
@@ -420,6 +426,7 @@ export default class AddClothes extends React.Component {
       afterRemoveBackgroundURL,
     } = this.state;
 
+    /* istanbul ignore next */
     if (loading) return;
 
     this.setState({ loading: true });
@@ -445,6 +452,7 @@ export default class AddClothes extends React.Component {
       .ref(storagePath)
       .put(chosenFile);
 
+    /* istanbul ignore next */
     task
       .then(() => task.snapshot.ref.getDownloadURL())
       .then(url => {
@@ -472,7 +480,12 @@ export default class AddClothes extends React.Component {
           const tagsRef = userRef.collection('tags').doc(tag);
           batch.set(
             tagsRef,
-            { clothes: firebase.firestore.FieldValue.arrayUnion({ id: clothesId, url }) },
+            {
+              clothes: firebase.firestore.FieldValue.arrayUnion({
+                id: clothesId,
+                url,
+              }),
+            },
             { merge: true }
           );
         });
@@ -483,7 +496,9 @@ export default class AddClothes extends React.Component {
         this.setState({ loading: false, finishDialogOpen: true });
       })
       .catch(err => {
+        /* istanbul ignore next */
         this.setState({ loading: false });
+        /* istanbul ignore next */
         message.error(`Error while saving clothes: ${err.message}`);
       });
   };
@@ -581,6 +596,7 @@ export default class AddClothes extends React.Component {
                       variant="contained"
                       color="primary"
                       onClick={() =>
+                        /* istanbul ignore next */
                         this.setState({
                           selectedImageURL: previewURL,
                           afterRemoveBackgroundURL: '',
@@ -677,6 +693,7 @@ export default class AddClothes extends React.Component {
                             key={tag}
                             closable
                             onClose={e => {
+                              /* istanbul ignore next */
                               e.preventDefault();
                               this.onRemoveTag(tag);
                             }}
@@ -692,6 +709,7 @@ export default class AddClothes extends React.Component {
                             value={newTagValue}
                             onChange={e => this.setState({ newTagValue: e.target.value })}
                             onBlur={() => {
+                              /* istanbul ignore next */
                               this.addTag();
                               this.setState({ tagsInputVisible: false });
                             }}
@@ -747,18 +765,21 @@ export default class AddClothes extends React.Component {
               text: 'Continue Adding Clothes',
               onClick: () => {
                 // TODO: reset state instead for better UX
+                /* istanbul ignore next */
                 location.reload();
               },
             },
             {
               text: 'Go to Design',
               onClick: () => {
+                /* istanbul ignore next */
                 history.push('/design');
               },
             },
             {
               text: 'Go Back Home',
               onClick: () => {
+                /* istanbul ignore next */
                 history.push('/');
               },
             },

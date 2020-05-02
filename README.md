@@ -6,6 +6,13 @@
 <!--   <a href="https://codecov.io/github/ooxxro/wardrobe?branch=master"><img src="https://img.shields.io/codecov/c/github/ooxxro/wardrobe/master.svg?sanitize=true" alt="Coverage Status"></a> -->
 </p>
 
+## README for Iteration 3 Progress Report
+
+Online Website: [https://wardrobe.rocks](https://wardrobe.rocks).  
+To build the application, you need node.js and npm installed.  
+After cloning this repo, run `npm install` to install dependencies.  
+Run `npm start` to start the development server.  
+Run `npm run e2e` to run Cypress automated end to end tests.
 
 ## README for Iteration 2 Progress Report
 
@@ -14,7 +21,7 @@ To build the application, you need node.js and npm installed.
 After cloning this repo, run `npm install` to install dependencies.  
 Run `npm start` to start the development server.  
 Run `npm test` to run unit tests.  
-Run `npm test -- --coverage --watchAll=false` to run for the code coverage
+Run `npm test -- --coverage --watchAll=false` to run for the code coverage.
 
 ## README for Iteration 1 Progress Report
 

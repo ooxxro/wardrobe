@@ -15,12 +15,12 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/random.png" width="45%">
-  <img src="screenshots/design.png" width="45%">
-  <img src="screenshots/design-done.png" width="45%">
-  <img src="screenshots/my-favorites.png" width="45%">
-  <img src="screenshots/my-wardrobe.png" width="45%">
-  <img src="screenshots/my-wardrobe-all.png" width="45%">
+  <img src="screenshots/random.jpg">
+  <img src="screenshots/design.jpg">
+  <img src="screenshots/design-done.jpg">
+  <img src="screenshots/my-favorites.jpg">
+  <img src="screenshots/my-wardrobe.jpg">
+  <img src="screenshots/my-wardrobe-all.jpg">
 </p>
 
 ## README for Iteration 3 Progress Report

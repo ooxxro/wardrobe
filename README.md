@@ -1,9 +1,26 @@
-<h1 align="center">Wardrobe</h1>
+<h1 align="center">
+  Wardrobe
+  <h4 align="center" style="font-size: 16px; color: #888">
+    Personal fashion planning web app. Add your clothes, see how they fit together, and get inspired!
+  </h4>
+  <h4 align="center" style="font-size: 16px; font-weight: normal">
+    <a href="https://mywardrobe.netlify.app">https://mywardrobe.netlify.app</a>
+  </h4>
+</h1>
 
 <p align="center">
   <a href="https://app.netlify.com/sites/mywardrobe/deploys"><img src="https://api.netlify.com/api/v1/badges/dd13f707-aa91-4842-a4ab-a0e6bbc475f4/deploy-status" alt="Deploy Status"></a>
   <a href="https://circleci.com/gh/ooxxro/wardrobe/tree/master"><img src="https://img.shields.io/circleci/project/github/ooxxro/wardrobe/master.svg?sanitize=true" alt="Test Status"></a>
 <!--   <a href="https://codecov.io/github/ooxxro/wardrobe?branch=master"><img src="https://img.shields.io/codecov/c/github/ooxxro/wardrobe/master.svg?sanitize=true" alt="Coverage Status"></a> -->
+</p>
+
+<p align="center">
+  <img src="screenshots/random.png" width="45%">
+  <img src="screenshots/design.png" width="45%">
+  <img src="screenshots/design-done.png" width="45%">
+  <img src="screenshots/my-favorites.png" width="45%">
+  <img src="screenshots/my-wardrobe.png" width="45%">
+  <img src="screenshots/my-wardrobe-all.png" width="45%">
 </p>
 
 ## README for Iteration 3 Progress Report
